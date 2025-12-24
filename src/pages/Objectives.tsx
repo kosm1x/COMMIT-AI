@@ -760,9 +760,13 @@ export default function Objectives() {
   };
 
   const updateObjective = async (id: string, updates: Partial<Objective>) => {
-    console.log('Updating objective with:', updates);
+    if (import.meta.env.DEV) {
+      console.log('Updating objective with:', updates);
+    }
     const { error, data } = await supabase.from('objectives').update(updates).eq('id', id).select();
-    console.log('Update result - error:', error, 'data:', data);
+    if (import.meta.env.DEV) {
+      console.log('Update result - error:', error, 'data:', data);
+    }
 
     if (error) {
       console.error('Error updating objective:', error);
@@ -825,9 +829,13 @@ export default function Objectives() {
   };
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
-    console.log('Updating task with:', updates);
+    if (import.meta.env.DEV) {
+      console.log('Updating task with:', updates);
+    }
     const { error, data } = await supabase.from('tasks').update(updates).eq('id', id).select();
-    console.log('Update result - error:', error, 'data:', data);
+    if (import.meta.env.DEV) {
+      console.log('Update result - error:', error, 'data:', data);
+    }
 
     if (error) {
       console.error('Error updating task:', error);
