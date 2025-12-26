@@ -9,6 +9,7 @@ interface GoalColumnProps {
   visions: Vision[];
   selectedVisionId: string | null;
   selectedGoalId: string | null;
+  hasAnySelection: boolean; // True if any item at any level is selected
   isInSelectedFamily: (type: 'vision' | 'goal' | 'objective' | 'task', id: string) => boolean;
   editingGoalId: string | null;
   setEditingGoalId: (id: string | null) => void;
@@ -27,6 +28,7 @@ export function GoalColumn({
   visions,
   selectedVisionId,
   selectedGoalId,
+  hasAnySelection,
   isInSelectedFamily,
   editingGoalId,
   setEditingGoalId,
@@ -41,11 +43,26 @@ export function GoalColumn({
   const [showOrphaned, setShowOrphaned] = useState(true);
 
   // Split goals into vision-attached and orphaned
-  const visionGoals = selectedVisionId
-    ? goals.filter(g => g.vision_id === selectedVisionId)
-    : goals.filter(g => g.vision_id !== null);
-
+  // When filtering by family, we need to show all goals (not pre-filtered by selectedVisionId)
+  // because isInSelectedFamily will correctly identify family members
+  const allVisionGoals = goals.filter(g => g.vision_id !== null);
   const orphanedGoals = goals.filter(g => g.vision_id === null);
+
+  // Filter: if something is selected, only show family members; otherwise show all
+  // When a vision is selected, show all goals in that vision's family
+  // When a goal/objective/task is selected, show only goals in that family
+  const visibleVisionGoals = hasAnySelection
+    ? allVisionGoals.filter(g => isInSelectedFamily('goal', g.id))
+    : allVisionGoals;
+  const visibleOrphanedGoals = hasAnySelection
+    ? orphanedGoals.filter(g => isInSelectedFamily('goal', g.id))
+    : orphanedGoals;
+
+  // For display purposes, if a vision is selected, show only goals attached to that vision
+  // Otherwise, show all vision-attached goals
+  const displayVisionGoals = selectedVisionId
+    ? visibleVisionGoals.filter(g => g.vision_id === selectedVisionId)
+    : visibleVisionGoals;
 
   const handleDelete = async (id: string) => {
     // Check for descendants
@@ -72,7 +89,7 @@ export function GoalColumn({
     await onDeleteGoal(id, !deleteAll); // If deleteAll is false, orphan descendants
   };
 
-  const totalCount = visionGoals.length + (showOrphaned ? orphanedGoals.length : 0);
+  const totalCount = displayVisionGoals.length + (showOrphaned ? visibleOrphanedGoals.length : 0);
 
   return (
     <div className="flex-1 lg:min-w-[240px] xl:min-w-[260px] 2xl:min-w-[280px] 3xl:min-w-[320px] flex flex-col glass-card border border-white/40 max-w-full w-full shrink">
@@ -107,8 +124,8 @@ export function GoalColumn({
               {selectedVision.title}
             </h3>
             <div className="space-y-2">
-              {visionGoals.length > 0 ? (
-                visionGoals.map((goal) => (
+              {displayVisionGoals.length > 0 ? (
+                displayVisionGoals.map((goal) => (
                   <GoalCard
                     key={goal.id}
                     goal={goal}
@@ -137,9 +154,9 @@ export function GoalColumn({
         )}
 
         {/* No vision selected - show all non-orphan goals */}
-        {!selectedVision && visionGoals.length > 0 && (
+        {!selectedVision && displayVisionGoals.length > 0 && (
           <div className="space-y-2">
-            {visionGoals.map((goal) => (
+            {displayVisionGoals.map((goal) => (
               <GoalCard
                 key={goal.id}
                 goal={goal}
@@ -168,12 +185,12 @@ export function GoalColumn({
             className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
           >
             {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            Orphaned Goals ({orphanedGoals.length})
+            Orphaned Goals ({visibleOrphanedGoals.length})
           </button>
           {showOrphaned && (
             <div className="space-y-2">
-              {orphanedGoals.length > 0 ? (
-                orphanedGoals.map((goal) => (
+              {visibleOrphanedGoals.length > 0 ? (
+                visibleOrphanedGoals.map((goal) => (
                   <GoalCard
                     key={goal.id}
                     goal={goal}

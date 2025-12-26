@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Eye } from 'lucide-react';
+import { createIsInSelectedFamily } from '../../utils/familyTree';
 
 interface Vision {
   id: string;
@@ -22,14 +23,20 @@ const STATUS_COLUMNS = [
 
 interface VisionsKanbanProps {
   selectedVisionId: string | null;
+  selectedGoalId: string | null;
+  selectedObjectiveId: string | null;
+  selectedTaskId: string | null;
   onSelectVision: (visionId: string | null) => void;
   highlightedItemId?: string | null;
 }
 
-export default function VisionsKanban({ selectedVisionId, onSelectVision, highlightedItemId }: VisionsKanbanProps) {
+export default function VisionsKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectVision, highlightedItemId }: VisionsKanbanProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [visions, setVisions] = useState<Vision[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [objectives, setObjectives] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
@@ -57,15 +64,29 @@ export default function VisionsKanban({ selectedVisionId, onSelectVision, highli
 
   const loadVisions = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('visions')
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('order', { ascending: true })
-      .order('created_at', { ascending: true });
+    const [visionsResult, goalsResult, objectivesResult, tasksResult] = await Promise.all([
+      supabase
+        .from('visions')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('order', { ascending: true })
+        .order('created_at', { ascending: true }),
+      supabase.from('goals').select('id, vision_id').eq('user_id', user!.id),
+      supabase.from('objectives').select('id, goal_id').eq('user_id', user!.id),
+      supabase.from('tasks').select('id, objective_id').eq('user_id', user!.id),
+    ]);
 
-    if (data) {
-      setVisions(data);
+    if (visionsResult.data) {
+      setVisions(visionsResult.data);
+    }
+    if (goalsResult.data) {
+      setGoals(goalsResult.data);
+    }
+    if (objectivesResult.data) {
+      setObjectives(objectivesResult.data);
+    }
+    if (tasksResult.data) {
+      setTasks(tasksResult.data);
     }
     setLoading(false);
   };
@@ -139,8 +160,31 @@ export default function VisionsKanban({ selectedVisionId, onSelectVision, highli
     loadVisions();
   };
 
+  // Check if there's any selection
+  const hasSelection = selectedVisionId || selectedGoalId || selectedObjectiveId || selectedTaskId;
+  
+  // Create family filter function
+  const isInSelectedFamily = createIsInSelectedFamily(
+    {
+      visionId: selectedVisionId,
+      goalId: selectedGoalId,
+      objectiveId: selectedObjectiveId,
+      taskId: selectedTaskId,
+    },
+    goals,
+    objectives,
+    tasks
+  );
+
   const getVisionsByStatus = (status: string) => {
-    return visions.filter((vision) => vision.status === status);
+    let filteredVisions = visions.filter((vision) => vision.status === status);
+    
+    // If there's a selection, only show family members
+    if (hasSelection) {
+      filteredVisions = filteredVisions.filter(vision => isInSelectedFamily('vision', vision.id));
+    }
+    
+    return filteredVisions;
   };
 
   if (loading) {
@@ -178,7 +222,7 @@ export default function VisionsKanban({ selectedVisionId, onSelectVision, highli
               .sort((a, b) => a.order - b.order)
               .map((vision) => {
               const isSelected = selectedVisionId === vision.id;
-              const isRelated = !selectedVisionId || isSelected;
+              const isRelated = hasSelection ? isInSelectedFamily('vision', vision.id) : true;
               const isDragged = draggedItem === vision.id;
               const isDraggedOver = draggedOverItem === vision.id && draggedOverStatus === column.id;
               

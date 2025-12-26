@@ -17,6 +17,9 @@ export default function Objectives() {
   // Use the centralized objectives state hook
   const state = useObjectivesState(user?.id);
 
+  // Check if any item is selected at any level
+  const hasAnySelection = !!(state.selectionPath.visionId || state.selectionPath.goalId || state.selectionPath.objectiveId || state.selectionPath.taskId);
+
   // Form visibility state
   const [showVisionForm, setShowVisionForm] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -41,25 +44,11 @@ export default function Objectives() {
 
   // Navigation state handling
   const processedNavStateRef = useRef<string | null>(null);
-  const hasAutoSelectedVisionRef = useRef(false);
 
   // Clear processed nav state when pathname changes
   useEffect(() => {
     processedNavStateRef.current = null;
   }, [location.pathname]);
-
-  // Auto-select first vision on initial load (if no navigation state)
-  useEffect(() => {
-    if (processedNavStateRef.current) return;
-
-    const navState = location.state as { selectVision?: string; selectGoal?: string; selectObjective?: string; selectTask?: string } | null;
-    const hasNavState = navState && (navState.selectVision || navState.selectGoal || navState.selectObjective || navState.selectTask);
-
-    if (state.visions.length > 0 && !state.selectedVision && !hasAutoSelectedVisionRef.current && !hasNavState) {
-      state.selectVision(state.visions[0]);
-      hasAutoSelectedVisionRef.current = true;
-    }
-  }, [state.visions, state.selectedVision, location.state, state]);
 
   // Handle navigation state from Kanban boards
   useEffect(() => {
@@ -287,6 +276,7 @@ export default function Objectives() {
           <VisionColumn
             visions={state.visions}
             selectedVisionId={state.selectionPath.visionId}
+            hasAnySelection={hasAnySelection}
             isInSelectedFamily={state.isInSelectedFamily}
             editingVisionId={editingVisionId}
             setEditingVisionId={setEditingVisionId}
@@ -310,6 +300,7 @@ export default function Objectives() {
             visions={state.visions}
             selectedVisionId={state.selectionPath.visionId}
             selectedGoalId={state.selectionPath.goalId}
+            hasAnySelection={hasAnySelection}
             isInSelectedFamily={state.isInSelectedFamily}
             editingGoalId={editingGoalId}
             setEditingGoalId={setEditingGoalId}
@@ -330,6 +321,7 @@ export default function Objectives() {
             goals={state.goals}
             selectedGoalId={state.selectionPath.goalId}
             selectedObjectiveId={state.selectionPath.objectiveId}
+            hasAnySelection={hasAnySelection}
             isInSelectedFamily={state.isInSelectedFamily}
             editingObjectiveId={editingObjectiveId}
             setEditingObjectiveId={setEditingObjectiveId}
@@ -351,6 +343,7 @@ export default function Objectives() {
             objectives={state.objectives}
             selectedObjectiveId={state.selectionPath.objectiveId}
             selectedTaskId={state.selectionPath.taskId}
+            hasAnySelection={hasAnySelection}
             isInSelectedFamily={state.isInSelectedFamily}
             editingTaskId={editingTaskId}
             setEditingTaskId={setEditingTaskId}

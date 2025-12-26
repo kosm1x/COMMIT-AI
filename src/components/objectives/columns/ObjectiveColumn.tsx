@@ -9,6 +9,7 @@ interface ObjectiveColumnProps {
   goals: Goal[]; // All goals (for dropdown in card edit)
   selectedGoalId: string | null;
   selectedObjectiveId: string | null;
+  hasAnySelection: boolean; // True if any item at any level is selected
   isInSelectedFamily: (type: 'vision' | 'goal' | 'objective' | 'task', id: string) => boolean;
   editingObjectiveId: string | null;
   setEditingObjectiveId: (id: string | null) => void;
@@ -27,6 +28,7 @@ export function ObjectiveColumn({
   goals,
   selectedGoalId,
   selectedObjectiveId,
+  hasAnySelection,
   isInSelectedFamily,
   editingObjectiveId,
   setEditingObjectiveId,
@@ -44,13 +46,27 @@ export function ObjectiveColumn({
   const [objectiveTasks, setObjectiveTasks] = useState<Record<string, Task[]>>({});
 
   // Split objectives into goal-attached and orphaned
-  const goalObjectives = selectedGoalId
-    ? objectives.filter(o => o.goal_id === selectedGoalId)
-    : objectives.filter(o => o.goal_id !== null);
-
+  // When filtering by family, we need to show all objectives (not pre-filtered by selectedGoalId)
+  // because isInSelectedFamily will correctly identify family members
+  const allGoalObjectives = objectives.filter(o => o.goal_id !== null);
   const orphanedObjectives = objectives.filter(o => o.goal_id === null);
 
-  const totalCount = goalObjectives.length + (showOrphaned ? orphanedObjectives.length : 0);
+  // Filter: if something is selected, only show family members; otherwise show all
+  // When a vision/goal/objective/task is selected, show only objectives in that family
+  const visibleGoalObjectives = hasAnySelection
+    ? allGoalObjectives.filter(o => isInSelectedFamily('objective', o.id))
+    : allGoalObjectives;
+  const visibleOrphanedObjectives = hasAnySelection
+    ? orphanedObjectives.filter(o => isInSelectedFamily('objective', o.id))
+    : orphanedObjectives;
+
+  // For display purposes, if a goal is selected, show only objectives attached to that goal
+  // Otherwise, show all goal-attached objectives
+  const displayGoalObjectives = selectedGoalId
+    ? visibleGoalObjectives.filter(o => o.goal_id === selectedGoalId)
+    : visibleGoalObjectives;
+
+  const totalCount = displayGoalObjectives.length + (showOrphaned ? visibleOrphanedObjectives.length : 0);
 
   const handleDelete = async (id: string) => {
     // Check for descendants
@@ -165,8 +181,8 @@ export function ObjectiveColumn({
               {selectedGoal.title}
             </h3>
             <div className="space-y-2">
-              {goalObjectives.length > 0 ? (
-                goalObjectives.map(renderObjectiveCard)
+              {displayGoalObjectives.length > 0 ? (
+                displayGoalObjectives.map(renderObjectiveCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
                   No objectives yet
@@ -176,8 +192,8 @@ export function ObjectiveColumn({
           </div>
         ) : (
           <div className="space-y-2">
-            {goalObjectives.length > 0 ? (
-              goalObjectives.map(renderObjectiveCard)
+            {displayGoalObjectives.length > 0 ? (
+              displayGoalObjectives.map(renderObjectiveCard)
             ) : (
               <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
                 No objectives yet
@@ -193,12 +209,12 @@ export function ObjectiveColumn({
             className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
           >
             {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            Orphaned Objectives ({orphanedObjectives.length})
+            Orphaned Objectives ({visibleOrphanedObjectives.length})
           </button>
           {showOrphaned && (
             <div className="space-y-2">
-              {orphanedObjectives.length > 0 ? (
-                orphanedObjectives.map(renderObjectiveCard)
+              {visibleOrphanedObjectives.length > 0 ? (
+                visibleOrphanedObjectives.map(renderObjectiveCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
                   No orphaned objectives

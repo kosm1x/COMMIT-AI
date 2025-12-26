@@ -314,25 +314,57 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
       }
       case 'objective': {
         if (selectionPath.objectiveId === id) return true;
-        // Objective is in family if selected goal contains it
-        if (selectionPath.goalId) {
-          const obj = objectives.find(o => o.id === id);
-          if (obj?.goal_id === selectionPath.goalId) return true;
+        
+        // Find this objective and trace its ancestry
+        const obj = objectives.find(o => o.id === id);
+        if (!obj) return false;
+        
+        // Check if selected vision is this objective's ancestor
+        if (selectionPath.visionId && obj.goal_id) {
+          const parentGoal = goals.find(g => g.id === obj.goal_id);
+          if (parentGoal?.vision_id === selectionPath.visionId) return true;
         }
-        // Or if selected task belongs to it
+        
+        // Check if selected goal is this objective's direct parent
+        if (selectionPath.goalId && obj.goal_id === selectionPath.goalId) {
+          return true;
+        }
+        
+        // Check if selected task is this objective's descendant
         if (selectionPath.taskId) {
           const task = tasks.find(t => t.id === selectionPath.taskId);
           if (task?.objective_id === id) return true;
         }
+        
         return false;
       }
       case 'task': {
         if (selectionPath.taskId === id) return true;
-        // Task is in family if selected objective contains it
-        if (selectionPath.objectiveId) {
-          const task = tasks.find(t => t.id === id);
-          if (task?.objective_id === selectionPath.objectiveId) return true;
+        
+        // Find this task and trace its ancestry
+        const task = tasks.find(t => t.id === id);
+        if (!task) return false;
+        
+        // Check if selected objective is this task's direct parent
+        if (selectionPath.objectiveId && task.objective_id === selectionPath.objectiveId) {
+          return true;
         }
+        
+        // Check if selected goal is this task's ancestor (objective → goal)
+        if (selectionPath.goalId && task.objective_id) {
+          const parentObjective = objectives.find(o => o.id === task.objective_id);
+          if (parentObjective?.goal_id === selectionPath.goalId) return true;
+        }
+        
+        // Check if selected vision is this task's ancestor (objective → goal → vision)
+        if (selectionPath.visionId && task.objective_id) {
+          const parentObjective = objectives.find(o => o.id === task.objective_id);
+          if (parentObjective?.goal_id) {
+            const parentGoal = goals.find(g => g.id === parentObjective.goal_id);
+            if (parentGoal?.vision_id === selectionPath.visionId) return true;
+          }
+        }
+        
         return false;
       }
       default:

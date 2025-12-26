@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { LogOut, Menu, X, Search, ChevronLeft, ChevronRight, Command, Moon, Sun } from 'lucide-react';
@@ -15,6 +16,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,13 +38,17 @@ export default function Layout({ children }: LayoutProps) {
       >
         {/* Header */}
         <div className={`p-4 flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'} border-b border-border-secondary/50`}>
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+            title="Go to Home"
+          >
             <img 
               src="/logo-icon.png" 
               alt="COMMIT" 
               className="w-[200px] h-[200px] object-contain"
             />
-          </div>
+          </button>
         </div>
 
         {/* Search */}
@@ -166,13 +172,20 @@ export default function Layout({ children }: LayoutProps) {
       >
         <div className="h-full flex flex-col">
           <div className="p-4 flex items-center justify-between border-b border-border-secondary">
-            <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                navigate('/');
+                setSidebarOpen(false);
+              }}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+              title="Go to Home"
+            >
               <img 
                 src="/logo-icon.png" 
                 alt="COMMIT" 
                 className="w-40 h-40 object-contain"
               />
-            </div>
+            </button>
             <button 
               onClick={() => setSidebarOpen(false)}
               className="p-2 text-text-tertiary hover:bg-bg-tertiary rounded-lg"

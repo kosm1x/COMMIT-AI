@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Flag, Link2, CheckCircle2 } from 'lucide-react';
+import { createIsInSelectedFamily } from '../../utils/familyTree';
 
 interface Task {
   id: string;
@@ -31,6 +31,8 @@ interface TasksKanbanProps {
   selectedVisionId: string | null;
   selectedGoalId: string | null;
   selectedObjectiveId: string | null;
+  selectedTaskId: string | null;
+  onSelectTask: (taskId: string | null) => void;
   highlightedItemId?: string | null;
 }
 
@@ -41,9 +43,8 @@ const STATUS_COLUMNS = [
   { id: 'completed', label: 'Completed', color: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100' },
 ] as const;
 
-export default function TasksKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, highlightedItemId }: TasksKanbanProps) {
+export default function TasksKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectTask, highlightedItemId }: TasksKanbanProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -97,31 +98,28 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
     setLoading(false);
   };
 
+  // Check if there's any selection
+  const hasSelection = selectedVisionId || selectedGoalId || selectedObjectiveId || selectedTaskId;
+  
+  // Create family filter function
+  const isInSelectedFamily = createIsInSelectedFamily(
+    {
+      visionId: selectedVisionId,
+      goalId: selectedGoalId,
+      objectiveId: selectedObjectiveId,
+      taskId: selectedTaskId,
+    },
+    goals,
+    objectives,
+    tasks
+  );
+
   const isTaskRelated = (task: Task): boolean => {
-    // If an objective is selected, only show tasks for that objective
-    if (selectedObjectiveId) {
-      return task.objective_id === selectedObjectiveId;
-    }
+    // If no selection, show all
+    if (!hasSelection) return true;
     
-    // Otherwise, filter by vision/goal as before
-    if (!selectedVisionId && !selectedGoalId) return true;
-    
-    if (!task.objective_id) return false; // Orphaned tasks are not related
-    
-    const objective = objectives.find(o => o.id === task.objective_id);
-    if (!objective) return false;
-    
-    if (selectedGoalId) {
-      return objective.goal_id === selectedGoalId;
-    }
-    
-    if (selectedVisionId) {
-      if (!objective.goal_id) return false;
-      const goal = goals.find(g => g.id === objective.goal_id);
-      return goal?.vision_id === selectedVisionId;
-    }
-    
-    return true;
+    // Use family filtering logic
+    return isInSelectedFamily('task', task.id);
   };
 
   const handleDragStart = (taskId: string, status: string) => {
@@ -278,6 +276,7 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
               .sort((a, b) => a.order - b.order)
               .map((task) => {
               const isRelated = isTaskRelated(task);
+              const isSelected = selectedTaskId === task.id;
               const isDragged = draggedItem === task.id;
               const isDraggedOver = draggedOverItem === task.id && draggedOverStatus === column.id;
               
@@ -296,11 +295,15 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
                   e.stopPropagation();
                   handleDrop(task.id, column.id);
                 }}
-                className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-move hover:shadow-md transition-all ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectTask(isSelected ? null : task.id);
+                }}
+                className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-pointer hover:shadow-md transition-all ${
                   isRelated ? 'opacity-100' : 'opacity-10'
                 } ${isDragged ? 'opacity-50' : ''} ${isDraggedOver ? 'border-t-4 border-t-teal-500' : ''} ${
                   isHighlighted ? 'ring-4 ring-purple-400 ring-offset-2 dark:ring-offset-gray-900 animate-pulse shadow-lg shadow-purple-500/30' : ''
-                }`}
+                } ${isSelected ? 'ring-2 ring-teal-500 border-teal-500' : ''}`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-start gap-2 flex-1">
@@ -311,10 +314,10 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
                       <h4
                         className={`font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors cursor-pointer ${
                           task.status === 'completed' ? 'line-through text-gray-500 dark:text-gray-400' : ''
-                        }`}
+                        } ${isSelected ? 'ring-2 ring-teal-500 rounded px-1' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate('/tasks', { state: { selectTask: task.id } });
+                          onSelectTask(isSelected ? null : task.id);
                         }}
                       >
                         {task.title}

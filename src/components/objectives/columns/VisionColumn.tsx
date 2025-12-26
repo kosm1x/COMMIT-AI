@@ -6,6 +6,7 @@ import { VisionCard } from '../cards';
 interface VisionColumnProps {
   visions: Vision[];
   selectedVisionId: string | null;
+  hasAnySelection: boolean; // True if any item at any level is selected
   isInSelectedFamily: (type: 'vision' | 'goal' | 'objective' | 'task', id: string) => boolean;
   editingVisionId: string | null;
   setEditingVisionId: (id: string | null) => void;
@@ -25,6 +26,7 @@ interface VisionColumnProps {
 export function VisionColumn({
   visions,
   selectedVisionId,
+  hasAnySelection,
   isInSelectedFamily,
   editingVisionId,
   setEditingVisionId,
@@ -41,6 +43,11 @@ export function VisionColumn({
 
   // Sort visions by order
   const sortedVisions = [...visions].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Filter: if something is selected, only show family members; otherwise show all
+  const visibleVisions = hasAnySelection
+    ? sortedVisions.filter(v => isInSelectedFamily('vision', v.id))
+    : sortedVisions;
 
   const handleDragStart = (e: React.DragEvent, visionId: string) => {
     setDraggedItem(visionId);
@@ -142,7 +149,7 @@ export function VisionColumn({
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
-        {sortedVisions.map((vision) => (
+        {visibleVisions.map((vision) => (
           <VisionCard
             key={vision.id}
             vision={vision}
@@ -166,7 +173,7 @@ export function VisionColumn({
             isDraggedOver={draggedOverId === vision.id}
           />
         ))}
-        {sortedVisions.length === 0 && (
+        {visibleVisions.length === 0 && (
           <div className="text-xs text-text-tertiary text-center py-8 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
             No visions yet. Create one to get started!
           </div>

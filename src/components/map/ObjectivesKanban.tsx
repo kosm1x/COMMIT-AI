@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Flag, Link2 } from 'lucide-react';
+import { createIsInSelectedFamily } from '../../utils/familyTree';
 
 interface Objective {
   id: string;
@@ -24,6 +25,7 @@ interface ObjectivesKanbanProps {
   selectedVisionId: string | null;
   selectedGoalId: string | null;
   selectedObjectiveId: string | null;
+  selectedTaskId: string | null;
   onSelectObjective: (objectiveId: string | null) => void;
   highlightedItemId?: string | null;
 }
@@ -35,11 +37,12 @@ const STATUS_COLUMNS = [
   { id: 'completed', label: 'Completed', color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100' },
 ] as const;
 
-export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, onSelectObjective, highlightedItemId }: ObjectivesKanbanProps) {
+export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectObjective, highlightedItemId }: ObjectivesKanbanProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
@@ -68,7 +71,7 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
 
   const loadData = async () => {
     setLoading(true);
-    const [objectivesResult, goalsResult] = await Promise.all([
+    const [objectivesResult, goalsResult, tasksResult] = await Promise.all([
       supabase
         .from('objectives')
         .select('*')
@@ -76,6 +79,7 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
         .order('order', { ascending: true })
         .order('created_at', { ascending: true }),
       supabase.from('goals').select('id, title, vision_id').eq('user_id', user!.id),
+      supabase.from('tasks').select('id, objective_id').eq('user_id', user!.id),
     ]);
 
     if (objectivesResult.data) {
@@ -84,29 +88,34 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     if (goalsResult.data) {
       setGoals(goalsResult.data);
     }
+    if (tasksResult.data) {
+      setTasks(tasksResult.data);
+    }
     setLoading(false);
   };
 
+  // Check if there's any selection
+  const hasSelection = selectedVisionId || selectedGoalId || selectedObjectiveId || selectedTaskId;
+  
+  // Create family filter function
+  const isInSelectedFamily = createIsInSelectedFamily(
+    {
+      visionId: selectedVisionId,
+      goalId: selectedGoalId,
+      objectiveId: selectedObjectiveId,
+      taskId: selectedTaskId,
+    },
+    goals,
+    objectives,
+    tasks
+  );
+
   const isObjectiveRelated = (objective: Objective): boolean => {
-    // If an objective is selected, only show that objective
-    if (selectedObjectiveId) {
-      return objective.id === selectedObjectiveId;
-    }
+    // If no selection, show all
+    if (!hasSelection) return true;
     
-    // Otherwise, filter by vision/goal as before
-    if (!selectedVisionId && !selectedGoalId) return true;
-    
-    if (selectedGoalId) {
-      return objective.goal_id === selectedGoalId;
-    }
-    
-    if (selectedVisionId) {
-      if (!objective.goal_id) return false;
-      const goal = goals.find(g => g.id === objective.goal_id);
-      return goal?.vision_id === selectedVisionId;
-    }
-    
-    return true;
+    // Use family filtering logic
+    return isInSelectedFamily('objective', objective.id);
   };
 
   const handleDragStart = (objectiveId: string, status: string) => {

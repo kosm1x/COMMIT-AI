@@ -184,7 +184,7 @@ export function ObjectiveCard({
             <div className="flex items-center gap-2 flex-1">
               {getStatusIcon(objective.status)}
               <h3
-                className="font-medium text-text-primary leading-snug hover:text-accent-primary transition-colors cursor-pointer"
+                className="font-semibold text-text-primary text-sm leading-snug hover:text-accent-primary transition-colors cursor-pointer"
                 onClick={onTitleClick}
               >
                 {objective.title}

@@ -12,14 +12,15 @@ interface KanbanViewProps {
 
 export default function KanbanView({ initialScrollTo, initialSelectItem }: KanbanViewProps) {
   const [sections, setSections] = useState({
-    vision: true,
-    goals: true,
-    objectives: true,
-    tasks: true,
+    vision: false,
+    goals: false,
+    objectives: false,
+    tasks: true, // Tasks open by default
   });
   const [selectedVisionId, setSelectedVisionId] = useState<string | null>(null);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [selectedObjectiveId, setSelectedObjectiveId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
 
   // Refs for scrolling to sections
@@ -69,6 +70,7 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
           break;
         case 'task':
           setSections(prev => ({ ...prev, tasks: true }));
+          setSelectedTaskId(id);
           break;
       }
       
@@ -92,33 +94,42 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
     setSelectedVisionId(visionId);
     setSelectedGoalId(null); // Clear goal selection when vision changes
     setSelectedObjectiveId(null); // Clear objective selection when vision changes
+    setSelectedTaskId(null); // Clear task selection when vision changes
   };
 
   const handleSelectGoal = (goalId: string | null) => {
     setSelectedGoalId(goalId);
     setSelectedObjectiveId(null); // Clear objective selection when goal changes
+    setSelectedTaskId(null); // Clear task selection when goal changes
   };
 
   const handleSelectObjective = (objectiveId: string | null) => {
     setSelectedObjectiveId(objectiveId);
+    setSelectedTaskId(null); // Clear task selection when objective changes
+  };
+
+  const handleSelectTask = (taskId: string | null) => {
+    setSelectedTaskId(taskId);
   };
 
   const clearFilter = () => {
     setSelectedVisionId(null);
     setSelectedGoalId(null);
     setSelectedObjectiveId(null);
+    setSelectedTaskId(null);
   };
 
   return (
     <div className="h-full overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-4 lg:space-y-6 custom-scrollbar">
       {/* Filter Bar */}
-      {(selectedVisionId || selectedGoalId || selectedObjectiveId) && (
+      {(selectedVisionId || selectedGoalId || selectedObjectiveId || selectedTaskId) && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-blue-700 dark:text-blue-300">
             <span className="font-medium">Filtered by:</span>
             {selectedVisionId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Vision</span>}
             {selectedGoalId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Goal</span>}
             {selectedObjectiveId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Objective</span>}
+            {selectedTaskId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Task</span>}
           </div>
           <button
             onClick={clearFilter}
@@ -143,6 +154,9 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
           <div className="animate-slide-up">
             <VisionsKanban
               selectedVisionId={selectedVisionId}
+              selectedGoalId={selectedGoalId}
+              selectedObjectiveId={selectedObjectiveId}
+              selectedTaskId={selectedTaskId}
               onSelectVision={handleSelectVision}
               highlightedItemId={highlightedItemId}
             />
@@ -164,6 +178,8 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
             <GoalsKanban
               selectedVisionId={selectedVisionId}
               selectedGoalId={selectedGoalId}
+              selectedObjectiveId={selectedObjectiveId}
+              selectedTaskId={selectedTaskId}
               onSelectVision={handleSelectVision}
               onSelectGoal={handleSelectGoal}
               highlightedItemId={highlightedItemId}
@@ -187,6 +203,7 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
               selectedVisionId={selectedVisionId}
               selectedGoalId={selectedGoalId}
               selectedObjectiveId={selectedObjectiveId}
+              selectedTaskId={selectedTaskId}
               onSelectObjective={handleSelectObjective}
               highlightedItemId={highlightedItemId}
             />
@@ -209,6 +226,8 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
               selectedVisionId={selectedVisionId}
               selectedGoalId={selectedGoalId}
               selectedObjectiveId={selectedObjectiveId}
+              selectedTaskId={selectedTaskId}
+              onSelectTask={handleSelectTask}
               highlightedItemId={highlightedItemId}
             />
           </div>

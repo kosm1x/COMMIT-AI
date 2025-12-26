@@ -10,6 +10,7 @@ interface TaskColumnProps {
   objectives: Objective[]; // All objectives (for dropdown in card edit)
   selectedObjectiveId: string | null;
   selectedTaskId: string | null;
+  hasAnySelection: boolean; // True if any item at any level is selected
   isInSelectedFamily: (type: 'vision' | 'goal' | 'objective' | 'task', id: string) => boolean;
   editingTaskId: string | null;
   setEditingTaskId: (id: string | null) => void;
@@ -28,6 +29,7 @@ export function TaskColumn({
   objectives,
   selectedObjectiveId,
   selectedTaskId,
+  hasAnySelection,
   isInSelectedFamily,
   editingTaskId,
   setEditingTaskId,
@@ -45,13 +47,27 @@ export function TaskColumn({
   const [recurringCompletedToday, setRecurringCompletedToday] = useState<Record<string, boolean>>({});
 
   // Split tasks into objective-attached and orphaned
-  const objectiveTasks = selectedObjectiveId
-    ? tasks.filter(t => t.objective_id === selectedObjectiveId)
-    : tasks.filter(t => t.objective_id !== null);
-
+  // When filtering by family, we need to show all tasks (not pre-filtered by selectedObjectiveId)
+  // because isInSelectedFamily will correctly identify family members
+  const allObjectiveTasks = tasks.filter(t => t.objective_id !== null);
   const orphanedTasks = tasks.filter(t => t.objective_id === null);
 
-  const totalCount = objectiveTasks.length + (showOrphaned ? orphanedTasks.length : 0);
+  // Filter: if something is selected, only show family members; otherwise show all
+  // When a vision/goal/objective/task is selected, show only tasks in that family
+  const visibleObjectiveTasks = hasAnySelection
+    ? allObjectiveTasks.filter(t => isInSelectedFamily('task', t.id))
+    : allObjectiveTasks;
+  const visibleOrphanedTasks = hasAnySelection
+    ? orphanedTasks.filter(t => isInSelectedFamily('task', t.id))
+    : orphanedTasks;
+
+  // For display purposes, if an objective is selected, show only tasks attached to that objective
+  // Otherwise, show all objective-attached tasks
+  const displayObjectiveTasks = selectedObjectiveId
+    ? visibleObjectiveTasks.filter(t => t.objective_id === selectedObjectiveId)
+    : visibleObjectiveTasks;
+
+  const totalCount = displayObjectiveTasks.length + (showOrphaned ? visibleOrphanedTasks.length : 0);
 
   const handleDelete = async (id: string) => {
     if (confirm('Delete this task?')) {
@@ -64,7 +80,7 @@ export function TaskColumn({
     const checkRecurringCompletions = async () => {
       if (!user) return;
 
-      const allTasks = [...objectiveTasks, ...orphanedTasks];
+      const allTasks = [...allObjectiveTasks, ...orphanedTasks];
       const recurringTaskIds = allTasks
         .filter(t => t.is_recurring)
         .map(t => t.id);
@@ -87,7 +103,7 @@ export function TaskColumn({
     };
 
     checkRecurringCompletions();
-  }, [tasks, user, objectiveTasks, orphanedTasks]);
+  }, [tasks, user, allObjectiveTasks, orphanedTasks]);
 
   const renderTaskCard = (task: Task) => (
     <TaskCard
@@ -142,12 +158,12 @@ export function TaskColumn({
           {/* Objective-attached tasks section */}
           {selectedObjective ? (
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-text-tertiary uppercase tracking-wider px-1">
+              <h3 className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider px-1">
                 {selectedObjective.title}
               </h3>
               <div className="space-y-3">
-                {objectiveTasks.length > 0 ? (
-                  objectiveTasks.map(renderTaskCard)
+                {displayObjectiveTasks.length > 0 ? (
+                  displayObjectiveTasks.map(renderTaskCard)
                 ) : (
                   <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
                     No tasks yet. Create one to get started!
@@ -157,8 +173,8 @@ export function TaskColumn({
             </div>
           ) : (
             <div className="space-y-3">
-              {objectiveTasks.length > 0 ? (
-                objectiveTasks.map(renderTaskCard)
+              {displayObjectiveTasks.length > 0 ? (
+                displayObjectiveTasks.map(renderTaskCard)
               ) : !showOrphaned ? (
                 <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
                   Select an objective to see tasks
@@ -171,15 +187,15 @@ export function TaskColumn({
           <div>
             <button
               onClick={() => setShowOrphaned(!showOrphaned)}
-              className="flex items-center gap-2 text-xs font-bold text-text-tertiary uppercase tracking-wider mb-3 px-1 hover:text-text-secondary transition-colors"
+              className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-3 px-1 hover:text-text-secondary transition-colors"
             >
               {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              Orphaned Tasks ({orphanedTasks.length})
+              Orphaned Tasks ({visibleOrphanedTasks.length})
             </button>
             {showOrphaned && (
               <div className="space-y-3">
-                {orphanedTasks.length > 0 ? (
-                  orphanedTasks.map(renderTaskCard)
+                {visibleOrphanedTasks.length > 0 ? (
+                  visibleOrphanedTasks.map(renderTaskCard)
                 ) : (
                   <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
                     No orphaned tasks yet
