@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import Login from './pages/Login';
 import Journal from './pages/Journal';
 import Objectives from './pages/Objectives';
@@ -14,6 +15,7 @@ import { hasSupabaseConfig } from './lib/supabase';
 
 function AppContent() {
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
 
   // Show configuration error if Supabase is not configured
   if (!hasSupabaseConfig) {
@@ -30,9 +32,9 @@ function AppContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-text-primary mb-2">Configuration Required</h1>
+            <h1 className="text-2xl font-bold text-text-primary mb-2">{t('errors.configError')}</h1>
             <p className="text-text-secondary mb-4">
-              Supabase environment variables are missing. Please create a <code className="bg-bg-tertiary px-2 py-1 rounded text-sm">.env</code> file in the project root with:
+              {t('errors.supabaseNotConfigured')}
             </p>
             <div className="bg-bg-tertiary rounded-xl p-4 text-left mb-4">
               <pre className="text-sm text-text-primary whitespace-pre-wrap">
@@ -55,7 +57,7 @@ VITE_GROQ_API_KEY=your_groq_api_key_here`}
       <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-text-secondary">Loading...</p>
+          <p className="text-text-secondary">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -72,6 +74,7 @@ VITE_GROQ_API_KEY=your_groq_api_key_here`}
           <IdeaDetail />
         </ErrorBoundary>
       } />
+      <Route path="/reset-password" element={<Login />} />
       <Route path="*" element={
         <Layout>
           <Routes>
@@ -131,12 +134,14 @@ VITE_GROQ_API_KEY=your_groq_api_key_here`}
 
 export default function App() {
   return (
-    <ThemeProvider>
-    <AuthProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </AuthProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }

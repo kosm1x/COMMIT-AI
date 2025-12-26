@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
   Activity,
 } from 'lucide-react';
@@ -7,6 +8,7 @@ import DashboardLayout from '../components/tracking/DashboardLayout';
 
 export default function Tracking() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [selectedDate] = useState(new Date());
 
@@ -21,8 +23,8 @@ export default function Tracking() {
             <Activity className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-heading font-bold text-text-primary">Progress Tracking</h1>
-            <p className="text-text-tertiary">Monitor your goals and habits over time</p>
+            <h1 className="text-2xl font-heading font-bold text-text-primary">{t('tracking.title')}</h1>
+            <p className="text-text-tertiary">{t('tracking.description')}</p>
           </div>
         </div>
 
@@ -37,7 +39,7 @@ export default function Tracking() {
                   : 'text-text-secondary hover:text-text-primary hover:bg-white dark:hover:bg-white/10'
               }`}
             >
-              {tab}
+              {t(`tracking.${tab}`)}
             </button>
           ))}
         </div>

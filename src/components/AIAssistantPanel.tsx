@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
   Sparkles,
   GitBranch,
@@ -86,6 +87,7 @@ export default function AIAssistantPanel({
   onCacheUpdate,
 }: AIAssistantPanelProps) {
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [activeTool, setActiveTool] = useState<ToolType>(null);
   const [loading, setLoading] = useState(false);
   const [divergentPaths, setDivergentPaths] = useState<DivergentPath[]>(cache?.divergentPaths || []);
@@ -146,7 +148,7 @@ export default function AIAssistantPanel({
       switch (tool) {
         case 'divergent':
           if (divergentPaths.length === 0 && !cache?.divergentPaths) {
-            const paths = await generateDivergentPaths(ideaTitle, ideaContent);
+            const paths = await generateDivergentPaths(ideaTitle, ideaContent, language);
             setDivergentPaths(paths);
             updateCache({ divergentPaths: paths });
           } else if (cache?.divergentPaths && divergentPaths.length === 0) {
@@ -155,7 +157,7 @@ export default function AIAssistantPanel({
           break;
         case 'nextSteps':
           if (nextSteps.length === 0 && !cache?.nextSteps) {
-            const steps = await suggestNextSteps(ideaTitle, ideaContent);
+            const steps = await suggestNextSteps(ideaTitle, ideaContent, language);
             setNextSteps(steps);
             updateCache({ nextSteps: steps });
           } else if (cache?.nextSteps && nextSteps.length === 0) {
@@ -164,7 +166,7 @@ export default function AIAssistantPanel({
           break;
         case 'critical':
           if (!criticalAnalysis && cache?.criticalAnalysis === undefined) {
-            const analysis = await generateCriticalAnalysis(ideaTitle, ideaContent);
+            const analysis = await generateCriticalAnalysis(ideaTitle, ideaContent, language);
             setCriticalAnalysis(analysis);
             updateCache({ criticalAnalysis: analysis });
           } else if (cache?.criticalAnalysis !== undefined && criticalAnalysis === null) {
@@ -173,7 +175,7 @@ export default function AIAssistantPanel({
           break;
         case 'concepts':
           if (relatedConcepts.length === 0 && !cache?.relatedConcepts) {
-            const concepts = await generateRelatedConcepts(ideaTitle, ideaContent);
+            const concepts = await generateRelatedConcepts(ideaTitle, ideaContent, language);
             setRelatedConcepts(concepts);
             updateCache({ relatedConcepts: concepts });
           } else if (cache?.relatedConcepts && relatedConcepts.length === 0) {
@@ -194,22 +196,22 @@ export default function AIAssistantPanel({
     try {
       switch (tool) {
         case 'divergent':
-          const paths = await generateDivergentPaths(ideaTitle, ideaContent);
+          const paths = await generateDivergentPaths(ideaTitle, ideaContent, language);
           setDivergentPaths(paths);
           updateCache({ divergentPaths: paths });
           break;
         case 'nextSteps':
-          const steps = await suggestNextSteps(ideaTitle, ideaContent);
+          const steps = await suggestNextSteps(ideaTitle, ideaContent, language);
           setNextSteps(steps);
           updateCache({ nextSteps: steps });
           break;
         case 'critical':
-          const analysis = await generateCriticalAnalysis(ideaTitle, ideaContent);
+          const analysis = await generateCriticalAnalysis(ideaTitle, ideaContent, language);
           setCriticalAnalysis(analysis);
           updateCache({ criticalAnalysis: analysis });
           break;
         case 'concepts':
-          const concepts = await generateRelatedConcepts(ideaTitle, ideaContent);
+          const concepts = await generateRelatedConcepts(ideaTitle, ideaContent, language);
           setRelatedConcepts(concepts);
           updateCache({ relatedConcepts: concepts });
           break;

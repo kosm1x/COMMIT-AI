@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { completeIdea, findIdeaConnections } from '../services/aiService';
 import {
@@ -40,6 +41,7 @@ interface IdeaSuggestion {
 
 export default function Ideate() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const location = useLocation();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(false);
@@ -99,7 +101,7 @@ export default function Ideate() {
     setGeneratedTags([]);
 
     try {
-      const result = await completeIdea(initialInput);
+      const result = await completeIdea(initialInput, language);
 
       setGeneratedTitle(result.title);
       setGeneratedContent(result.expandedContent);
@@ -116,7 +118,8 @@ export default function Ideate() {
           {
             title: result.title,
             tags: result.tags || []
-          }
+          },
+          language
         );
 
         if (connections.length > 0) {
@@ -173,7 +176,7 @@ export default function Ideate() {
   };
 
   const handleDeleteIdea = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this idea?')) return;
+    if (!confirm(t('ideate.deleteIdeaConfirm'))) return;
 
     try {
       const { error } = await supabase.from('ideas').delete().eq('id', id);
@@ -229,8 +232,8 @@ export default function Ideate() {
           <Lightbulb className="w-5 h-5 lg:w-7 lg:h-7 text-white" />
         </div>
         <div>
-          <h1 className="text-xl lg:text-2xl font-heading font-bold text-text-primary">Ideation Lab</h1>
-          <p className="text-sm lg:text-base text-text-tertiary hidden sm:block">Explore, expand, and connect your thoughts with AI</p>
+          <h1 className="text-xl lg:text-2xl font-heading font-bold text-text-primary">{t('ideate.ideationLab')}</h1>
+          <p className="text-sm lg:text-base text-text-tertiary hidden sm:block">{t('ideate.exploreExpandConnect')}</p>
         </div>
       </div>
 
@@ -245,13 +248,13 @@ export default function Ideate() {
               <div className="glass-card p-4 lg:p-6 border border-white/40 dark:border-white/10">
                 <div className="flex items-center gap-2 mb-3 lg:mb-4 text-text-secondary">
                   <Plus className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <h2 className="font-semibold text-sm lg:text-base">New Idea Spark</h2>
+                  <h2 className="font-semibold text-sm lg:text-base">{t('ideate.newIdeaSpark')}</h2>
                 </div>
 
                 <textarea
                   value={initialInput}
                   onChange={(e) => setInitialInput(e.target.value)}
-                  placeholder="Enter a concept, problem, or rough thought... AI will help structure and expand it."
+                  placeholder={t('ideate.placeholder')}
                   className="w-full h-24 lg:h-32 px-3 lg:px-4 py-2.5 lg:py-3 bg-white/50 dark:bg-white/5 border border-border-secondary rounded-xl focus:ring-2 focus:ring-accent-primary/20 focus:border-accent-primary transition-all resize-none outline-none text-sm lg:text-base text-text-primary placeholder:text-text-tertiary"
                 />
 
@@ -265,12 +268,12 @@ export default function Ideate() {
                     {generating ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="hidden sm:inline">Generating...</span>
+                        <span className="hidden sm:inline">{t('ideate.generating')}</span>
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4" />
-                        <span className="hidden sm:inline">Generate</span>
+                        <span className="hidden sm:inline">{t('ideate.generate')}</span>
                       </>
                     )}
                   </button>
@@ -282,7 +285,7 @@ export default function Ideate() {
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 lg:mb-6">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-yellow-500" />
-                      <h2 className="font-bold text-base lg:text-lg text-text-primary">AI Generated Concept</h2>
+                      <h2 className="font-bold text-base lg:text-lg text-text-primary">{t('ideate.aiGeneratedConcept')}</h2>
                     </div>
                     {generatedTitle && (
                       <button
@@ -290,7 +293,7 @@ export default function Ideate() {
                         className="btn-primary bg-green-600 hover:bg-green-700 shadow-green-200 text-sm w-full sm:w-auto"
                       >
                         <Save className="w-4 h-4" />
-                        Save to Library
+                        {t('ideate.saveToLibrary')}
                       </button>
                     )}
                   </div>
@@ -298,7 +301,7 @@ export default function Ideate() {
                   {generatedTitle && (
                     <div className="space-y-4 lg:space-y-5">
                       <div>
-                        <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">Title</label>
+                        <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">{t('ideate.ideaTitle')}</label>
                         <input
                           type="text"
                           value={generatedTitle}
@@ -308,7 +311,7 @@ export default function Ideate() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">Expanded Content</label>
+                        <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">{t('ideate.expandedContent')}</label>
                         <textarea
                           value={generatedContent}
                           onChange={(e) => setGeneratedContent(e.target.value)}
@@ -318,7 +321,7 @@ export default function Ideate() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">Category</label>
+                          <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">{t('ideate.category')}</label>
                           <input
                             type="text"
                             value={generatedCategory}
@@ -327,7 +330,7 @@ export default function Ideate() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">Tags</label>
+                          <label className="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2 ml-1">{t('ideate.ideaTags')}</label>
                           <div className="flex flex-wrap gap-2 min-h-[42px] p-2 bg-white/50 dark:bg-white/5 rounded-xl border border-border-primary">
                             {generatedTags.map((tag, idx) => (
                               <span
@@ -345,7 +348,7 @@ export default function Ideate() {
 
                   {suggestions.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-border-secondary">
-                      <h3 className="text-sm font-bold text-text-secondary mb-4">AI Suggestions</h3>
+                      <h3 className="text-sm font-bold text-text-secondary mb-4">{t('ideate.aiSuggestions')}</h3>
                       <div className="grid gap-3">
                         {suggestions.map((suggestion, idx) => (
                           <div
@@ -370,18 +373,18 @@ export default function Ideate() {
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
                   <FolderOpen className="w-5 h-5 text-accent-primary" />
-                  Idea Library
+                  {t('ideate.ideaLibrary')}
                 </h2>
                 <div className="flex items-center gap-2">
                   {filteredIdeas.length > 0 && (
                     <span className="text-sm text-text-tertiary">
-                      {filteredIdeas.length} {filteredIdeas.length === 1 ? 'idea' : 'ideas'}
+                      {filteredIdeas.length} {filteredIdeas.length === 1 ? t('ideate.idea') : t('ideate.ideas')}
                     </span>
                   )}
                   <button
                     onClick={() => setLibraryCollapsed(true)}
                     className="p-1.5 hover:bg-bg-tertiary rounded-lg transition-colors"
-                    title="Collapse library"
+                    title={t('ideate.collapseLibrary')}
                   >
                     <ChevronDown className="w-4 h-4 text-text-secondary" />
                   </button>
@@ -395,8 +398,8 @@ export default function Ideate() {
             ) : filteredIdeas.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-text-tertiary">
                 <FolderOpen className="w-16 h-16 mb-4 opacity-20" />
-                <p className="text-base font-medium">No ideas found</p>
-                <p className="text-sm mt-1">Try adjusting your filters or create a new idea</p>
+                <p className="text-base font-medium">{t('ideate.noIdeasFound')}</p>
+                <p className="text-sm mt-1">{t('ideate.tryAdjustingFilters')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
@@ -429,7 +432,7 @@ export default function Ideate() {
                               : 'bg-bg-tertiary text-text-secondary border-border-secondary hover:bg-accent-subtle hover:border-accent-primary'
                           }`}
                         >
-                          {idea.category || 'Uncategorized'}
+                          {idea.category || t('ideate.uncategorized')}
                         </button>
                         
                         <div className="flex items-center gap-1 text-[10px] text-text-tertiary">
@@ -489,11 +492,11 @@ export default function Ideate() {
                 className="w-full flex items-center justify-center gap-2 p-3 bg-bg-tertiary hover:bg-bg-secondary rounded-lg transition-colors"
               >
                 <FolderOpen className="w-4 h-4 text-accent-primary" />
-                <span className="text-sm font-medium text-text-primary">Show Idea Library</span>
+                <span className="text-sm font-medium text-text-primary">{t('ideate.showIdeaLibrary')}</span>
                 <ChevronUp className="w-4 h-4 text-text-secondary" />
                 {filteredIdeas.length > 0 && (
                   <span className="ml-auto text-xs text-text-tertiary">
-                    {filteredIdeas.length} {filteredIdeas.length === 1 ? 'idea' : 'ideas'}
+                    {filteredIdeas.length} {filteredIdeas.length === 1 ? t('ideate.idea') : t('ideate.ideas')}
                   </span>
                 )}
               </button>
@@ -506,7 +509,7 @@ export default function Ideate() {
           <div className="glass-card p-4 border border-white/40 dark:border-white/10">
             <div className="flex items-center gap-2 mb-4">
               <Filter className="w-5 h-5 text-accent-primary" />
-              <h2 className="font-bold text-text-primary">Filters</h2>
+              <h2 className="font-bold text-text-primary">{t('ideate.filters')}</h2>
             </div>
 
             <div className="space-y-3">
@@ -516,7 +519,7 @@ export default function Ideate() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search ideas..."
+                  placeholder={t('ideate.searchIdeas')}
                   className="input-modern pl-10 py-2 text-sm bg-white/50 dark:bg-white/5"
                 />
               </div>
@@ -536,10 +539,10 @@ export default function Ideate() {
                     colorScheme: 'dark'
                   }}
                 >
-                  <option value="all">All Categories</option>
+                  <option value="all">{t('ideate.allCategories')}</option>
                   {uniqueCategories.map(cat => (
                     <option key={cat} value={cat}>
-                      {cat === 'uncategorized' ? 'Uncategorized' : cat}
+                      {cat === 'uncategorized' ? t('ideate.uncategorized') : cat}
                     </option>
                   ))}
                 </select>
@@ -553,7 +556,7 @@ export default function Ideate() {
                   >
                     <div className="flex items-center gap-1">
                       <Tag className="w-3 h-3" />
-                      Filter by Tags
+                      {t('ideate.filterByTags')}
                       {selectedTags.length > 0 && (
                         <span className="ml-1 px-1.5 py-0.5 bg-accent-primary text-white rounded-full text-[10px]">
                           {selectedTags.length}
@@ -593,7 +596,7 @@ export default function Ideate() {
                       onClick={() => setSelectedTags([])}
                       className="mt-2 text-xs text-accent-primary hover:text-accent-hover font-medium"
                     >
-                      Clear tags ({selectedTags.length})
+                      {t('ideate.clearTags')} ({selectedTags.length})
                     </button>
                   )}
                 </div>

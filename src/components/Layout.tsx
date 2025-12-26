@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { LogOut, Menu, X, Search, ChevronLeft, ChevronRight, Command, Moon, Sun } from 'lucide-react';
-import { navigationGroups } from '../config/navigation';
+import { getTranslatedNavigationGroups } from '../config/navigation';
 import NavigationGroup from './navigation/NavigationGroup';
 import CommandPalette from './navigation/CommandPalette';
 import BottomTabBar from './navigation/BottomTabBar';
@@ -19,10 +20,13 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+
+  const navigationGroups = useMemo(() => getTranslatedNavigationGroups(t), [t]);
 
   useKeyboardShortcuts({
     onOpenCommandPalette: () => setCommandPaletteOpen(true),
@@ -41,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-            title="Go to Home"
+            title={t('nav.goToHome')}
           >
             <img 
               src="/logo-icon.png" 
@@ -62,7 +66,7 @@ export default function Layout({ children }: LayoutProps) {
             <Search className="w-4 h-4 text-text-tertiary group-hover:text-accent-primary transition-colors" />
             {!sidebarCollapsed && (
               <>
-                <span className="text-sm text-text-secondary font-medium">Search...</span>
+                <span className="text-sm text-text-secondary font-medium">{t('common.search')}</span>
                 <div className="ml-auto flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-bg-primary border border-border-primary">
                   <Command className="w-3 h-3 text-text-tertiary" />
                   <span className="text-[10px] text-text-tertiary font-bold">K</span>
@@ -115,7 +119,7 @@ export default function Layout({ children }: LayoutProps) {
                   className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-medium text-text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  Sign Out
+                  {t('nav.signOut')}
                 </button>
                 <button
                   onClick={() => setSidebarCollapsed(true)}
@@ -141,7 +145,7 @@ export default function Layout({ children }: LayoutProps) {
               <button
                 onClick={signOut}
                 className="p-2 text-text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Sign Out"
+                title={t('nav.signOut')}
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -178,7 +182,7 @@ export default function Layout({ children }: LayoutProps) {
                 setSidebarOpen(false);
               }}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-              title="Go to Home"
+              title={t('nav.goToHome')}
             >
               <img 
                 src="/logo-icon.png" 

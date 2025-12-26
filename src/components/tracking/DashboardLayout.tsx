@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { GripVertical, RotateCcw } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import StatsOverview from './widgets/StatsOverview';
 import RecurringTasksGrid from './widgets/RecurringTasksGrid';
 import UpcomingDeadlines from './widgets/UpcomingDeadlines';
@@ -50,6 +51,8 @@ interface WidgetRendererProps {
 }
 
 const WidgetRenderer = memo(function WidgetRenderer({ id, activeTab, selectedDate }: WidgetRendererProps) {
+  const { t } = useLanguage();
+  
   switch (id) {
     case 'stats_overview':
       return <StatsOverview />;
@@ -78,7 +81,7 @@ const WidgetRenderer = memo(function WidgetRenderer({ id, activeTab, selectedDat
         <div className="glass-card p-6 border border-white/40 dark:border-white/10">
           <h3 className="font-heading font-bold text-lg text-text-primary mb-4 flex items-center gap-2">
             <PieChartIcon className="w-5 h-5 text-accent-primary" />
-            Status Distribution
+            {t('tracking.statusDistribution')}
           </h3>
           <KanbanOverview />
         </div>
@@ -137,6 +140,7 @@ const DraggableWidget = memo(function DraggableWidget({
 });
 
 export default function DashboardLayout({ activeTab, selectedDate }: DashboardLayoutProps) {
+  const { t } = useLanguage();
   const [layout, setLayout] = useState<LayoutConfig>(DEFAULT_LAYOUT);
   const [dragOverTarget, setDragOverTarget] = useState<{ id: WidgetId | null; zone: keyof LayoutConfig } | null>(null);
 
@@ -282,13 +286,13 @@ export default function DashboardLayout({ activeTab, selectedDate }: DashboardLa
     <div className="space-y-4 lg:space-y-6">
       {/* Toolbar */}
       <div className="flex justify-between items-center">
-        <span className="text-xs text-text-tertiary hidden sm:block">Drag widgets to customize layout</span>
+        <span className="text-xs text-text-tertiary hidden sm:block">{t('tracking.dragWidgetsToCustomize')}</span>
         <button
           onClick={resetLayout}
           className="flex items-center gap-2 text-xs text-text-tertiary hover:text-text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
         >
           <RotateCcw className="w-3 h-3" />
-          Reset Layout
+          {t('tracking.resetLayout')}
         </button>
       </div>
 
@@ -319,7 +323,7 @@ export default function DashboardLayout({ activeTab, selectedDate }: DashboardLa
         ))}
         {layout.top.length === 0 && (
           <div className="h-20 lg:h-24 flex items-center justify-center border-2 border-dashed border-border-secondary rounded-xl p-4 text-text-tertiary text-sm">
-            Drop widgets here
+            {t('tracking.dropWidgetsHere')}
           </div>
         )}
       </div>
@@ -353,7 +357,7 @@ export default function DashboardLayout({ activeTab, selectedDate }: DashboardLa
           ))}
           {layout.left.length === 0 && (
             <div className="h-full min-h-[200px] flex items-center justify-center border-2 border-dashed border-border-secondary rounded-xl p-8 text-text-tertiary text-sm">
-              Drop widgets here
+              {t('tracking.dropWidgetsHere')}
             </div>
           )}
         </div>
@@ -385,7 +389,7 @@ export default function DashboardLayout({ activeTab, selectedDate }: DashboardLa
           ))}
           {layout.right.length === 0 && (
             <div className="h-full min-h-[200px] flex items-center justify-center border-2 border-dashed border-border-secondary rounded-xl p-8 text-text-tertiary text-sm">
-              Drop widgets here
+              {t('tracking.dropWidgetsHere')}
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Eye, Target, Flag, CheckCircle2, TrendingUp } from 'lucide-react';
 import { getCompletionStats } from '../../utils/trackingStats';
@@ -16,6 +17,7 @@ interface StatCard {
 
 export default function OverviewCards() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StatCard[]>([]);
 
@@ -45,7 +47,7 @@ export default function OverviewCards() {
 
     setStats([
       {
-        title: 'Overall Progress',
+        title: t('tracking.overallProgress'),
         icon: TrendingUp,
         color: 'text-blue-600',
         bgColor: 'bg-blue-100',
@@ -54,28 +56,28 @@ export default function OverviewCards() {
         percentage: overallPercentage,
       },
       {
-        title: 'Visions',
+        title: t('tracking.visions'),
         icon: Eye,
         color: 'text-amber-600',
         bgColor: 'bg-amber-100',
         ...visionStats,
       },
       {
-        title: 'Goals',
+        title: t('tracking.goals'),
         icon: Target,
         color: 'text-blue-600',
         bgColor: 'bg-blue-100',
         ...goalStats,
       },
       {
-        title: 'Objectives',
+        title: t('tracking.objectives'),
         icon: Flag,
         color: 'text-green-600',
         bgColor: 'bg-green-100',
         ...objectiveStats,
       },
       {
-        title: 'Tasks',
+        title: t('tracking.tasks'),
         icon: CheckCircle2,
         color: 'text-purple-600',
         bgColor: 'bg-purple-100',
@@ -118,8 +120,8 @@ export default function OverviewCards() {
             </div>
             <h3 className="text-sm font-medium text-gray-600 mb-2">{stat.title}</h3>
             <div className="flex items-center justify-between text-sm text-gray-500">
-              <span>{stat.completed} of {stat.total}</span>
-              <span>completed</span>
+              <span>{stat.completed} {t('tracking.of')} {stat.total}</span>
+              <span>{t('tracking.completed')}</span>
             </div>
             <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
               <div

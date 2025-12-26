@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Eye, Target, Flag, CheckCircle2, Circle, Clock, Pause } from 'lucide-react';
 
@@ -12,21 +13,22 @@ interface Item {
 }
 
 const STATUS_COLUMNS = [
-  { id: 'not_started', label: 'Not Started', icon: Circle, color: 'text-gray-500 dark:text-gray-400', bgColor: 'bg-gray-50 dark:bg-gray-900', borderColor: 'border-gray-200 dark:border-gray-700' },
-  { id: 'in_progress', label: 'In Progress', icon: Clock, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-900/30', borderColor: 'border-blue-200 dark:border-blue-800' },
-  { id: 'on_hold', label: 'On Hold', icon: Pause, color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-50 dark:bg-yellow-900/30', borderColor: 'border-yellow-200 dark:border-yellow-800' },
-  { id: 'completed', label: 'Completed', icon: CheckCircle2, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-900/30', borderColor: 'border-green-200 dark:border-green-800' },
+  { id: 'not_started', labelKey: 'notStarted', icon: Circle, color: 'text-gray-500 dark:text-gray-400', bgColor: 'bg-gray-50 dark:bg-gray-900', borderColor: 'border-gray-200 dark:border-gray-700' },
+  { id: 'in_progress', labelKey: 'inProgress', icon: Clock, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-900/30', borderColor: 'border-blue-200 dark:border-blue-800' },
+  { id: 'on_hold', labelKey: 'onHold', icon: Pause, color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-50 dark:bg-yellow-900/30', borderColor: 'border-yellow-200 dark:border-yellow-800' },
+  { id: 'completed', labelKey: 'completedStatus', icon: CheckCircle2, color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-50 dark:bg-green-900/30', borderColor: 'border-green-200 dark:border-green-800' },
 ] as const;
 
 const TYPE_CONFIG = {
-  vision: { icon: Eye, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300', label: 'Vision' },
-  goal: { icon: Target, color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300', label: 'Goal' },
-  objective: { icon: Flag, color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300', label: 'Objective' },
-  task: { icon: CheckCircle2, color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300', label: 'Task' },
+  vision: { icon: Eye, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300', labelKey: 'vision' },
+  goal: { icon: Target, color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300', labelKey: 'goal' },
+  objective: { icon: Flag, color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300', labelKey: 'objective' },
+  task: { icon: CheckCircle2, color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300', labelKey: 'task' },
 };
 
 export default function KanbanOverview() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +112,7 @@ export default function KanbanOverview() {
             >
               <Icon className="w-4 h-4" />
               <span className="text-xs font-bold">{count}</span>
-              <span className="text-xs font-medium ml-auto">{config.label}</span>
+              <span className="text-xs font-medium ml-auto">{t(`tracking.${config.labelKey}`)}</span>
             </button>
           );
         })}
@@ -128,7 +130,7 @@ export default function KanbanOverview() {
               <div className={`flex items-center justify-between px-3 py-2 rounded-lg border ${column.bgColor} ${column.borderColor}`}>
                 <div className="flex items-center gap-2">
                   <StatusIcon className={`w-4 h-4 ${column.color}`} />
-                  <span className="text-sm font-bold text-text-primary">{column.label}</span>
+                  <span className="text-sm font-bold text-text-primary">{t(`tracking.${column.labelKey}`)}</span>
                 </div>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${column.bgColor} ${column.color} border ${column.borderColor}`}>
                   {items.length}
@@ -138,7 +140,7 @@ export default function KanbanOverview() {
               {/* Items List */}
               {items.length === 0 ? (
                 <div className="text-center py-6 text-xs text-text-tertiary bg-white/20 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  No items
+                  {t('tracking.noItems')}
                 </div>
               ) : (
                 <div className="space-y-1.5 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
@@ -169,7 +171,7 @@ export default function KanbanOverview() {
                       onClick={() => navigate('/boards')}
                       className="w-full text-center py-2 text-xs text-text-tertiary font-medium hover:text-accent-primary transition-colors"
                     >
-                      +{items.length - 10} more
+                      +{items.length - 10} {t('tracking.more')}
                     </button>
                   )}
                 </div>

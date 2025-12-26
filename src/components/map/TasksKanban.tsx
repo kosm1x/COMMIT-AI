@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Flag, Link2, CheckCircle2 } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
@@ -36,15 +37,17 @@ interface TasksKanbanProps {
   highlightedItemId?: string | null;
 }
 
-const STATUS_COLUMNS = [
-  { id: 'not_started', label: 'Not Started', color: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-teal-100 dark:bg-teal-900/30 text-teal-900 dark:text-teal-100' },
-  { id: 'on_hold', label: 'On Hold', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100' },
-  { id: 'completed', label: 'Completed', color: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100' },
+const getStatusColumns = (t: (key: string) => string) => [
+  { id: 'not_started', label: t('map.notStarted'), color: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' },
+  { id: 'in_progress', label: t('map.inProgress'), color: 'bg-teal-100 dark:bg-teal-900/30 text-teal-900 dark:text-teal-100' },
+  { id: 'on_hold', label: t('map.onHold'), color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100' },
+  { id: 'completed', label: t('map.completed'), color: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100' },
 ] as const;
 
 export default function TasksKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectTask, highlightedItemId }: TasksKanbanProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const STATUS_COLUMNS = getStatusColumns(t);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -268,7 +271,7 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
           <div className={`${column.color} px-4 py-2 rounded-t-lg border-x border-t border-white/20 dark:border-white/10`}>
             <h3 className="font-semibold">{column.label}</h3>
             <p className="text-sm opacity-80">
-              {getTasksByStatus(column.id).length} tasks
+              {getTasksByStatus(column.id).length} {t('map.tasks')}
             </p>
           </div>
           <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-b-lg min-h-[200px] space-y-3 border border-white/20 dark:border-white/10">
@@ -335,7 +338,7 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
                     )}`}
                   >
                     <Flag className="w-3 h-3 mr-1" />
-                    {task.priority}
+                    {t(`objectives.${task.priority}`)}
                   </span>
                 </div>
                 <div className="space-y-1">
@@ -353,7 +356,7 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
                   ) : (
                     <div className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
                       <Link2 className="w-3 h-3" />
-                      Orphaned
+                      {t('map.orphaned')}
                     </div>
                   )}
                 </div>
@@ -362,7 +365,7 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
             })}
             {getTasksByStatus(column.id).length === 0 && (
               <div className="text-center py-8 text-sm text-gray-400">
-                No tasks in this status
+                {t('map.noTasksInStatus')}
               </div>
             )}
           </div>

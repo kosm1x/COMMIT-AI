@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { TrendingUp, Calendar } from 'lucide-react';
 import { getStartOfWeek, getEndOfWeek, formatShortDate } from '../../utils/trackingStats';
@@ -16,6 +17,7 @@ interface WeeklyViewProps {
 
 export default function WeeklyView({ selectedDate }: WeeklyViewProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [weekStats, setWeekStats] = useState<DayStats[]>([]);
   const [weeklyTotals, setWeeklyTotals] = useState({ completed: 0, total: 0 });
   const [loading, setLoading] = useState(true);
@@ -143,14 +145,14 @@ export default function WeeklyView({ selectedDate }: WeeklyViewProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-heading font-bold text-text-primary">
-          Week of {formatShortDate(getStartOfWeek(selectedDate))}
+          {t('tracking.weekOf')} {formatShortDate(getStartOfWeek(selectedDate))}
         </h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass-card p-6 border border-white/40 dark:border-white/10 bg-gradient-to-br from-blue-50/50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100 uppercase tracking-wider">Weekly Completion</h3>
+            <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100 uppercase tracking-wider">{t('tracking.weeklyCompletion')}</h3>
             <div className="text-2xl font-heading font-bold text-blue-600 dark:text-blue-400">{weekPercentage}%</div>
           </div>
           <div className="w-full bg-blue-200/50 dark:bg-blue-900/50 rounded-full h-3 mb-2">
@@ -160,7 +162,7 @@ export default function WeeklyView({ selectedDate }: WeeklyViewProps) {
             />
           </div>
           <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-            {weeklyTotals.completed} of {weeklyTotals.total} tasks completed this week
+            {weeklyTotals.completed} {t('tracking.of')} {weeklyTotals.total} {t('tracking.tasksCompletedThisWeek')}
           </p>
         </div>
 
@@ -173,14 +175,14 @@ export default function WeeklyView({ selectedDate }: WeeklyViewProps) {
               <div className="text-2xl font-heading font-bold text-green-900 dark:text-green-100">
                 {weeklyTotals.total > 0 ? (weeklyTotals.completed / 7).toFixed(1) : '0.0'}
               </div>
-              <p className="text-sm text-green-700 dark:text-green-300 font-medium">Avg. Tasks per Day</p>
+              <p className="text-sm text-green-700 dark:text-green-300 font-medium">{t('tracking.avgTasksPerDay')}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-heading font-bold text-text-primary mb-4">Daily Breakdown</h3>
+        <h3 className="text-lg font-heading font-bold text-text-primary mb-4">{t('tracking.dailyBreakdown')}</h3>
         <div className="grid grid-cols-7 gap-3">
           {weekStats.map((day, index) => {
             const dayPercentage = day.total > 0
@@ -200,7 +202,11 @@ export default function WeeklyView({ selectedDate }: WeeklyViewProps) {
               >
                 <div className="text-center mb-3">
                   <div className="text-xs font-bold text-text-tertiary uppercase tracking-wider">
-                    {day.date.toLocaleDateString('en-US', { weekday: 'short' })}
+                    {(() => {
+                      const weekday = day.date.getDay();
+                      const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                      return t(`tracking.${dayKeys[weekday]}`);
+                    })()}
                   </div>
                   <div className="text-base font-heading font-bold text-text-primary mt-1">
                     {day.date.getDate()}
@@ -237,28 +243,28 @@ export default function WeeklyView({ selectedDate }: WeeklyViewProps) {
       <div className="glass-card p-6 border border-white/40 dark:border-white/10">
         <div className="flex items-center gap-3 mb-4">
           <Calendar className="w-5 h-5 text-accent-primary" />
-          <h3 className="text-lg font-heading font-bold text-text-primary">Week Summary</h3>
+          <h3 className="text-lg font-heading font-bold text-text-primary">{t('tracking.weekSummary')}</h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <div className="text-2xl font-heading font-bold text-text-primary">{weeklyTotals.total}</div>
-            <div className="text-sm text-text-secondary font-medium">Total Tasks</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.totalTasks')}</div>
           </div>
           <div>
             <div className="text-2xl font-heading font-bold text-green-600 dark:text-green-400">{weeklyTotals.completed}</div>
-            <div className="text-sm text-text-secondary font-medium">Completed</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.completed')}</div>
           </div>
           <div>
             <div className="text-2xl font-heading font-bold text-yellow-600 dark:text-yellow-400">
               {weeklyTotals.total - weeklyTotals.completed}
             </div>
-            <div className="text-sm text-text-secondary font-medium">Remaining</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.remaining')}</div>
           </div>
           <div>
             <div className="text-2xl font-heading font-bold text-blue-600 dark:text-blue-400">
               {weekStats.filter(d => d.completed > 0).length}
             </div>
-            <div className="text-sm text-text-secondary font-medium">Active Days</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.activeDays')}</div>
           </div>
         </div>
       </div>

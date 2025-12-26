@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Target, Eye } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
@@ -21,11 +22,11 @@ interface Goal {
   visions?: Vision;
 }
 
-const STATUS_COLUMNS = [
-  { id: 'not_started', label: 'Not Started', color: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100' },
-  { id: 'on_hold', label: 'On Hold', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100' },
-  { id: 'completed', label: 'Completed', color: 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100' },
+const getStatusColumns = (t: (key: string) => string) => [
+  { id: 'not_started', label: t('map.notStarted'), color: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' },
+  { id: 'in_progress', label: t('map.inProgress'), color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100' },
+  { id: 'on_hold', label: t('map.onHold'), color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100' },
+  { id: 'completed', label: t('map.completed'), color: 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100' },
 ] as const;
 
 interface GoalsKanbanProps {
@@ -40,7 +41,9 @@ interface GoalsKanbanProps {
 
 export default function GoalsKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectVision, onSelectGoal, highlightedItemId }: GoalsKanbanProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
+  const STATUS_COLUMNS = getStatusColumns(t);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [objectives, setObjectives] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -222,7 +225,7 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
           <div className={`${column.color} px-4 py-2 rounded-t-lg border-x border-t border-white/20 dark:border-white/10`}>
             <h3 className="font-semibold">{column.label}</h3>
             <p className="text-sm opacity-80">
-              {getGoalsByStatus(column.id).length} goals
+              {getGoalsByStatus(column.id).length} {t('map.goals')}
             </p>
           </div>
           <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-b-lg min-h-[200px] space-y-3 border border-white/20 dark:border-white/10">
@@ -301,7 +304,7 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
             })}
             {getGoalsByStatus(column.id).length === 0 && (
               <div className="text-center py-8 text-sm text-gray-400">
-                No goals in this status
+                {t('map.noGoalsInStatus')}
               </div>
             )}
           </div>

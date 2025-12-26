@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { Vision, Goal, Objective, Task } from '../types';
 import { VisionCard } from '../cards';
 
@@ -38,6 +39,7 @@ export function VisionColumn({
   onTitleClick,
   getVisionDescendantCounts,
 }: VisionColumnProps) {
+  const { t } = useLanguage();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverId, setDraggedOverId] = useState<string | null>(null);
 
@@ -104,20 +106,21 @@ export function VisionColumn({
 
     if (!hasDescendants) {
       // No descendants, simple confirmation
-      if (confirm('Delete this vision?')) {
+      if (confirm(t('objectives.deleteVisionConfirm'))) {
         await onDeleteVision(id);
       }
       return;
     }
 
     // Has descendants - show detailed confirmation
-    const message = `This vision has:\n` +
-      `• ${counts.goals} goal${counts.goals !== 1 ? 's' : ''}\n` +
-      `• ${counts.objectives} objective${counts.objectives !== 1 ? 's' : ''}\n` +
-      `• ${counts.tasks} task${counts.tasks !== 1 ? 's' : ''}\n\n` +
-      `Choose an option:\n` +
-      `OK = Delete everything (vision and all descendants)\n` +
-      `Cancel = Orphan descendants (keep goals/objectives/tasks but remove parent link)`;
+    const message = t('objectives.deleteWithDescendantsMessage')
+      .replace('{{type}}', t('objectives.vision'))
+      .replace('{{goals}}', counts.goals.toString())
+      .replace('{{goalsPlural}}', counts.goals !== 1 ? 's' : '')
+      .replace('{{objectives}}', counts.objectives.toString())
+      .replace('{{objectivesPlural}}', counts.objectives !== 1 ? 's' : '')
+      .replace('{{tasks}}', counts.tasks.toString())
+      .replace('{{tasksPlural}}', counts.tasks !== 1 ? 's' : '');
 
     const deleteAll = confirm(message);
     await onDeleteVision(id, !deleteAll); // If deleteAll is false, orphan descendants
@@ -128,10 +131,10 @@ export function VisionColumn({
       <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm relative overflow-visible z-10">
         <div className="flex items-center justify-between mb-3">
           <div className="group relative z-20">
-            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">Vision</h2>
+            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">{t('objectives.vision')}</h2>
             <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] pointer-events-none whitespace-normal">
-              <div className="font-semibold mb-1 text-amber-400">Best Use:</div>
-              <p className="leading-relaxed">Long-term aspirations and life direction. Think 5-10 years ahead. Examples: "Become a thought leader in my field" or "Build a sustainable lifestyle".</p>
+              <div className="font-semibold mb-1 text-amber-400">{t('objectives.bestUse')}</div>
+              <p className="leading-relaxed">{t('objectives.visionBestUse')}</p>
               <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
             </div>
           </div>
@@ -144,7 +147,7 @@ export function VisionColumn({
           className="btn-primary w-full shadow-lg shadow-amber-500/20 bg-amber-600 hover:bg-amber-700 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 flex-shrink-0" />
-          <span>Add Vision</span>
+          <span>{t('objectives.newVision')}</span>
         </button>
       </div>
 
@@ -175,7 +178,7 @@ export function VisionColumn({
         ))}
         {visibleVisions.length === 0 && (
           <div className="text-xs text-text-tertiary text-center py-8 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-            No visions yet. Create one to get started!
+            {t('objectives.noVisionsYet')}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, TrendingUp, Target, CheckCircle2 } from 'lucide-react';
 import { getStartOfMonth, getEndOfMonth, getDaysInMonth } from '../../utils/trackingStats';
@@ -24,6 +25,7 @@ interface MonthlyViewProps {
 
 export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [stats, setStats] = useState<MonthlyStats>({
     tasksCompleted: 0,
     tasksTotal: 0,
@@ -188,7 +190,7 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
             </div>
             <div>
               <div className="text-2xl font-heading font-bold text-purple-900 dark:text-purple-100">{stats.tasksCompleted}</div>
-              <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">Tasks Completed</p>
+              <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">{t('tracking.tasksCompletedLabel')}</p>
             </div>
           </div>
           <div className="w-full bg-purple-200/50 dark:bg-purple-900/50 rounded-full h-2">
@@ -206,7 +208,7 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
             </div>
             <div>
               <div className="text-2xl font-heading font-bold text-blue-900 dark:text-blue-100">{stats.objectivesCompleted}</div>
-              <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">Objectives Done</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">{t('tracking.objectivesDone')}</p>
             </div>
           </div>
         </div>
@@ -218,7 +220,7 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
             </div>
             <div>
               <div className="text-2xl font-heading font-bold text-green-900 dark:text-green-100">{stats.goalsCompleted}</div>
-              <p className="text-sm text-green-700 dark:text-green-300 font-medium">Goals Achieved</p>
+              <p className="text-sm text-green-700 dark:text-green-300 font-medium">{t('tracking.goalsAchieved')}</p>
             </div>
           </div>
         </div>
@@ -227,13 +229,13 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
       <div>
         <div className="flex items-center gap-3 mb-4">
           <Calendar className="w-5 h-5 text-accent-primary" />
-          <h3 className="text-lg font-heading font-bold text-text-primary">Activity Heatmap</h3>
+          <h3 className="text-lg font-heading font-bold text-text-primary">{t('tracking.activityHeatmap')}</h3>
         </div>
         <div className="glass-card p-6 border border-white/40 dark:border-white/10">
           <div className="grid grid-cols-7 gap-2 mb-3">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+            {['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].map((day) => (
               <div key={day} className="text-center text-xs font-bold text-text-tertiary uppercase tracking-wider">
-                {day}
+                {t(`tracking.${day}`)}
               </div>
             ))}
           </div>
@@ -249,7 +251,7 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
                   className={`aspect-square rounded-lg border-2 transition-all hover:scale-110 cursor-pointer relative group ${
                     isToday ? 'ring-2 ring-accent-primary' : ''
                   } ${getActivityColor(day.count)}`}
-                  title={`${day.date.toLocaleDateString()}: ${day.count} tasks completed`}
+                  title={`${day.date.toLocaleDateString()}: ${day.count} ${t('tracking.tasksCompleted')}`}
                 >
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className={`text-xs font-bold ${
@@ -263,7 +265,7 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
             })}
           </div>
           <div className="flex items-center justify-between mt-4 text-xs text-text-tertiary">
-            <span className="font-medium">Less active</span>
+            <span className="font-medium">{t('tracking.lessActive')}</span>
             <div className="flex gap-1">
               <div className="w-4 h-4 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700" />
               <div className="w-4 h-4 bg-green-200 dark:bg-green-900/40 rounded border border-green-300 dark:border-green-800" />
@@ -271,31 +273,31 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
               <div className="w-4 h-4 bg-green-600 dark:bg-green-700/80 rounded border border-green-700 dark:border-green-600" />
               <div className="w-4 h-4 bg-green-700 dark:bg-green-600 rounded border border-green-800 dark:border-green-500" />
             </div>
-            <span className="font-medium">More active</span>
+            <span className="font-medium">{t('tracking.moreActive')}</span>
           </div>
         </div>
       </div>
 
       <div className="glass-card p-6 border border-white/40 dark:border-white/10">
-        <h3 className="text-lg font-heading font-bold text-text-primary mb-4">Monthly Summary</h3>
+        <h3 className="text-lg font-heading font-bold text-text-primary mb-4">{t('tracking.monthlySummary')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <div className="text-2xl font-heading font-bold text-text-primary">{stats.tasksTotal}</div>
-            <div className="text-sm text-text-secondary font-medium">Total Tasks</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.totalTasks')}</div>
           </div>
           <div>
             <div className="text-2xl font-heading font-bold text-text-primary">{stats.objectivesTotal}</div>
-            <div className="text-sm text-text-secondary font-medium">Total Objectives</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.totalObjectives')}</div>
           </div>
           <div>
             <div className="text-2xl font-heading font-bold text-text-primary">{stats.goalsTotal}</div>
-            <div className="text-sm text-text-secondary font-medium">Total Goals</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.totalGoals')}</div>
           </div>
           <div>
             <div className="text-2xl font-heading font-bold text-blue-600 dark:text-blue-400">
               {dailyActivity.filter(d => d.count > 0).length}
             </div>
-            <div className="text-sm text-text-secondary font-medium">Active Days</div>
+            <div className="text-sm text-text-secondary font-medium">{t('tracking.activeDays')}</div>
           </div>
         </div>
       </div>

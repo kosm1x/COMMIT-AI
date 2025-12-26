@@ -33,6 +33,7 @@ const emotionColors: { [key: string]: string } = {
  * @param max_tokens - Maximum tokens to generate
  * @param top_p - Top-p sampling parameter
  * @param reasoning_effort - Optional reasoning effort for complex tasks ("default" | "low" | "medium" | "high")
+ * @param language - Language code ('en', 'es', 'zh') for response language
  * @returns The text response from the API, or null if error
  */
 async function callGroqAPI(
@@ -40,13 +41,24 @@ async function callGroqAPI(
   temperature: number,
   max_tokens: number,
   top_p: number = 0.95,
-  reasoning_effort?: 'default' | 'low' | 'medium' | 'high'
+  reasoning_effort?: 'default' | 'low' | 'medium' | 'high',
+  language: 'en' | 'es' | 'zh' = 'en'
 ): Promise<string | null> {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
   if (!apiKey || apiKey === 'your_groq_api_key_here') {
     return null;
   }
+
+  // Add language instruction to prompt
+  const languageInstructions: Record<'en' | 'es' | 'zh', string> = {
+    en: 'IMPORTANT: Respond in English. All text, labels, and content must be in English.',
+    es: 'IMPORTANTE: Responde en español. Todo el texto, etiquetas y contenido deben estar en español.',
+    zh: '重要：用中文回复。所有文本、标签和内容必须使用中文。',
+  };
+
+  const languagePrompt = languageInstructions[language];
+  const fullPrompt = `${prompt}\n\n${languagePrompt}`;
 
   try {
     const requestBody: {
@@ -58,7 +70,7 @@ async function callGroqAPI(
       reasoning_effort?: string;
     } = {
       model: 'qwen/qwen3-32b',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: fullPrompt }],
       temperature,
       max_tokens,
       top_p,
@@ -90,7 +102,7 @@ async function callGroqAPI(
   }
 }
 
-export async function analyzeJournalEntry(content: string): Promise<AnalysisResult> {
+export async function analyzeJournalEntry(content: string, language: 'en' | 'es' | 'zh' = 'en'): Promise<AnalysisResult> {
   const prompt = `Analyze this journal entry and provide emotional insights, patterns, and coping strategies. Return your response in JSON format with the following structure:
 {
   "emotions": [{"name": "emotion name", "intensity": 0-100}],
@@ -110,10 +122,10 @@ Focus on:
 
 Return ONLY the JSON object, no additional text.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.7, 1024, 0.95, 'default');
+  const textResponse = await callGroqAPI(prompt, 0.7, 1024, 0.95, 'default', language);
 
   if (!textResponse) {
-      return generateMockAnalysis(content);
+      return generateMockAnalysis(content, language);
     }
 
   try {
@@ -139,10 +151,10 @@ Return ONLY the JSON object, no additional text.`;
       };
     }
 
-    return generateMockAnalysis(content);
+    return generateMockAnalysis(content, language);
   } catch (error) {
     console.error('Error analyzing journal entry:', error);
-    return generateMockAnalysis(content);
+    return generateMockAnalysis(content, language);
   }
 }
 
@@ -156,41 +168,120 @@ function getEmotionColor(emotionName: string): string {
   return 'bg-gray-500';
 }
 
-function generateMockAnalysis(content: string): AnalysisResult {
-  const commonEmotions: EmotionResult[] = [
-    { name: 'Determined', intensity: 75, color: 'bg-cyan-500' },
-    { name: 'Hopeful', intensity: 65, color: 'bg-teal-500' },
-    { name: 'Focused', intensity: 80, color: 'bg-blue-500' },
-  ];
+function generateMockAnalysis(content: string, language: 'en' | 'es' | 'zh' = 'en'): AnalysisResult {
+  const mockData: Record<'en' | 'es' | 'zh', {
+    emotions: EmotionResult[];
+    patterns: string[];
+    copingStrategies: string[];
+  }> = {
+    en: {
+      emotions: [
+        { name: 'Determined', intensity: 75, color: 'bg-cyan-500' },
+        { name: 'Hopeful', intensity: 65, color: 'bg-teal-500' },
+        { name: 'Focused', intensity: 80, color: 'bg-blue-500' },
+      ],
+      patterns: [
+        'Consistent focus on personal development and growth',
+        'Balancing multiple priorities and commitments',
+        'Strong motivation toward achieving goals',
+      ],
+      copingStrategies: [
+        'Break down large goals into smaller, manageable daily actions',
+        'Schedule regular breaks to maintain energy and focus',
+        'Practice mindfulness or deep breathing when feeling overwhelmed',
+        'Celebrate small wins to maintain motivation',
+      ],
+    },
+    es: {
+      emotions: [
+        { name: 'Determinado', intensity: 75, color: 'bg-cyan-500' },
+        { name: 'Esperanzado', intensity: 65, color: 'bg-teal-500' },
+        { name: 'Concentrado', intensity: 80, color: 'bg-blue-500' },
+      ],
+      patterns: [
+        'Enfoque consistente en desarrollo personal y crecimiento',
+        'Equilibrio entre múltiples prioridades y compromisos',
+        'Fuerte motivación hacia el logro de objetivos',
+      ],
+      copingStrategies: [
+        'Divide objetivos grandes en acciones diarias más pequeñas y manejables',
+        'Programa descansos regulares para mantener energía y enfoque',
+        'Practica atención plena o respiración profunda cuando te sientas abrumado',
+        'Celebra las pequeñas victorias para mantener la motivación',
+      ],
+    },
+    zh: {
+      emotions: [
+        { name: '坚定', intensity: 75, color: 'bg-cyan-500' },
+        { name: '充满希望', intensity: 65, color: 'bg-teal-500' },
+        { name: '专注', intensity: 80, color: 'bg-blue-500' },
+      ],
+      patterns: [
+        '持续关注个人发展和成长',
+        '平衡多个优先事项和承诺',
+        '强烈追求目标的动机',
+      ],
+      copingStrategies: [
+        '将大目标分解为更小、可管理的日常行动',
+        '安排定期休息以保持精力和专注',
+        '感到不知所措时练习正念或深呼吸',
+        '庆祝小胜利以保持动力',
+      ],
+    },
+  };
 
-  if (content.toLowerCase().includes('stress') || content.toLowerCase().includes('anxious')) {
-    commonEmotions.push({ name: 'Anxious', intensity: 60, color: 'bg-orange-500' });
+  const data = mockData[language];
+  const commonEmotions: EmotionResult[] = [...data.emotions];
+
+  if (content.toLowerCase().includes('stress') || content.toLowerCase().includes('anxious') || 
+      content.toLowerCase().includes('estrés') || content.toLowerCase().includes('ansioso') ||
+      content.toLowerCase().includes('压力') || content.toLowerCase().includes('焦虑')) {
+    const anxiousEmotions: Record<'en' | 'es' | 'zh', EmotionResult> = {
+      en: { name: 'Anxious', intensity: 60, color: 'bg-orange-500' },
+      es: { name: 'Ansioso', intensity: 60, color: 'bg-orange-500' },
+      zh: { name: '焦虑', intensity: 60, color: 'bg-orange-500' },
+    };
+    commonEmotions.push(anxiousEmotions[language]);
   }
 
-  if (content.toLowerCase().includes('happy') || content.toLowerCase().includes('great')) {
-    commonEmotions.push({ name: 'Happy', intensity: 85, color: 'bg-yellow-500' });
+  if (content.toLowerCase().includes('happy') || content.toLowerCase().includes('great') ||
+      content.toLowerCase().includes('feliz') || content.toLowerCase().includes('genial') ||
+      content.toLowerCase().includes('快乐') || content.toLowerCase().includes('很好')) {
+    const happyEmotions: Record<'en' | 'es' | 'zh', EmotionResult> = {
+      en: { name: 'Happy', intensity: 85, color: 'bg-yellow-500' },
+      es: { name: 'Feliz', intensity: 85, color: 'bg-yellow-500' },
+      zh: { name: '快乐', intensity: 85, color: 'bg-yellow-500' },
+    };
+    commonEmotions.push(happyEmotions[language]);
   }
 
-  if (content.toLowerCase().includes('tired') || content.toLowerCase().includes('exhausted')) {
-    commonEmotions.push({ name: 'Overwhelmed', intensity: 55, color: 'bg-indigo-500' });
+  if (content.toLowerCase().includes('tired') || content.toLowerCase().includes('exhausted') ||
+      content.toLowerCase().includes('cansado') || content.toLowerCase().includes('agotado') ||
+      content.toLowerCase().includes('累') || content.toLowerCase().includes('疲惫')) {
+    const overwhelmedEmotions: Record<'en' | 'es' | 'zh', EmotionResult> = {
+      en: { name: 'Overwhelmed', intensity: 55, color: 'bg-indigo-500' },
+      es: { name: 'Abrumado', intensity: 55, color: 'bg-indigo-500' },
+      zh: { name: '不知所措', intensity: 55, color: 'bg-indigo-500' },
+    };
+    commonEmotions.push(overwhelmedEmotions[language]);
   }
 
-  const patterns = [
-    'Consistent focus on personal development and growth',
-    'Balancing multiple priorities and commitments',
-    'Strong motivation toward achieving goals',
-  ];
-
-  if (content.toLowerCase().includes('work')) {
-    patterns.push('Work-related themes and professional development');
+  const patterns = [...data.patterns];
+  const workKeywords = {
+    en: ['work'],
+    es: ['trabajo', 'laboral'],
+    zh: ['工作'],
+  };
+  if (workKeywords[language].some(keyword => content.toLowerCase().includes(keyword))) {
+    const workPatterns: Record<'en' | 'es' | 'zh', string> = {
+      en: 'Work-related themes and professional development',
+      es: 'Temas relacionados con el trabajo y desarrollo profesional',
+      zh: '与工作相关的主题和专业发展',
+    };
+    patterns.push(workPatterns[language]);
   }
 
-  const copingStrategies = [
-    'Break down large goals into smaller, manageable daily actions',
-    'Schedule regular breaks to maintain energy and focus',
-    'Practice mindfulness or deep breathing when feeling overwhelmed',
-    'Celebrate small wins to maintain motivation',
-  ];
+  const copingStrategies = [...data.copingStrategies];
 
   const selectedEmotions = commonEmotions.slice(0, 4);
   return {
@@ -201,7 +292,7 @@ function generateMockAnalysis(content: string): AnalysisResult {
   };
 }
 
-export async function extractObjectivesFromJournal(content: string): Promise<string[]> {
+export async function extractObjectivesFromJournal(content: string, language: 'en' | 'es' | 'zh' = 'en'): Promise<string[]> {
   const prompt = `Extract potential goals or objectives from this journal entry. Return a JSON array of strings, each representing a goal or objective the person might want to pursue. If no clear goals are mentioned, return an empty array.
 
 Journal Entry:
@@ -209,7 +300,7 @@ ${content}
 
 Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
 
-  const textResponse = await callGroqAPI(prompt, 0.5, 512, 0.95);
+  const textResponse = await callGroqAPI(prompt, 0.5, 512, 0.95, undefined, language);
 
   if (!textResponse) {
       return [];
@@ -233,7 +324,7 @@ interface MindMapResult {
   title: string;
 }
 
-export async function generateMindMap(problemStatement: string, context?: string): Promise<MindMapResult> {
+export async function generateMindMap(problemStatement: string, context?: string, language: 'en' | 'es' | 'zh' = 'en'): Promise<MindMapResult> {
   const contextPrompt = context 
     ? `\n\nPrevious Context (from earlier mind maps in this exploration):
 ${context}
@@ -270,34 +361,44 @@ mindmap
 
 Return ONLY the JSON object with title and mermaidSyntax fields, no additional text.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.7, 2048, 0.95, 'default');
+  const textResponse = await callGroqAPI(prompt, 0.7, 2048, 0.95, 'default', language);
 
   if (!textResponse) {
-    return generateMockMindMap(problemStatement, context);
+    return generateMockMindMap(problemStatement, context, language);
   }
 
   try {
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsedResult = JSON.parse(jsonMatch[0]);
+      const defaultTitles: Record<'en' | 'es' | 'zh', string> = {
+        en: 'Mind Map',
+        es: 'Mapa Mental',
+        zh: '思维导图',
+      };
       return {
-        title: parsedResult.title || 'Mind Map',
+        title: parsedResult.title || defaultTitles[language],
         mermaidSyntax: parsedResult.mermaidSyntax || '',
       };
     }
 
-    return generateMockMindMap(problemStatement, context);
+    return generateMockMindMap(problemStatement, context, language);
   } catch (error) {
     console.error('Error generating mind map:', error);
-    return generateMockMindMap(problemStatement, context);
+    return generateMockMindMap(problemStatement, context, language);
   }
 }
 
-function generateMockMindMap(problemStatement: string, _context?: string): MindMapResult {
+function generateMockMindMap(problemStatement: string, _context?: string, language: 'en' | 'es' | 'zh' = 'en'): MindMapResult {
   const shortProblem = problemStatement.slice(0, 30) + (problemStatement.length > 30 ? '...' : '');
+  const titles: Record<'en' | 'es' | 'zh', string> = {
+    en: 'Problem Breakdown',
+    es: 'Desglose del Problema',
+    zh: '问题分解',
+  };
 
   return {
-    title: 'Problem Breakdown',
+    title: titles[language],
     mermaidSyntax: `mindmap
   root((${shortProblem}))
     Understanding
@@ -327,7 +428,7 @@ interface IdeaCompletionResult {
   suggestions: string[];
 }
 
-export async function completeIdea(initialInput: string): Promise<IdeaCompletionResult> {
+export async function completeIdea(initialInput: string, language: 'en' | 'es' | 'zh' = 'en'): Promise<IdeaCompletionResult> {
   const prompt = `You are a creative assistant helping expand on a minimal idea. Take this initial idea input and help complete it. Return your response in JSON format with the following structure:
 {
   "title": "A clear, concise title for this idea (5-8 words)",
@@ -349,18 +450,23 @@ Instructions:
 
 Return ONLY the JSON object, no additional text.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.8, 2048, 0.95);
+  const textResponse = await callGroqAPI(prompt, 0.8, 2048, 0.95, undefined, language);
 
   if (!textResponse) {
-      return generateMockIdeaCompletion(initialInput);
+      return generateMockIdeaCompletion(initialInput, language);
     }
 
   try {
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsedResult = JSON.parse(jsonMatch[0]);
+      const defaultTitles: Record<'en' | 'es' | 'zh', string> = {
+        en: 'New Idea',
+        es: 'Nueva Idea',
+        zh: '新想法',
+      };
       return {
-        title: parsedResult.title || 'New Idea',
+        title: parsedResult.title || defaultTitles[language],
         expandedContent: parsedResult.expandedContent || initialInput,
         category: parsedResult.category || 'general',
         tags: parsedResult.tags || [],
@@ -368,25 +474,54 @@ Return ONLY the JSON object, no additional text.`;
       };
     }
 
-    return generateMockIdeaCompletion(initialInput);
+    return generateMockIdeaCompletion(initialInput, language);
   } catch (error) {
     console.error('Error completing idea:', error);
-    return generateMockIdeaCompletion(initialInput);
+    return generateMockIdeaCompletion(initialInput, language);
   }
 }
 
-function generateMockIdeaCompletion(initialInput: string): IdeaCompletionResult {
+function generateMockIdeaCompletion(initialInput: string, language: 'en' | 'es' | 'zh' = 'en'): IdeaCompletionResult {
+  const mockData: Record<'en' | 'es' | 'zh', {
+    expandedContent: string;
+    suggestions: string[];
+  }> = {
+    en: {
+      expandedContent: `${initialInput}\n\nThis is a promising concept that could be developed further. Consider breaking it down into smaller, actionable steps. Think about the resources you'll need, potential challenges, and how you can measure success.\n\nTo move forward, start by researching similar approaches and identifying key stakeholders or collaborators who could help bring this idea to life.`,
+      suggestions: [
+        'Research existing solutions in this area',
+        'Create a detailed action plan with milestones',
+        'Identify potential collaborators or resources',
+        'Start with a small prototype or proof of concept',
+      ],
+    },
+    es: {
+      expandedContent: `${initialInput}\n\nEste es un concepto prometedor que podría desarrollarse más. Considera dividirlo en pasos más pequeños y accionables. Piensa en los recursos que necesitarás, los desafíos potenciales y cómo puedes medir el éxito.\n\nPara avanzar, comienza investigando enfoques similares e identificando partes interesadas clave o colaboradores que podrían ayudar a dar vida a esta idea.`,
+      suggestions: [
+        'Investiga soluciones existentes en esta área',
+        'Crea un plan de acción detallado con hitos',
+        'Identifica colaboradores o recursos potenciales',
+        'Comienza con un prototipo pequeño o prueba de concepto',
+      ],
+    },
+    zh: {
+      expandedContent: `${initialInput}\n\n这是一个有前景的概念，可以进一步发展。考虑将其分解为更小、可操作的步骤。思考您需要的资源、潜在挑战以及如何衡量成功。\n\n要向前推进，首先研究类似的方法，并确定可以帮助实现这个想法的关键利益相关者或合作者。`,
+      suggestions: [
+        '研究该领域的现有解决方案',
+        '创建带有里程碑的详细行动计划',
+        '确定潜在的合作者或资源',
+        '从一个小原型或概念验证开始',
+      ],
+    },
+  };
+
+  const data = mockData[language];
   return {
     title: initialInput.slice(0, 50) + (initialInput.length > 50 ? '...' : ''),
-    expandedContent: `${initialInput}\n\nThis is a promising concept that could be developed further. Consider breaking it down into smaller, actionable steps. Think about the resources you'll need, potential challenges, and how you can measure success.\n\nTo move forward, start by researching similar approaches and identifying key stakeholders or collaborators who could help bring this idea to life.`,
+    expandedContent: data.expandedContent,
     category: 'general',
     tags: ['brainstorming', 'new-idea', 'development'],
-    suggestions: [
-      'Research existing solutions in this area',
-      'Create a detailed action plan with milestones',
-      'Identify potential collaborators or resources',
-      'Start with a small prototype or proof of concept',
-    ],
+    suggestions: data.suggestions,
   };
 }
 
@@ -401,7 +536,8 @@ interface IdeaConnection {
 export async function findIdeaConnections(
   currentIdea: string,
   existingIdeas: { id: string; title: string; content: string; tags?: string[] }[],
-  currentIdeaMeta?: { title: string; tags?: string[] }
+  currentIdeaMeta?: { title: string; tags?: string[] },
+  language: 'en' | 'es' | 'zh' = 'en'
 ): Promise<IdeaConnection[]> {
   if (existingIdeas.length === 0) {
     console.log('[findIdeaConnections] No existing ideas to compare');
@@ -461,7 +597,7 @@ IMPORTANT:
 
 Return ONLY a JSON array of connection objects with strength >= 70. Return empty array [] if no close connections exist.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.5, 2048, 0.95, 'default');
+  const textResponse = await callGroqAPI(prompt, 0.5, 2048, 0.95, 'default', language);
 
   if (!textResponse) {
     console.warn('[findIdeaConnections] API call failed, using fallback similarity check');
@@ -675,7 +811,8 @@ interface DivergentPath {
 
 export async function generateDivergentPaths(
   ideaTitle: string,
-  ideaContent: string
+  ideaContent: string,
+  language: 'en' | 'es' | 'zh' = 'en'
 ): Promise<DivergentPath[]> {
   const prompt = `Analyze this idea and generate 3-4 divergent paths or alternative approaches to explore it. Each path should offer a different angle, perspective, or methodology. Return a JSON array with this structure:
 
@@ -701,10 +838,10 @@ Make each path distinctly different - consider variations in:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.9, 1536, 0.95, 'default');
+  const textResponse = await callGroqAPI(prompt, 0.9, 1536, 0.95, 'default', language);
 
   if (!textResponse) {
-      return generateMockDivergentPaths(ideaTitle);
+      return generateMockDivergentPaths(ideaTitle, language);
     }
 
   try {
@@ -713,34 +850,78 @@ Return ONLY the JSON array, no additional text.`;
       return JSON.parse(jsonMatch[0]);
     }
 
-    return generateMockDivergentPaths(ideaTitle);
+    return generateMockDivergentPaths(ideaTitle, language);
   } catch (error) {
     console.error('Error generating divergent paths:', error);
-    return generateMockDivergentPaths(ideaTitle);
+    return generateMockDivergentPaths(ideaTitle, language);
   }
 }
 
-function generateMockDivergentPaths(_ideaTitle: string): DivergentPath[] {
-  return [
-    {
-      title: 'Rapid Prototype Approach',
-      description: 'Build a minimal version quickly to test core assumptions',
-      approach: 'Focus on creating a basic working prototype within 2-4 weeks. Strip away all non-essential features and test the fundamental concept with real users.',
-      potentialOutcome: 'Fast validation of whether the core idea resonates, allowing for quick pivots if needed',
-    },
-    {
-      title: 'Research-First Strategy',
-      description: 'Deep dive into existing solutions and user needs before building',
-      approach: 'Spend 1-2 months conducting thorough market research, user interviews, and competitive analysis. Map out the landscape before committing to an approach.',
-      potentialOutcome: 'Well-informed decision making with reduced risk of building something unwanted',
-    },
-    {
-      title: 'Community-Driven Development',
-      description: 'Build in public with early adopters shaping the direction',
-      approach: 'Share your concept early with a small community of interested users. Co-create the solution by incorporating their feedback and ideas at every stage.',
-      potentialOutcome: 'Built-in user base and product-market fit through collaborative development',
-    },
-  ];
+function generateMockDivergentPaths(_ideaTitle: string, language: 'en' | 'es' | 'zh' = 'en'): DivergentPath[] {
+  const mockData: Record<'en' | 'es' | 'zh', DivergentPath[]> = {
+    en: [
+      {
+        title: 'Rapid Prototype Approach',
+        description: 'Build a minimal version quickly to test core assumptions',
+        approach: 'Focus on creating a basic working prototype within 2-4 weeks. Strip away all non-essential features and test the fundamental concept with real users.',
+        potentialOutcome: 'Fast validation of whether the core idea resonates, allowing for quick pivots if needed',
+      },
+      {
+        title: 'Research-First Strategy',
+        description: 'Deep dive into existing solutions and user needs before building',
+        approach: 'Spend 1-2 months conducting thorough market research, user interviews, and competitive analysis. Map out the landscape before committing to an approach.',
+        potentialOutcome: 'Well-informed decision making with reduced risk of building something unwanted',
+      },
+      {
+        title: 'Community-Driven Development',
+        description: 'Build in public with early adopters shaping the direction',
+        approach: 'Share your concept early with a small community of interested users. Co-create the solution by incorporating their feedback and ideas at every stage.',
+        potentialOutcome: 'Built-in user base and product-market fit through collaborative development',
+      },
+    ],
+    es: [
+      {
+        title: 'Enfoque de Prototipo Rápido',
+        description: 'Construye una versión mínima rápidamente para probar suposiciones centrales',
+        approach: 'Enfócate en crear un prototipo básico funcional en 2-4 semanas. Elimina todas las características no esenciales y prueba el concepto fundamental con usuarios reales.',
+        potentialOutcome: 'Validación rápida de si la idea central resuena, permitiendo pivotes rápidos si es necesario',
+      },
+      {
+        title: 'Estrategia de Investigación Primero',
+        description: 'Profundiza en soluciones existentes y necesidades del usuario antes de construir',
+        approach: 'Pasa 1-2 meses realizando investigación de mercado exhaustiva, entrevistas con usuarios y análisis competitivo. Mapea el panorama antes de comprometerte con un enfoque.',
+        potentialOutcome: 'Toma de decisiones bien informada con menor riesgo de construir algo no deseado',
+      },
+      {
+        title: 'Desarrollo Impulsado por la Comunidad',
+        description: 'Construye en público con adoptantes tempranos dando forma a la dirección',
+        approach: 'Comparte tu concepto temprano con una pequeña comunidad de usuarios interesados. Co-crea la solución incorporando sus comentarios e ideas en cada etapa.',
+        potentialOutcome: 'Base de usuarios incorporada y ajuste producto-mercado a través del desarrollo colaborativo',
+      },
+    ],
+    zh: [
+      {
+        title: '快速原型方法',
+        description: '快速构建最小版本以测试核心假设',
+        approach: '专注于在2-4周内创建一个基本的工作原型。去除所有非必要功能，用真实用户测试基本概念。',
+        potentialOutcome: '快速验证核心想法是否引起共鸣，允许在需要时快速调整',
+      },
+      {
+        title: '研究优先策略',
+        description: '在构建之前深入研究现有解决方案和用户需求',
+        approach: '花费1-2个月进行彻底的市场研究、用户访谈和竞争分析。在承诺采用某种方法之前先绘制全景图。',
+        potentialOutcome: '做出明智的决策，降低构建不需要的东西的风险',
+      },
+      {
+        title: '社区驱动开发',
+        description: '在公开环境中构建，让早期采用者塑造方向',
+        approach: '尽早与一小群感兴趣的用户分享您的概念。通过在每个阶段融入他们的反馈和想法来共同创建解决方案。',
+        potentialOutcome: '通过协作开发建立内置用户群和产品市场契合度',
+      },
+    ],
+  };
+
+  return mockData[language];
 }
 
 interface NextStep {
@@ -752,7 +933,8 @@ interface NextStep {
 
 export async function suggestNextSteps(
   ideaTitle: string,
-  ideaContent: string
+  ideaContent: string,
+  language: 'en' | 'es' | 'zh' = 'en'
 ): Promise<NextStep[]> {
   const prompt = `Based on this idea, suggest 4-6 specific, actionable next steps. Return a JSON array:
 
@@ -777,10 +959,10 @@ Make steps:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.7, 1024, 0.95);
+  const textResponse = await callGroqAPI(prompt, 0.7, 1024, 0.95, undefined, language);
 
   if (!textResponse) {
-      return generateMockNextSteps();
+      return generateMockNextSteps(language);
     }
 
   try {
@@ -789,40 +971,96 @@ Return ONLY the JSON array, no additional text.`;
       return JSON.parse(jsonMatch[0]);
     }
 
-    return generateMockNextSteps();
+    return generateMockNextSteps(language);
   } catch (error) {
     console.error('Error suggesting next steps:', error);
-    return generateMockNextSteps();
+    return generateMockNextSteps(language);
   }
 }
 
-function generateMockNextSteps(): NextStep[] {
-  return [
-    {
-      step: 'Define core requirements and constraints',
-      description: 'Clarify what success looks like and identify any limitations or boundaries',
-      timeEstimate: '2-3 hours',
-      priority: 'high',
-    },
-    {
-      step: 'Research existing solutions',
-      description: 'Look for similar ideas or approaches to learn from successes and failures',
-      timeEstimate: '1 day',
-      priority: 'high',
-    },
-    {
-      step: 'Create a simple action plan',
-      description: 'Break down the idea into phases with clear milestones',
-      timeEstimate: '3-4 hours',
-      priority: 'medium',
-    },
-    {
-      step: 'Identify potential collaborators',
-      description: 'Find people with complementary skills who could help or provide feedback',
-      timeEstimate: '1-2 days',
-      priority: 'medium',
-    },
-  ];
+function generateMockNextSteps(language: 'en' | 'es' | 'zh' = 'en'): NextStep[] {
+  const mockData: Record<'en' | 'es' | 'zh', NextStep[]> = {
+    en: [
+      {
+        step: 'Define core requirements and constraints',
+        description: 'Clarify what success looks like and identify any limitations or boundaries',
+        timeEstimate: '2-3 hours',
+        priority: 'high',
+      },
+      {
+        step: 'Research existing solutions',
+        description: 'Look for similar ideas or approaches to learn from successes and failures',
+        timeEstimate: '1 day',
+        priority: 'high',
+      },
+      {
+        step: 'Create a simple action plan',
+        description: 'Break down the idea into phases with clear milestones',
+        timeEstimate: '3-4 hours',
+        priority: 'medium',
+      },
+      {
+        step: 'Identify potential collaborators',
+        description: 'Find people with complementary skills who could help or provide feedback',
+        timeEstimate: '1-2 days',
+        priority: 'medium',
+      },
+    ],
+    es: [
+      {
+        step: 'Definir requisitos y restricciones principales',
+        description: 'Aclarar cómo se ve el éxito e identificar cualquier limitación o límite',
+        timeEstimate: '2-3 horas',
+        priority: 'high',
+      },
+      {
+        step: 'Investigar soluciones existentes',
+        description: 'Buscar ideas o enfoques similares para aprender de éxitos y fracasos',
+        timeEstimate: '1 día',
+        priority: 'high',
+      },
+      {
+        step: 'Crear un plan de acción simple',
+        description: 'Dividir la idea en fases con hitos claros',
+        timeEstimate: '3-4 horas',
+        priority: 'medium',
+      },
+      {
+        step: 'Identificar colaboradores potenciales',
+        description: 'Encontrar personas con habilidades complementarias que puedan ayudar o proporcionar comentarios',
+        timeEstimate: '1-2 días',
+        priority: 'medium',
+      },
+    ],
+    zh: [
+      {
+        step: '定义核心要求和约束',
+        description: '明确成功的样子并识别任何限制或边界',
+        timeEstimate: '2-3小时',
+        priority: 'high',
+      },
+      {
+        step: '研究现有解决方案',
+        description: '寻找类似的想法或方法，从成功和失败中学习',
+        timeEstimate: '1天',
+        priority: 'high',
+      },
+      {
+        step: '创建简单的行动计划',
+        description: '将想法分解为具有明确里程碑的阶段',
+        timeEstimate: '3-4小时',
+        priority: 'medium',
+      },
+      {
+        step: '确定潜在合作者',
+        description: '找到具有互补技能的人，他们可以提供帮助或反馈',
+        timeEstimate: '1-2天',
+        priority: 'medium',
+      },
+    ],
+  };
+
+  return mockData[language];
 }
 
 interface CriticalAnalysis {
@@ -834,7 +1072,8 @@ interface CriticalAnalysis {
 
 export async function generateCriticalAnalysis(
   ideaTitle: string,
-  ideaContent: string
+  ideaContent: string,
+  language: 'en' | 'es' | 'zh' = 'en'
 ): Promise<CriticalAnalysis> {
   const prompt = `Provide a balanced critical analysis of this idea. Return JSON:
 
@@ -859,10 +1098,10 @@ Be constructive but honest. Help strengthen the idea through critical thinking.
 
 Return ONLY the JSON object, no additional text.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.6, 1024, 0.95, 'default');
+  const textResponse = await callGroqAPI(prompt, 0.6, 1024, 0.95, 'default', language);
 
   if (!textResponse) {
-      return generateMockCriticalAnalysis();
+      return generateMockCriticalAnalysis(language);
     }
 
   try {
@@ -871,35 +1110,81 @@ Return ONLY the JSON object, no additional text.`;
       return JSON.parse(jsonMatch[0]);
     }
 
-    return generateMockCriticalAnalysis();
+    return generateMockCriticalAnalysis(language);
   } catch (error) {
     console.error('Error generating critical analysis:', error);
-    return generateMockCriticalAnalysis();
+    return generateMockCriticalAnalysis(language);
   }
 }
 
-function generateMockCriticalAnalysis(): CriticalAnalysis {
-  return {
-    strengths: [
-      'Addresses a clear need or problem area',
-      'Can be started with existing resources',
-      'Has potential for iterative improvement',
-    ],
-    challenges: [
-      'May require significant time investment',
-      'Success depends on factors outside your control',
-      'Competition or similar solutions might exist',
-    ],
-    assumptions: [
-      'Target users will value this solution',
-      'Required resources will be accessible',
-      'Timeline is realistic given constraints',
-    ],
-    alternativePerspectives: [
-      'Consider starting smaller and scaling up based on feedback',
-      'Could partner with others rather than building alone',
-    ],
+function generateMockCriticalAnalysis(language: 'en' | 'es' | 'zh' = 'en'): CriticalAnalysis {
+  const mockData: Record<'en' | 'es' | 'zh', CriticalAnalysis> = {
+    en: {
+      strengths: [
+        'Addresses a clear need or problem area',
+        'Can be started with existing resources',
+        'Has potential for iterative improvement',
+      ],
+      challenges: [
+        'May require significant time investment',
+        'Success depends on factors outside your control',
+        'Competition or similar solutions might exist',
+      ],
+      assumptions: [
+        'Target users will value this solution',
+        'Required resources will be accessible',
+        'Timeline is realistic given constraints',
+      ],
+      alternativePerspectives: [
+        'Consider starting smaller and scaling up based on feedback',
+        'Could partner with others rather than building alone',
+      ],
+    },
+    es: {
+      strengths: [
+        'Aborda una necesidad o área problemática clara',
+        'Puede iniciarse con recursos existentes',
+        'Tiene potencial para mejora iterativa',
+      ],
+      challenges: [
+        'Puede requerir una inversión de tiempo significativa',
+        'El éxito depende de factores fuera de tu control',
+        'Puede existir competencia o soluciones similares',
+      ],
+      assumptions: [
+        'Los usuarios objetivo valorarán esta solución',
+        'Los recursos requeridos serán accesibles',
+        'El cronograma es realista dados los límites',
+      ],
+      alternativePerspectives: [
+        'Considera comenzar más pequeño y escalar según los comentarios',
+        'Podrías asociarte con otros en lugar de construir solo',
+      ],
+    },
+    zh: {
+      strengths: [
+        '解决明确的需求或问题领域',
+        '可以用现有资源开始',
+        '具有迭代改进的潜力',
+      ],
+      challenges: [
+        '可能需要大量时间投入',
+        '成功取决于您无法控制的因素',
+        '可能存在竞争或类似的解决方案',
+      ],
+      assumptions: [
+        '目标用户会重视这个解决方案',
+        '所需资源将可访问',
+        '考虑到约束条件，时间表是现实的',
+      ],
+      alternativePerspectives: [
+        '考虑从小规模开始，根据反馈进行扩展',
+        '可以与他人合作而不是独自构建',
+      ],
+    },
   };
+
+  return mockData[language];
 }
 
 interface RelatedConcept {
@@ -911,7 +1196,8 @@ interface RelatedConcept {
 
 export async function generateRelatedConcepts(
   ideaTitle: string,
-  ideaContent: string
+  ideaContent: string,
+  language: 'en' | 'es' | 'zh' = 'en'
 ): Promise<RelatedConcept[]> {
   const prompt = `Identify 3-4 related concepts, frameworks, or methodologies that connect to this idea. Return JSON array:
 
@@ -936,10 +1222,10 @@ Suggest concepts that:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(prompt, 0.7, 1536, 0.95, 'default');
+  const textResponse = await callGroqAPI(prompt, 0.7, 1536, 0.95, 'default', language);
 
   if (!textResponse) {
-      return generateMockRelatedConcepts();
+      return generateMockRelatedConcepts(language);
     }
 
   try {
@@ -948,34 +1234,78 @@ Return ONLY the JSON array, no additional text.`;
       return JSON.parse(jsonMatch[0]);
     }
 
-    return generateMockRelatedConcepts();
+    return generateMockRelatedConcepts(language);
   } catch (error) {
     console.error('Error generating related concepts:', error);
-    return generateMockRelatedConcepts();
+    return generateMockRelatedConcepts(language);
   }
 }
 
-function generateMockRelatedConcepts(): RelatedConcept[] {
-  return [
-    {
-      concept: 'Lean Startup Methodology',
-      description: 'Build-measure-learn approach to developing products',
-      relevance: 'Helps validate assumptions quickly through rapid experimentation',
-      resources: ['The Lean Startup by Eric Ries', 'Running Lean by Ash Maurya'],
-    },
-    {
-      concept: 'Design Thinking',
-      description: 'Human-centered approach to innovation and problem-solving',
-      relevance: 'Ensures your solution addresses real user needs',
-      resources: ['IDEO Design Thinking resources', 'Stanford d.school methodology'],
-    },
-    {
-      concept: 'Systems Thinking',
-      description: 'Understanding how different parts interact as a whole',
-      relevance: 'Reveals hidden connections and unintended consequences',
-      resources: ['Thinking in Systems by Donella Meadows'],
-    },
-  ];
+function generateMockRelatedConcepts(language: 'en' | 'es' | 'zh' = 'en'): RelatedConcept[] {
+  const mockData: Record<'en' | 'es' | 'zh', RelatedConcept[]> = {
+    en: [
+      {
+        concept: 'Lean Startup Methodology',
+        description: 'Build-measure-learn approach to developing products',
+        relevance: 'Helps validate assumptions quickly through rapid experimentation',
+        resources: ['The Lean Startup by Eric Ries', 'Running Lean by Ash Maurya'],
+      },
+      {
+        concept: 'Design Thinking',
+        description: 'Human-centered approach to innovation and problem-solving',
+        relevance: 'Ensures your solution addresses real user needs',
+        resources: ['IDEO Design Thinking resources', 'Stanford d.school methodology'],
+      },
+      {
+        concept: 'Systems Thinking',
+        description: 'Understanding how different parts interact as a whole',
+        relevance: 'Reveals hidden connections and unintended consequences',
+        resources: ['Thinking in Systems by Donella Meadows'],
+      },
+    ],
+    es: [
+      {
+        concept: 'Metodología Lean Startup',
+        description: 'Enfoque construir-medir-aprender para desarrollar productos',
+        relevance: 'Ayuda a validar suposiciones rápidamente a través de experimentación rápida',
+        resources: ['The Lean Startup por Eric Ries', 'Running Lean por Ash Maurya'],
+      },
+      {
+        concept: 'Design Thinking',
+        description: 'Enfoque centrado en el ser humano para la innovación y resolución de problemas',
+        relevance: 'Asegura que tu solución aborde las necesidades reales del usuario',
+        resources: ['Recursos de Design Thinking de IDEO', 'Metodología de Stanford d.school'],
+      },
+      {
+        concept: 'Pensamiento Sistémico',
+        description: 'Comprender cómo las diferentes partes interactúan como un todo',
+        relevance: 'Revela conexiones ocultas y consecuencias no deseadas',
+        resources: ['Thinking in Systems por Donella Meadows'],
+      },
+    ],
+    zh: [
+      {
+        concept: '精益创业方法论',
+        description: '构建-测量-学习的产品开发方法',
+        relevance: '通过快速实验帮助快速验证假设',
+        resources: ['Eric Ries的《精益创业》', 'Ash Maurya的《Running Lean》'],
+      },
+      {
+        concept: '设计思维',
+        description: '以人为中心的创新和问题解决方法',
+        relevance: '确保您的解决方案解决真实的用户需求',
+        resources: ['IDEO设计思维资源', '斯坦福d.school方法论'],
+      },
+      {
+        concept: '系统思维',
+        description: '理解不同部分如何作为一个整体相互作用',
+        relevance: '揭示隐藏的连接和意外后果',
+        resources: ['Donella Meadows的《系统思考》'],
+      },
+    ],
+  };
+
+  return mockData[language];
 }
 
 // Transform or collaborate on selected text within an idea
@@ -987,7 +1317,8 @@ export async function transformIdeaText(
     content: string;
     cursorPosition?: number;
     fullContext?: string;
-  }
+  },
+  language: 'en' | 'es' | 'zh' = 'en'
 ): Promise<string> {
   const prompts: Record<typeof mode, string> = {
     enhance: `Improve clarity, style, and impact of the following text. Keep the author's intent and voice. Return only the rewritten text, nothing else.`,
@@ -1049,7 +1380,7 @@ RULES:
   }
 
   // Use 600 tokens to ensure we get complete text even if there's some overhead
-  const textResponse = await callGroqAPI(prompt, 0.5, 600, 0.95);
+  const textResponse = await callGroqAPI(prompt, 0.5, 600, 0.95, undefined, language);
   if (!textResponse) {
     return selectedText;
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { Vision, Goal } from '../types';
 import { GoalCard } from '../cards';
 
@@ -40,6 +41,7 @@ export function GoalColumn({
   getGoalDescendantCounts,
   selectedVision,
 }: GoalColumnProps) {
+  const { t } = useLanguage();
   const [showOrphaned, setShowOrphaned] = useState(true);
 
   // Split goals into vision-attached and orphaned
@@ -71,19 +73,21 @@ export function GoalColumn({
 
     if (!hasDescendants) {
       // No descendants, simple confirmation
-      if (confirm('Delete this goal?')) {
+      if (confirm(t('objectives.deleteGoalConfirm'))) {
         await onDeleteGoal(id);
       }
       return;
     }
 
     // Has descendants - show detailed confirmation
-    const message = `This goal has:\n` +
-      `• ${counts.objectives} objective${counts.objectives !== 1 ? 's' : ''}\n` +
-      `• ${counts.tasks} task${counts.tasks !== 1 ? 's' : ''}\n\n` +
-      `Choose an option:\n` +
-      `OK = Delete everything (goal and all descendants)\n` +
-      `Cancel = Orphan descendants (keep objectives/tasks but remove parent link)`;
+    const message = t('objectives.deleteWithDescendantsMessage')
+      .replace('{{type}}', t('objectives.goal'))
+      .replace('{{goals}}', '0')
+      .replace('{{goalsPlural}}', '')
+      .replace('{{objectives}}', counts.objectives.toString())
+      .replace('{{objectivesPlural}}', counts.objectives !== 1 ? 's' : '')
+      .replace('{{tasks}}', counts.tasks.toString())
+      .replace('{{tasksPlural}}', counts.tasks !== 1 ? 's' : '');
 
     const deleteAll = confirm(message);
     await onDeleteGoal(id, !deleteAll); // If deleteAll is false, orphan descendants
@@ -96,10 +100,10 @@ export function GoalColumn({
       <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm relative overflow-visible z-10">
         <div className="flex items-center justify-between mb-3">
           <div className="group relative z-20">
-            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">Goal / Project</h2>
+            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">{t('objectives.goal')}</h2>
             <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] pointer-events-none whitespace-normal">
-              <div className="font-semibold mb-1 text-blue-400">Best Use:</div>
-              <p className="leading-relaxed">Major milestones or projects that move you toward your vision. Typically 1-3 years. Break down into objectives.</p>
+              <div className="font-semibold mb-1 text-blue-400">{t('objectives.bestUse')}</div>
+              <p className="leading-relaxed">{t('objectives.goalBestUse')}</p>
               <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
             </div>
           </div>
@@ -112,7 +116,7 @@ export function GoalColumn({
           className="btn-primary w-full shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 flex-shrink-0" />
-          <span>Add Goal / Project</span>
+          <span>{t('objectives.addGoal')}</span>
         </button>
       </div>
 
@@ -146,7 +150,7 @@ export function GoalColumn({
                 ))
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  No goals yet
+                  {t('objectives.noGoalsYet')}
                 </div>
               )}
             </div>
@@ -185,7 +189,7 @@ export function GoalColumn({
             className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
           >
             {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            Orphaned Goals ({visibleOrphanedGoals.length})
+            {t('objectives.orphanedGoals')} ({visibleOrphanedGoals.length})
           </button>
           {showOrphaned && (
             <div className="space-y-2">
@@ -211,7 +215,7 @@ export function GoalColumn({
                 ))
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  No orphaned goals
+                  {t('objectives.noOrphanedGoals')}
                 </div>
               )}
             </div>

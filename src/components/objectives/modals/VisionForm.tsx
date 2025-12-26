@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface VisionFormProps {
   onClose: () => void;
@@ -6,6 +7,7 @@ interface VisionFormProps {
 }
 
 export default function VisionForm({ onClose, onCreate }: VisionFormProps) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [targetDate, setTargetDate] = useState('');
@@ -18,10 +20,10 @@ export default function VisionForm({ onClose, onCreate }: VisionFormProps) {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
       <div className="glass-strong rounded-2xl p-6 max-w-md w-full shadow-2xl border border-white/20 dark:border-white/10 animate-scale-in">
-        <h2 className="text-2xl font-bold text-text-primary mb-6">Create Vision</h2>
+        <h2 className="text-2xl font-bold text-text-primary mb-6">{t('objectives.createVision')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Title</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.title')}</label>
             <input
               type="text"
               value={title}
@@ -32,7 +34,7 @@ export default function VisionForm({ onClose, onCreate }: VisionFormProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Description</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -41,7 +43,7 @@ export default function VisionForm({ onClose, onCreate }: VisionFormProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Target Date</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.targetDate')}</label>
             <input
               type="date"
               value={targetDate}
@@ -55,13 +57,13 @@ export default function VisionForm({ onClose, onCreate }: VisionFormProps) {
               onClick={onClose}
               className="flex-1 btn-secondary"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 btn-primary bg-amber-600 hover:bg-amber-700"
             >
-              Create
+              {t('common.create')}
             </button>
           </div>
         </form>

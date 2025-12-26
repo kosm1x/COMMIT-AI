@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { CheckCircle2, Circle, Calendar, Flag, AlertCircle, Flame, Link2 } from 'lucide-react';
 import { getStartOfDay, getEndOfDay, formatDate } from '../../utils/trackingStats';
@@ -21,6 +22,7 @@ interface DailyViewProps {
 
 export default function DailyView({ selectedDate }: DailyViewProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [completedToday, setCompletedToday] = useState<Task[]>([]);
   const [recurringTasks, setRecurringTasks] = useState<Task[]>([]);
@@ -152,7 +154,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
         {overdueCount > 0 && (
           <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800">
             <AlertCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">{overdueCount} overdue</span>
+            <span className="text-sm font-medium">{overdueCount} {t('tracking.overdue')}</span>
           </div>
         )}
       </div>
@@ -160,7 +162,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-card p-6 border border-white/40 dark:border-white/10 bg-gradient-to-br from-blue-50/50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100 uppercase tracking-wider">Today's Progress</h3>
+            <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100 uppercase tracking-wider">{t('tracking.todaysProgress')}</h3>
             <div className="text-2xl font-heading font-bold text-blue-600 dark:text-blue-400">{completionPercentage}%</div>
           </div>
           <div className="w-full bg-blue-200/50 dark:bg-blue-900/50 rounded-full h-3 mb-2">
@@ -170,7 +172,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
             />
           </div>
           <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-            {tasks.filter(t => t.status === 'completed').length} of {tasks.length} tasks completed
+            {tasks.filter(t => t.status === 'completed').length} {t('tracking.of')} {tasks.length} {t('tracking.tasksCompleted')}
           </p>
         </div>
 
@@ -181,7 +183,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
             </div>
             <div>
               <div className="text-2xl font-heading font-bold text-green-900 dark:text-green-100">{completedToday.length}</div>
-              <p className="text-sm text-green-700 dark:text-green-300 font-medium">Completed Today</p>
+              <p className="text-sm text-green-700 dark:text-green-300 font-medium">{t('tracking.completedToday')}</p>
             </div>
           </div>
         </div>
@@ -193,19 +195,19 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
             </div>
             <div>
               <div className="text-2xl font-heading font-bold text-purple-900 dark:text-purple-100">{tasks.length}</div>
-              <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">Tasks Due Today</p>
+              <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">{t('tracking.tasksDueToday')}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-heading font-bold text-text-primary mb-4">Tasks Due Today</h3>
+        <h3 className="text-lg font-heading font-bold text-text-primary mb-4">{t('tracking.tasksDueToday')}</h3>
         {tasks.length === 0 ? (
           <div className="text-center py-12 glass-card border border-white/40 dark:border-white/10 border-dashed">
             <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-3 opacity-30" />
-            <p className="text-text-secondary font-medium">No tasks due today</p>
-            <p className="text-sm text-text-tertiary mt-1">Enjoy your day or plan ahead!</p>
+            <p className="text-text-secondary font-medium">{t('tracking.noTasksDueToday')}</p>
+            <p className="text-sm text-text-tertiary mt-1">{t('tracking.enjoyYourDay')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -246,7 +248,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
                         )}`}
                       >
                         <Flag className="w-3 h-3 mr-1" />
-                        {task.priority}
+                        {t(`tracking.${task.priority}`)}
                       </span>
                       {task.objectives && (
                         <span className="text-xs text-text-secondary bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded border border-white/50 dark:border-white/10">
@@ -273,7 +275,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
 
       {recurringTasks.length > 0 && (
         <div>
-          <h3 className="text-lg font-heading font-bold text-text-primary mb-4">Recurring Tasks</h3>
+          <h3 className="text-lg font-heading font-bold text-text-primary mb-4">{t('tracking.recurringTasks')}</h3>
           <div className="space-y-3">
             {recurringTasks.map((task) => {
               const isCompleted = recurringCompletedToday.has(task.id);
@@ -332,7 +334,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
                           {task.title}
                         </h4>
                         <span className="text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
-                          🔁 Recurring
+                          🔁 {t('tracking.recurring')}
                         </span>
                       </div>
                       <div className="flex items-center flex-wrap gap-2 mt-2">
@@ -342,7 +344,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
                           )}`}
                         >
                           <Flag className="w-3 h-3 mr-1" />
-                          {task.priority}
+                          {t(`tracking.${task.priority}`)}
                         </span>
                         {task.objectives && (
                           <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded border border-green-200 dark:border-green-800">

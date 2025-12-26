@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { X, Network, Lightbulb, Eye, Target, Flag, ListTodo } from 'lucide-react';
 import { useObjectivesState } from '../hooks/useObjectivesState';
@@ -11,6 +12,7 @@ type ItemType = 'vision' | 'goal' | 'objective' | 'task';
 
 export default function Objectives() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -230,10 +232,10 @@ export default function Objectives() {
 
   // Tab configuration
   const tabs = [
-    { id: 'vision' as const, label: 'Vision', icon: Eye, count: state.visions.length },
-    { id: 'goals' as const, label: 'Goals', icon: Target, count: state.goals.length },
-    { id: 'objectives' as const, label: 'Objectives', icon: Flag, count: state.objectives.length },
-    { id: 'tasks' as const, label: 'Tasks', icon: ListTodo, count: state.tasks.length },
+    { id: 'vision' as const, label: t('objectives.vision'), icon: Eye, count: state.visions.length },
+    { id: 'goals' as const, label: t('nav.goals'), icon: Target, count: state.goals.length },
+    { id: 'objectives' as const, label: t('objectives.objective'), icon: Flag, count: state.objectives.length },
+    { id: 'tasks' as const, label: t('objectives.tasks'), icon: ListTodo, count: state.tasks.length },
   ];
 
   if (state.loading) {
@@ -393,7 +395,7 @@ export default function Objectives() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="glass-strong rounded-3xl shadow-2xl p-6 border border-border-primary animate-scale-in max-w-md w-full">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-heading font-bold text-text-primary">Create from "{actionModal.title}"</h2>
+              <h2 className="text-xl font-heading font-bold text-text-primary">{t('objectives.createFrom').replace('{{title}}', actionModal.title)}</h2>
               <button
                 onClick={() => setActionModal({ type: null, title: '', description: '' })}
                 className="text-text-tertiary hover:text-text-primary transition-colors"
@@ -402,7 +404,7 @@ export default function Objectives() {
               </button>
             </div>
             <p className="text-sm text-text-secondary mb-6">
-              Choose how you'd like to explore this {actionModal.type}:
+              {t('objectives.chooseHowToExplore').replace('{{type}}', actionModal.type)}
             </p>
             <div className="space-y-3">
               <button
@@ -413,8 +415,8 @@ export default function Objectives() {
                   <Network className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="font-semibold text-text-primary">Create Mind Map</div>
-                  <div className="text-xs text-text-secondary">Break down into components and relationships</div>
+                  <div className="font-semibold text-text-primary">{t('objectives.createMindMap')}</div>
+                  <div className="text-xs text-text-secondary">{t('objectives.createMindMapDescription')}</div>
                 </div>
               </button>
               <button
@@ -425,8 +427,8 @@ export default function Objectives() {
                   <Lightbulb className="w-5 h-5 text-yellow-600" />
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="font-semibold text-text-primary">Create Idea</div>
-                  <div className="text-xs text-text-secondary">Expand and develop with AI assistance</div>
+                  <div className="font-semibold text-text-primary">{t('objectives.createIdea')}</div>
+                  <div className="text-xs text-text-secondary">{t('objectives.createIdeaDescription')}</div>
                 </div>
               </button>
             </div>

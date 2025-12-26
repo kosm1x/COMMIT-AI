@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 import { LayoutGrid, Network } from 'lucide-react';
 import KanbanView from '../components/map/KanbanView';
 import MindMapView from '../components/map/MindMapView';
@@ -13,6 +14,7 @@ interface NavigationState {
 }
 
 export default function Map() {
+  const { t } = useLanguage();
   const location = useLocation();
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   
@@ -38,7 +40,7 @@ export default function Map() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-xl lg:text-2xl font-heading font-bold text-text-primary">Strategic Map</h1>
-          <p className="text-sm lg:text-base text-text-tertiary hidden sm:block">Visualize your goals and connections</p>
+          <p className="text-sm lg:text-base text-text-tertiary hidden sm:block">{t('map.visualizeGoals')}</p>
         </div>
 
         <div className="glass-card p-1 flex items-center gap-1 rounded-xl border border-white/40 dark:border-white/10 bg-white dark:bg-black/40 w-full sm:w-auto">
@@ -51,7 +53,7 @@ export default function Map() {
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
-            <span>Boards</span>
+            <span>{t('map.kanban')}</span>
           </button>
           <button
             onClick={() => setViewMode('mindmap')}
@@ -62,7 +64,7 @@ export default function Map() {
             }`}
           >
             <Network className="w-4 h-4" />
-            <span>Mind Map</span>
+            <span>{t('map.mindMap')}</span>
           </button>
         </div>
       </div>

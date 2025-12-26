@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { flatNavigationItems } from '../config/navigation';
+import { getTranslatedFlatNavigationItems } from '../config/navigation';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface UseKeyboardShortcutsProps {
   onOpenCommandPalette?: () => void;
@@ -8,6 +9,9 @@ interface UseKeyboardShortcutsProps {
 
 export function useKeyboardShortcuts({ onOpenCommandPalette }: UseKeyboardShortcutsProps = {}) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const flatNavigationItems = useMemo(() => getTranslatedFlatNavigationItems(t), [t]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,5 +44,5 @@ export function useKeyboardShortcuts({ onOpenCommandPalette }: UseKeyboardShortc
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, onOpenCommandPalette]);
+  }, [navigate, onOpenCommandPalette, flatNavigationItems]);
 }

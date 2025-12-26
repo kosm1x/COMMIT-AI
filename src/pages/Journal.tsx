@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { analyzeJournalEntry } from '../services/aiService';
 import {
@@ -35,6 +36,7 @@ interface AIAnalysis {
 
 export default function Journal() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [content, setContent] = useState('');
@@ -163,7 +165,7 @@ export default function Journal() {
 
     setAnalyzing(true);
     try {
-      const result = await analyzeJournalEntry(content);
+      const result = await analyzeJournalEntry(content, language);
 
       const analysisData: AIAnalysis = {
         id: 'temp',
@@ -209,7 +211,7 @@ export default function Journal() {
   };
 
   const handleDelete = async () => {
-    if (!selectedEntry || !confirm('Delete this entry?')) return;
+    if (!selectedEntry || !confirm(t('journal.confirmDelete'))) return;
 
     await supabase.from('journal_entries').delete().eq('id', selectedEntry.id);
 
@@ -246,7 +248,7 @@ export default function Journal() {
                 month: 'short',
                 day: 'numeric',
               })
-            : 'New Entry'}
+            : t('journal.newEntry')}
         </span>
         <button
           onClick={handleNewEntry}
@@ -289,12 +291,12 @@ export default function Journal() {
           className="btn-primary w-full shadow-lg shadow-accent-primary/20 hidden lg:flex"
         >
           <Plus className="w-5 h-5" />
-          New Entry
+          {t('journal.newEntry')}
         </button>
 
         <div className="glass-card flex-1 overflow-hidden flex flex-col border border-white/40 dark:border-white/10 mt-8 lg:mt-0">
           <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm">
-            <h3 className="font-semibold text-text-secondary text-sm uppercase tracking-wider">Recent Entries</h3>
+            <h3 className="font-semibold text-text-secondary text-sm uppercase tracking-wider">{t('journal.recentEntries')}</h3>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
             {entries.map((entry) => (
@@ -352,7 +354,7 @@ export default function Journal() {
                 className="bg-transparent border-none text-text-primary font-heading font-bold text-base lg:text-lg focus:ring-0 p-0 cursor-pointer flex-1 sm:flex-none"
               />
               <span className="text-xs font-medium px-2 py-1 rounded-md bg-white/50 dark:bg-white/5 text-text-tertiary border border-white/20 whitespace-nowrap">
-                {saving ? 'Saving...' : 'Auto-saved'}
+                {saving ? t('journal.saving') : t('journal.autoSaved')}
               </span>
             </div>
 
@@ -368,14 +370,14 @@ export default function Journal() {
                   ) : (
                     <Sparkles className="w-4 h-4" />
                   )}
-                  <span className="hidden sm:inline">{analyzing ? 'Analyzing...' : 'Analyze'}</span>
+                  <span className="hidden sm:inline">{analyzing ? t('journal.analyzing') : t('journal.analyzeEntry')}</span>
                 </button>
               )}
               {analysis && (
                 <button
                   onClick={() => setShowAnalysis(!showAnalysis)}
                   className="lg:hidden p-2 text-text-tertiary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
-                  title={showAnalysis ? 'Hide Analysis' : 'Show Analysis'}
+                  title={showAnalysis ? t('journal.hideAnalysis') : t('journal.showAnalysis')}
                 >
                   {showAnalysis ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                 </button>
@@ -397,7 +399,7 @@ export default function Journal() {
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Write about your day, your thoughts, your feelings..."
+                placeholder={t('journal.placeholder')}
                 className="flex-1 w-full p-4 sm:p-6 lg:p-8 bg-transparent border-none resize-none focus:ring-0 text-base lg:text-lg leading-relaxed text-text-primary placeholder:text-text-tertiary custom-scrollbar min-h-[300px] lg:min-h-[200px]"
               />
             </div>
@@ -416,8 +418,8 @@ export default function Journal() {
                   <div className="glass-card p-3 lg:p-5 bg-white/60 dark:bg-black/60 border border-white/40 dark:border-white/10">
                     <h3 className="text-xs lg:text-sm font-bold text-text-primary mb-2 lg:mb-4 flex items-center gap-2">
                       <Heart className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-pink-500" />
-                      <span className="hidden sm:inline">Emotional Insights</span>
-                      <span className="sm:hidden">Emotions</span>
+                      <span className="hidden sm:inline">{t('journal.emotionalInsights')}</span>
+                      <span className="sm:hidden">{t('journal.emotionalInsights')}</span>
                     </h3>
                     <div className="space-y-2 lg:space-y-4">
                       {analysis.emotions.map((emotion, idx) => (
@@ -441,7 +443,7 @@ export default function Journal() {
                   </div>
 
                   <div className="glass-card p-3 lg:p-5 bg-white/60 dark:bg-black/60 border border-white/40 dark:border-white/10">
-                    <h3 className="text-xs lg:text-sm font-bold text-text-primary mb-2 lg:mb-3">Patterns</h3>
+                    <h3 className="text-xs lg:text-sm font-bold text-text-primary mb-2 lg:mb-3">{t('journal.patternsDetected')}</h3>
                     <ul className="space-y-1.5 lg:space-y-3">
                       {analysis.patterns.slice(0, 3).map((pattern, idx) => (
                         <li key={idx} className="flex items-start gap-2 lg:gap-3 text-xs lg:text-sm text-text-secondary">
@@ -453,7 +455,7 @@ export default function Journal() {
                   </div>
 
                   <div className="glass-card p-3 lg:p-5 bg-gradient-to-br from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800">
-                    <h3 className="text-xs lg:text-sm font-bold text-green-900 dark:text-green-300 mb-2 lg:mb-3">Strategies</h3>
+                    <h3 className="text-xs lg:text-sm font-bold text-green-900 dark:text-green-300 mb-2 lg:mb-3">{t('journal.copingStrategies')}</h3>
                     <ul className="space-y-1.5 lg:space-y-3">
                       {analysis.coping_strategies.slice(0, 2).map((strategy, idx) => (
                         <li key={idx} className="flex gap-2 lg:gap-3 text-xs lg:text-sm text-green-800 dark:text-green-300">

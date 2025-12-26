@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { Goal } from '../types';
 
 interface ObjectiveFormProps {
@@ -9,6 +10,7 @@ interface ObjectiveFormProps {
 }
 
 export default function ObjectiveForm({ onClose, onCreate, goals, selectedGoal }: ObjectiveFormProps) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -23,10 +25,10 @@ export default function ObjectiveForm({ onClose, onCreate, goals, selectedGoal }
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
       <div className="glass-strong rounded-2xl p-6 max-w-md w-full shadow-2xl border border-white/20 dark:border-white/10 animate-scale-in">
-        <h2 className="text-2xl font-bold text-text-primary mb-6">Create Objective</h2>
+        <h2 className="text-2xl font-bold text-text-primary mb-6">{t('objectives.createObjective')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Title</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.title')}</label>
             <input
               type="text"
               value={title}
@@ -37,7 +39,7 @@ export default function ObjectiveForm({ onClose, onCreate, goals, selectedGoal }
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Description</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -46,13 +48,13 @@ export default function ObjectiveForm({ onClose, onCreate, goals, selectedGoal }
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Goal</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.goal')}</label>
             <select
               value={goalId || ''}
               onChange={(e) => setGoalId(e.target.value || null)}
               className="input-modern"
             >
-              <option value="">No Goal (Orphaned)</option>
+              <option value="">{t('objectives.noGoalOrphaned')}</option>
               {goals.map((goal) => (
                 <option key={goal.id} value={goal.id}>
                   {goal.title}
@@ -61,19 +63,19 @@ export default function ObjectiveForm({ onClose, onCreate, goals, selectedGoal }
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Priority</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.priority')}</label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               className="input-modern"
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low">{t('objectives.low')}</option>
+              <option value="medium">{t('objectives.medium')}</option>
+              <option value="high">{t('objectives.high')}</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Target Date</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.targetDate')}</label>
             <input
               type="date"
               value={targetDate}
@@ -87,13 +89,13 @@ export default function ObjectiveForm({ onClose, onCreate, goals, selectedGoal }
               onClick={onClose}
               className="flex-1 btn-secondary"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 btn-primary bg-green-600 hover:bg-green-700"
             >
-              Create
+              {t('common.create')}
             </button>
           </div>
         </form>

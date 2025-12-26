@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Eye } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
@@ -14,11 +15,11 @@ interface Vision {
   order: number;
 }
 
-const STATUS_COLUMNS = [
-  { id: 'not_started', label: 'Not Started', color: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' },
-  { id: 'in_progress', label: 'In Progress', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100' },
-  { id: 'on_hold', label: 'On Hold', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100' },
-  { id: 'completed', label: 'Completed', color: 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100' },
+const getStatusColumns = (t: (key: string) => string) => [
+  { id: 'not_started', label: t('map.notStarted'), color: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' },
+  { id: 'in_progress', label: t('map.inProgress'), color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100' },
+  { id: 'on_hold', label: t('map.onHold'), color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100' },
+  { id: 'completed', label: t('map.completed'), color: 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100' },
 ] as const;
 
 interface VisionsKanbanProps {
@@ -32,7 +33,9 @@ interface VisionsKanbanProps {
 
 export default function VisionsKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectVision, highlightedItemId }: VisionsKanbanProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
+  const STATUS_COLUMNS = getStatusColumns(t);
   const [visions, setVisions] = useState<Vision[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [objectives, setObjectives] = useState<any[]>([]);
@@ -214,7 +217,7 @@ export default function VisionsKanban({ selectedVisionId, selectedGoalId, select
           <div className={`${column.color} px-4 py-2 rounded-t-lg border-x border-t border-white/20 dark:border-white/10`}>
             <h3 className="font-semibold">{column.label}</h3>
             <p className="text-sm opacity-80">
-              {getVisionsByStatus(column.id).length} visions
+              {getVisionsByStatus(column.id).length} {t('map.visions')}
             </p>
           </div>
           <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-b-lg min-h-[200px] space-y-3 border border-white/20 dark:border-white/10">
@@ -281,7 +284,7 @@ export default function VisionsKanban({ selectedVisionId, selectedGoalId, select
             })}
             {getVisionsByStatus(column.id).length === 0 && (
               <div className="text-center py-8 text-sm text-gray-400">
-                No visions in this status
+                {t('map.noVisionsInStatus')}
               </div>
             )}
           </div>

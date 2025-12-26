@@ -1,18 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowRight, Loader2, Mail, Lock, Globe } from 'lucide-react';
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { language, setLanguage, t } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword, updatePassword } = useAuth();
+
+  // Check if we're coming from a password reset email
+  useEffect(() => {
+    const accessToken = searchParams.get('access_token');
+    const type = searchParams.get('type');
+    if (accessToken && type === 'recovery') {
+      setShowResetForm(true);
+      setShowResetPassword(false);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     const { error } = isSignUp
@@ -21,6 +43,60 @@ export default function Login() {
 
     if (error) {
       setError(error.message);
+    }
+    setLoading(false);
+  };
+
+  const handleResetPasswordRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    if (!email) {
+      setError(t('login.enterEmail'));
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await resetPassword(email);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess(t('login.passwordResetSent'));
+    }
+    setLoading(false);
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    if (newPassword.length < 6) {
+      setError(t('login.passwordMinLength'));
+      setLoading(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError(t('login.passwordsDontMatch'));
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await updatePassword(newPassword);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess(t('login.passwordUpdated'));
+      setTimeout(() => {
+        navigate('/');
+        window.location.reload();
+      }, 2000);
     }
     setLoading(false);
   };
@@ -71,7 +147,20 @@ export default function Login() {
 
         {/* Right Side - Auth Form */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-4 sm:px-8">
-          <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/50 shadow-glass rounded-3xl p-8 sm:p-10 animate-scale-in">
+          <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/50 shadow-glass rounded-3xl p-8 sm:p-10 animate-scale-in relative">
+            {/* Language Selector Button */}
+            <div className="absolute top-4 right-4 z-50">
+              <button
+                onClick={() => setShowLanguageSelector(!showLanguageSelector)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/40 hover:bg-white/70 transition-all"
+                title={t('language.selectLanguage')}
+              >
+                <Globe className="w-4 h-4 text-text-secondary" />
+                <span className="text-sm font-medium text-text-secondary">
+                  {language === 'en' ? 'EN' : language === 'es' ? 'ES' : 'ZH'}
+                </span>
+              </button>
+            </div>
             <div className="text-center mb-8">
               <div className="flex justify-center mb-3">
                 <img 
@@ -81,76 +170,306 @@ export default function Login() {
                 />
               </div>
               <h2 className="text-2xl font-bold text-text-primary mb-2">
-                {isSignUp ? 'Create an account' : 'Welcome back'}
+                {showResetForm 
+                  ? t('login.setNewPassword')
+                  : showResetPassword 
+                    ? t('login.resetPassword')
+                    : isSignUp 
+                      ? t('login.createAccount')
+                      : t('login.welcomeBack')}
               </h2>
               <p className="text-text-tertiary">
-                {isSignUp ? 'Start your journey today' : 'Enter your details to access your journal'}
+                {showResetForm
+                  ? t('login.setNewPasswordDescription')
+                  : showResetPassword
+                    ? t('login.resetPasswordDescription')
+                    : isSignUp 
+                      ? t('login.startJourney')
+                      : t('login.enterDetails')}
               </p>
           </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                  className="input-modern"
-                  placeholder="name@example.com"
-                required
-              />
-            </div>
+            {showResetForm ? (
+              // Password Reset Form (after clicking email link)
+              <form onSubmit={handlePasswordUpdate} className="space-y-5">
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-2">
+                    <Lock className="w-4 h-4" />
+                    <span className="font-medium text-sm">{t('login.setNewPassword')}</span>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    {t('login.setNewPasswordDescription')}
+                  </p>
+                </div>
 
-            <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                  className="input-modern"
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.newPassword')}</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="input-modern"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
 
-            {error && (
-                <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
-                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                {error}
-              </div>
-            )}
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.confirmPassword')}</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="input-modern"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-                className="w-full btn-primary h-12 text-base group"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    {isSignUp ? 'Sign Up' : 'Sign In'}
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </>
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                    {error}
+                  </div>
                 )}
-            </button>
-          </form>
+
+                {success && (
+                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-sm text-green-600 flex items-center gap-2 animate-fade-in">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                    {success}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn-primary h-12 text-base group"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      {t('login.updatePassword')}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetForm(false);
+                    navigate('/');
+                  }}
+                  className="w-full text-sm text-text-tertiary hover:text-text-primary transition-colors"
+                >
+                  {t('common.back')} {t('login.signIn')}
+                </button>
+              </form>
+            ) : showResetPassword ? (
+              // Password Reset Request Form
+              <form onSubmit={handleResetPasswordRequest} className="space-y-5">
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-2">
+                    <Mail className="w-4 h-4" />
+                    <span className="font-medium text-sm">{t('login.resetPassword')}</span>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    {t('login.resetPasswordDescription')}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.email')}</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input-modern"
+                    placeholder="name@example.com"
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                    {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-sm text-green-600 flex items-center gap-2 animate-fade-in">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                    {success}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn-primary h-12 text-base group"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      {t('login.sendResetLink')}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetPassword(false);
+                    setError('');
+                    setSuccess('');
+                  }}
+                  className="w-full text-sm text-text-tertiary hover:text-text-primary transition-colors"
+                >
+                  {t('common.back')} {t('login.signIn')}
+                </button>
+              </form>
+            ) : (
+              // Regular Sign In / Sign Up Form
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.email')}</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input-modern"
+                    placeholder="name@example.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.password')}</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="input-modern"
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
+
+                {!isSignUp && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResetPassword(true);
+                        setError('');
+                        setSuccess('');
+                      }}
+                      className="text-sm text-accent-primary hover:text-accent-hover transition-colors"
+                    >
+                      {t('login.forgotPassword')}
+                    </button>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn-primary h-12 text-base group"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      {isSignUp ? t('login.signUp') : t('login.signIn')}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
 
             <div className="mt-8 pt-6 border-t border-border-secondary text-center">
               <p className="text-sm text-text-secondary">
-                {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+                {isSignUp ? t('login.alreadyHaveAccount') : t('login.dontHaveAccount')}
                 <button
                   onClick={() => setIsSignUp(!isSignUp)}
                   className="ml-2 font-medium text-accent-primary hover:text-accent-hover transition-colors"
                 >
-                  {isSignUp ? 'Sign in' : 'Sign up'}
+                  {isSignUp ? t('login.signIn') : t('login.signUp')}
                 </button>
               </p>
             </div>
           </div>
         </div>
       </div>
+      {/* Click outside to close language selector */}
+      {showLanguageSelector && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={(e) => {
+            console.log('Backdrop clicked, target:', e.target);
+            setShowLanguageSelector(false);
+          }}
+        />
+      )}
+      {/* Language Selector Dropdown */}
+      {showLanguageSelector && (
+        <div className="fixed top-20 right-8 w-40 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-border-primary overflow-hidden z-50">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('Setting language to EN, current:', language);
+              setLanguage('en');
+              setShowLanguageSelector(false);
+            }}
+            className={`w-full px-4 py-2 text-left text-sm hover:bg-bg-tertiary transition-colors ${
+              language === 'en' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+            }`}
+          >
+            {t('language.english')}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('Setting language to ES, current:', language);
+              setLanguage('es');
+              setShowLanguageSelector(false);
+            }}
+            className={`w-full px-4 py-2 text-left text-sm hover:bg-bg-tertiary transition-colors ${
+              language === 'es' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+            }`}
+          >
+            {t('language.spanish')}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('Setting language to ZH, current:', language);
+              setLanguage('zh');
+              setShowLanguageSelector(false);
+            }}
+            className={`w-full px-4 py-2 text-left text-sm hover:bg-bg-tertiary transition-colors ${
+              language === 'zh' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+            }`}
+          >
+            {t('language.chinese')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

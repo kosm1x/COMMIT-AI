@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { supabase } from '../../../lib/supabase';
 import { Task, Objective } from '../types';
 import { TaskCard } from '../cards';
-import { useAuth } from '../../../contexts/AuthContext';
 
 interface TaskColumnProps {
   tasks: Task[];
@@ -43,6 +44,7 @@ export function TaskColumn({
   selectedObjective,
 }: TaskColumnProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [showOrphaned, setShowOrphaned] = useState(true);
   const [recurringCompletedToday, setRecurringCompletedToday] = useState<Record<string, boolean>>({});
 
@@ -70,7 +72,7 @@ export function TaskColumn({
   const totalCount = displayObjectiveTasks.length + (showOrphaned ? visibleOrphanedTasks.length : 0);
 
   const handleDelete = async (id: string) => {
-    if (confirm('Delete this task?')) {
+    if (confirm(t('objectives.deleteTaskConfirm'))) {
       await onDeleteTask(id);
     }
   };
@@ -133,10 +135,10 @@ export function TaskColumn({
       <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm relative overflow-visible z-10">
         <div className="flex items-center justify-between mb-3">
           <div className="group relative z-20">
-            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">Tasks</h2>
+            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">{t('objectives.tasks')}</h2>
             <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] pointer-events-none whitespace-normal">
-              <div className="font-semibold mb-1 text-purple-400">Best Use:</div>
-              <p className="leading-relaxed">Daily or weekly actions that complete an objective. Small, concrete steps you can check off. Tasks can be one-time or recurring. Focus on what you can do today.</p>
+              <div className="font-semibold mb-1 text-purple-400">{t('objectives.bestUse')}</div>
+              <p className="leading-relaxed">{t('objectives.taskBestUse')}</p>
               <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
             </div>
           </div>
@@ -149,7 +151,7 @@ export function TaskColumn({
           className="btn-primary w-full shadow-lg shadow-purple-500/20 bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 flex-shrink-0" />
-          <span>Add Task</span>
+          <span>{t('objectives.addTask')}</span>
         </button>
       </div>
 
@@ -166,7 +168,7 @@ export function TaskColumn({
                   displayObjectiveTasks.map(renderTaskCard)
                 ) : (
                   <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
-                    No tasks yet. Create one to get started!
+                    {t('objectives.noTasksYet')}
                   </div>
                 )}
               </div>
@@ -177,7 +179,7 @@ export function TaskColumn({
                 displayObjectiveTasks.map(renderTaskCard)
               ) : !showOrphaned ? (
                 <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
-                  Select an objective to see tasks
+                  {t('objectives.selectObjectiveToSeeTasks')}
                 </div>
               ) : null}
             </div>
@@ -190,7 +192,7 @@ export function TaskColumn({
               className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-3 px-1 hover:text-text-secondary transition-colors"
             >
               {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              Orphaned Tasks ({visibleOrphanedTasks.length})
+              {t('objectives.orphanedTasks')} ({visibleOrphanedTasks.length})
             </button>
             {showOrphaned && (
               <div className="space-y-3">
@@ -198,7 +200,7 @@ export function TaskColumn({
                   visibleOrphanedTasks.map(renderTaskCard)
                 ) : (
                   <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
-                    No orphaned tasks yet
+                    {t('objectives.noOrphanedTasks')}
                   </div>
                 )}
               </div>

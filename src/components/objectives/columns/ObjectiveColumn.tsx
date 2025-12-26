@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { supabase } from '../../../lib/supabase';
 import { Objective, Goal, Task } from '../types';
 import { ObjectiveCard } from '../cards';
@@ -41,6 +42,7 @@ export function ObjectiveColumn({
   selectedGoal,
   taskCounts,
 }: ObjectiveColumnProps) {
+  const { t } = useLanguage();
   const [showOrphaned, setShowOrphaned] = useState(true);
   const [expandedObjectives, setExpandedObjectives] = useState<Set<string>>(new Set());
   const [objectiveTasks, setObjectiveTasks] = useState<Record<string, Task[]>>({});
@@ -75,17 +77,21 @@ export function ObjectiveColumn({
 
     if (!hasDescendants) {
       // No descendants, simple confirmation
-      if (confirm('Delete this objective?')) {
+      if (confirm(t('objectives.deleteObjectiveConfirm'))) {
         await onDeleteObjective(id);
       }
       return;
     }
 
     // Has descendants - show detailed confirmation
-    const message = `This objective has ${counts.tasks} task${counts.tasks !== 1 ? 's' : ''}.\n\n` +
-      `Choose an option:\n` +
-      `OK = Delete everything (objective and all tasks)\n` +
-      `Cancel = Orphan tasks (keep tasks but remove parent link)`;
+    const message = t('objectives.deleteWithDescendantsMessage')
+      .replace('{{type}}', t('objectives.objective'))
+      .replace('{{goals}}', '0')
+      .replace('{{goalsPlural}}', '')
+      .replace('{{objectives}}', '0')
+      .replace('{{objectivesPlural}}', '')
+      .replace('{{tasks}}', counts.tasks.toString())
+      .replace('{{tasksPlural}}', counts.tasks !== 1 ? 's' : '');
 
     const deleteAll = confirm(message);
     await onDeleteObjective(id, !deleteAll); // If deleteAll is false, orphan descendants
@@ -153,10 +159,10 @@ export function ObjectiveColumn({
       <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm relative overflow-visible z-10">
         <div className="flex items-center justify-between mb-3">
           <div className="group relative z-20">
-            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">Objectives</h2>
+            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">{t('objectives.objective')}</h2>
             <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] pointer-events-none whitespace-normal">
-              <div className="font-semibold mb-1 text-green-400">Best Use:</div>
-              <p className="leading-relaxed">Specific, actionable steps to achieve a goal. Usually 3-6 months. Break into tasks. Objectives have clear success criteria and deadlines.</p>
+              <div className="font-semibold mb-1 text-green-400">{t('objectives.bestUse')}</div>
+              <p className="leading-relaxed">{t('objectives.objectiveBestUse')}</p>
               <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
             </div>
           </div>
@@ -169,7 +175,7 @@ export function ObjectiveColumn({
           className="btn-primary w-full shadow-lg shadow-green-500/20 bg-green-600 hover:bg-green-700 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 flex-shrink-0" />
-          <span>Add Objective</span>
+          <span>{t('objectives.addObjective')}</span>
         </button>
       </div>
 
@@ -185,7 +191,7 @@ export function ObjectiveColumn({
                 displayGoalObjectives.map(renderObjectiveCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  No objectives yet
+                  {t('objectives.noObjectivesYet')}
                 </div>
               )}
             </div>
@@ -209,7 +215,7 @@ export function ObjectiveColumn({
             className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
           >
             {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            Orphaned Objectives ({visibleOrphanedObjectives.length})
+            {t('objectives.orphanedObjectives')} ({visibleOrphanedObjectives.length})
           </button>
           {showOrphaned && (
             <div className="space-y-2">
@@ -217,7 +223,7 @@ export function ObjectiveColumn({
                 visibleOrphanedObjectives.map(renderObjectiveCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  No orphaned objectives
+                  {t('objectives.noOrphanedObjectives')}
                 </div>
               )}
             </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { Objective } from '../types';
 
 interface TaskFormProps {
@@ -9,6 +10,7 @@ interface TaskFormProps {
 }
 
 export default function TaskForm({ onClose, onCreate, objectives, selectedObjective }: TaskFormProps) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
@@ -23,10 +25,10 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
       <div className="glass-strong rounded-2xl p-6 max-w-md w-full shadow-2xl border border-white/20 dark:border-white/10 animate-scale-in">
-        <h2 className="text-2xl font-bold text-text-primary mb-6">Create Task</h2>
+        <h2 className="text-2xl font-bold text-text-primary mb-6">{t('objectives.createTask')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Title</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.title')}</label>
             <input
               type="text"
               value={title}
@@ -37,13 +39,13 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Objective</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.objective')}</label>
             <select
               value={objectiveId || ''}
               onChange={(e) => setObjectiveId(e.target.value || null)}
               className="input-modern"
             >
-              <option value="">No Objective (Orphaned)</option>
+              <option value="">{t('objectives.noObjectiveOrphaned')}</option>
               {objectives.map((obj) => (
                 <option key={obj.id} value={obj.id}>
                   {obj.title}
@@ -52,19 +54,19 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Priority</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.priority')}</label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               className="input-modern"
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low">{t('objectives.low')}</option>
+              <option value="medium">{t('objectives.medium')}</option>
+              <option value="high">{t('objectives.high')}</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Due Date</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.dueDate')}</label>
             <input
               type="date"
               value={dueDate}
@@ -73,7 +75,7 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
               disabled={isRecurring}
             />
             {isRecurring && (
-              <p className="text-xs text-text-tertiary mt-1">Recurring tasks don't have a due date</p>
+              <p className="text-xs text-text-tertiary mt-1">{t('objectives.recurringTaskNoDueDate')}</p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -85,7 +87,7 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
               className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
             />
             <label htmlFor="isRecurring" className="text-sm font-medium text-text-secondary cursor-pointer">
-              Recurring task (e.g., daily habits)
+              {t('objectives.recurringTaskInfo')}
             </label>
           </div>
           <div className="flex gap-3 pt-2">
@@ -94,13 +96,13 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
               onClick={onClose}
               className="flex-1 btn-secondary"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 btn-primary bg-purple-600 hover:bg-purple-700"
             >
-              Create
+              {t('common.create')}
             </button>
           </div>
         </form>

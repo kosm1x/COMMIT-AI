@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import VisionsKanban from './VisionsKanban';
 import GoalsKanban from './GoalsKanban';
 import ObjectivesKanban from './ObjectivesKanban';
@@ -11,6 +12,7 @@ interface KanbanViewProps {
 }
 
 export default function KanbanView({ initialScrollTo, initialSelectItem }: KanbanViewProps) {
+  const { t } = useLanguage();
   const [sections, setSections] = useState({
     vision: false,
     goals: false,
@@ -125,18 +127,18 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
       {(selectedVisionId || selectedGoalId || selectedObjectiveId || selectedTaskId) && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-blue-700 dark:text-blue-300">
-            <span className="font-medium">Filtered by:</span>
-            {selectedVisionId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Vision</span>}
-            {selectedGoalId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Goal</span>}
-            {selectedObjectiveId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Objective</span>}
-            {selectedTaskId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">Task</span>}
+            <span className="font-medium">{t('map.filteredBy')}</span>
+            {selectedVisionId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">{t('objectives.vision')}</span>}
+            {selectedGoalId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">{t('objectives.goal')}</span>}
+            {selectedObjectiveId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">{t('objectives.objective')}</span>}
+            {selectedTaskId && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">{t('objectives.task')}</span>}
           </div>
           <button
             onClick={clearFilter}
             className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
           >
             <X className="w-3 h-3 sm:w-4 sm:h-4" />
-            Clear
+            {t('map.clear')}
           </button>
         </div>
       )}
@@ -148,7 +150,7 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
           className="flex items-center gap-2 text-sm font-bold text-text-secondary uppercase tracking-wider hover:text-accent-primary transition-colors"
         >
           {sections.vision ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          Vision Board
+          {t('map.visionBoard')}
         </button>
         {sections.vision && (
           <div className="animate-slide-up">
@@ -171,7 +173,7 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
           className="flex items-center gap-2 text-sm font-bold text-text-secondary uppercase tracking-wider hover:text-accent-primary transition-colors"
         >
           {sections.goals ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          Goals Board
+          {t('map.goalsBoard')}
         </button>
         {sections.goals && (
           <div className="animate-slide-up">
@@ -195,7 +197,7 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
           className="flex items-center gap-2 text-sm font-bold text-text-secondary uppercase tracking-wider hover:text-accent-primary transition-colors"
         >
           {sections.objectives ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          Objectives Board
+          {t('map.objectivesBoard')}
         </button>
         {sections.objectives && (
           <div className="animate-slide-up">
@@ -218,7 +220,7 @@ export default function KanbanView({ initialScrollTo, initialSelectItem }: Kanba
           className="flex items-center gap-2 text-sm font-bold text-text-secondary uppercase tracking-wider hover:text-accent-primary transition-colors"
         >
           {sections.tasks ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          Tasks Board
+          {t('map.tasksBoard')}
         </button>
         {sections.tasks && (
           <div className="animate-slide-up">

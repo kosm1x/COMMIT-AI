@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { findIdeaConnections, transformIdeaText } from '../services/aiService';
 import AIAssistantPanel from '../components/AIAssistantPanel';
@@ -50,6 +51,7 @@ export default function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { language, t } = useLanguage();
   const [idea, setIdea] = useState<Idea | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -141,7 +143,8 @@ export default function IdeaDetail() {
           {
             title: currentIdea.title,
             tags: currentIdea.tags || []
-          }
+          },
+          language
         );
         // Debug logging (only in development)
         if (import.meta.env.DEV) {
@@ -190,7 +193,7 @@ export default function IdeaDetail() {
 
   const handleDelete = async () => {
     if (!idea || !user) return;
-    if (!confirm('Are you sure you want to delete this idea?')) return;
+    if (!confirm(t('ideaDetail.deleteConfirm'))) return;
 
     try {
       const { error } = await supabase
@@ -359,7 +362,7 @@ export default function IdeaDetail() {
         case 'enhance':
           // Enhance: Only work on selected text
           if (!selection.text || selection.text.trim().length === 0) {
-            alert('Please select text to enhance');
+            alert(t('ideaDetail.selectTextToEnhance'));
             return;
           }
           targetText = selection.text;
@@ -374,7 +377,7 @@ export default function IdeaDetail() {
         case 'shorten':
           // Shorten: Only work on selected text
           if (!selection.text || selection.text.trim().length === 0) {
-            alert('Please select text to shorten');
+            alert(t('ideaDetail.selectTextToShorten'));
             return;
           }
           targetText = selection.text;
@@ -396,7 +399,7 @@ export default function IdeaDetail() {
       }
       
       if (!targetText.trim()) {
-        alert('No content to transform');
+        alert(t('ideaDetail.noContentToTransform'));
         return;
       }
       
@@ -405,7 +408,7 @@ export default function IdeaDetail() {
         content: idea.content,
         cursorPosition: selection.start,
         fullContext: contextText
-      });
+      }, language);
       
       // Apply result based on mode behavior
       if (mode === 'complete' || mode === 'cocreate') {
@@ -488,10 +491,10 @@ export default function IdeaDetail() {
 
       if (error) throw error;
 
-      alert(`Task "${title}" created successfully! You can find it in the Objectives page under orphaned tasks.`);
+      alert(t('ideaDetail.taskCreatedSuccess').replace('{{title}}', title));
     } catch (error) {
       console.error('Error creating task:', error);
-      alert('Failed to create task. Please try again.');
+      alert(t('ideaDetail.taskCreateFailed'));
     }
   };
 
@@ -559,7 +562,7 @@ export default function IdeaDetail() {
       <div className="h-screen flex items-center justify-center bg-bg-secondary">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-3" />
-          <p className="text-sm text-text-secondary">Loading...</p>
+          <p className="text-sm text-text-secondary">{t('ideaDetail.loading')}</p>
         </div>
       </div>
     );
@@ -569,12 +572,12 @@ export default function IdeaDetail() {
     return (
       <div className="h-screen flex items-center justify-center bg-bg-secondary">
         <div className="text-center">
-          <p className="text-text-secondary mb-4">Idea not found</p>
+          <p className="text-text-secondary mb-4">{t('ideaDetail.ideaNotFound')}</p>
           <button
             onClick={() => navigate('/ideate')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Back to Ideas
+            {t('ideaDetail.backToIdeas')}
           </button>
         </div>
       </div>
@@ -593,9 +596,9 @@ export default function IdeaDetail() {
               <ArrowLeft className="w-5 h-5 text-text-secondary" />
             </button>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-text-primary truncate">Edit Idea</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-text-primary truncate">{t('ideaDetail.editIdea')}</h1>
               <p className="text-xs text-text-tertiary hidden sm:block">
-                Last updated: {new Date(idea.updated_at).toLocaleString()}
+                {t('ideaDetail.lastUpdated')}: {new Date(idea.updated_at).toLocaleString()}
               </p>
             </div>
           </div>
@@ -604,7 +607,7 @@ export default function IdeaDetail() {
             <div className="relative group hidden sm:block">
               <button className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-bg-tertiary text-text-secondary rounded-lg hover:bg-border-secondary transition-colors text-sm">
                 <Download className="w-4 h-4" />
-                <span className="hidden md:inline">Export</span>
+                <span className="hidden md:inline">{t('ideaDetail.export')}</span>
               </button>
               <div className="absolute right-0 mt-2 w-48 glass-strong border-border-primary opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                 <button
@@ -612,21 +615,21 @@ export default function IdeaDetail() {
                   className="w-full flex items-center gap-2 px-4 py-2 hover:bg-bg-secondary text-left text-sm"
                 >
                   <FileText className="w-4 h-4" />
-                  Plain Text (.txt)
+                  {t('ideaDetail.plainText')}
                 </button>
                 <button
                   onClick={() => handleExport('md')}
                   className="w-full flex items-center gap-2 px-4 py-2 hover:bg-bg-secondary text-left text-sm"
                 >
                   <FileCode className="w-4 h-4" />
-                  Markdown (.md)
+                  {t('ideaDetail.markdown')}
                 </button>
                 <button
                   onClick={() => handleExport('json')}
                   className="w-full flex items-center gap-2 px-4 py-2 hover:bg-bg-secondary text-left text-sm"
                 >
                   <File className="w-4 h-4" />
-                  JSON (.json)
+                  {t('ideaDetail.json')}
                 </button>
               </div>
             </div>
@@ -637,7 +640,7 @@ export default function IdeaDetail() {
               className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span className="hidden sm:inline">Save</span>
+              <span className="hidden sm:inline">{t('ideaDetail.save')}</span>
             </button>
 
             <button
@@ -645,7 +648,7 @@ export default function IdeaDetail() {
               className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
             >
               <Trash2 className="w-4 h-4" />
-              <span className="hidden md:inline">Delete</span>
+              <span className="hidden md:inline">{t('ideaDetail.delete')}</span>
             </button>
 
             <button
@@ -682,7 +685,7 @@ export default function IdeaDetail() {
               <div className="glass-card border-border-primary p-4 lg:p-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-2">Title</label>
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('ideaDetail.title')}</label>
                     <input
                       type="text"
                       value={idea.title}
@@ -693,14 +696,14 @@ export default function IdeaDetail() {
 
                   <div ref={editorRef} className="relative">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <label className="block text-sm font-medium text-text-secondary">Content</label>
+                      <label className="block text-sm font-medium text-text-secondary">{t('ideaDetail.content')}</label>
                       <div className="flex flex-wrap gap-1 sm:gap-2">
                         {[
-                          { mode: 'enhance' as const, label: 'Enhance', icon: <Wand2 className="w-3.5 h-3.5" /> },
-                          { mode: 'complete' as const, label: 'Complete', icon: <CornerDownRight className="w-3.5 h-3.5" /> },
-                          { mode: 'shorten' as const, label: 'Shorten', icon: <Scissors className="w-3.5 h-3.5" /> },
-                          { mode: 'summarize' as const, label: 'Summarize', icon: <FileText className="w-3.5 h-3.5" /> },
-                          { mode: 'cocreate' as const, label: 'Co-create', icon: <Users className="w-3.5 h-3.5" /> },
+                          { mode: 'enhance' as const, label: t('ideaDetail.enhance'), icon: <Wand2 className="w-3.5 h-3.5" /> },
+                          { mode: 'complete' as const, label: t('ideaDetail.complete'), icon: <CornerDownRight className="w-3.5 h-3.5" /> },
+                          { mode: 'shorten' as const, label: t('ideaDetail.shorten'), icon: <Scissors className="w-3.5 h-3.5" /> },
+                          { mode: 'summarize' as const, label: t('ideaDetail.summarize'), icon: <FileText className="w-3.5 h-3.5" /> },
+                          { mode: 'cocreate' as const, label: t('ideaDetail.cocreate'), icon: <Users className="w-3.5 h-3.5" /> },
                         ].map((action) => (
                           <button
                             key={action.mode}
@@ -746,26 +749,26 @@ export default function IdeaDetail() {
                         <button
                           onClick={handleConvertSelectedToIdea}
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded transition-colors"
-                          title="Convert to Idea"
+                          title={t('ideaDetail.convertToIdea')}
                         >
                           <Lightbulb className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                          Idea
+                          {t('ideate.newIdea')}
                         </button>
                         <button
                           onClick={handleConvertSelectedToTask}
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-green-50 dark:hover:bg-green-950/30 rounded transition-colors"
-                          title="Convert to Task"
+                          title={t('ideaDetail.convertToTask')}
                         >
                           <CheckSquare className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                          Task
+                          {t('objectives.task')}
                         </button>
                         <button
                           onClick={handleConvertSelectedToMindMap}
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded transition-colors"
-                          title="Convert to Mind Map"
+                          title={t('ideaDetail.convertToMindMap')}
                         >
                           <Network className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                          Mind Map
+                          {t('map.mindMap')}
                         </button>
                       </div>
                     )}
@@ -773,7 +776,7 @@ export default function IdeaDetail() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-2">Category</label>
+                      <label className="block text-sm font-medium text-text-secondary mb-2">{t('ideaDetail.category')}</label>
                       <input
                         type="text"
                         value={idea.category}
@@ -783,22 +786,22 @@ export default function IdeaDetail() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-2">Status</label>
+                      <label className="block text-sm font-medium text-text-secondary mb-2">{t('ideaDetail.status')}</label>
                       <select
                         value={idea.status}
                         onChange={(e) => setIdea({ ...idea, status: e.target.value as Idea['status'] })}
                         className="w-full px-4 py-2 border border-border-primary bg-bg-primary rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                       >
-                        <option value="draft">Draft</option>
-                        <option value="active">Active</option>
-                        <option value="completed">Completed</option>
-                        <option value="archived">Archived</option>
+                        <option value="draft">{t('ideaDetail.draft')}</option>
+                        <option value="active">{t('ideaDetail.active')}</option>
+                        <option value="completed">{t('ideaDetail.completed')}</option>
+                        <option value="archived">{t('ideaDetail.archived')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-2">Tags</label>
+                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('ideaDetail.tags')}</label>
                     <div className="flex flex-wrap gap-2 mb-2">
                       {idea.tags.map((tag) => (
                         <span
@@ -817,7 +820,7 @@ export default function IdeaDetail() {
                     </div>
                     <input
                       type="text"
-                      placeholder="Add a tag and press Enter"
+                      placeholder={t('ideaDetail.addTagPlaceholder')}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                           addTag(e.currentTarget.value.trim());
@@ -834,7 +837,7 @@ export default function IdeaDetail() {
                 <div className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-4 h-4 text-blue-600" />
-                    <h3 className="text-sm font-semibold text-blue-900">Original Input</h3>
+                    <h3 className="text-sm font-semibold text-blue-900">{t('ideaDetail.originalInput')}</h3>
                   </div>
                   <p className="text-sm text-blue-800 dark:text-blue-200">{idea.initial_input}</p>
                 </div>
@@ -845,15 +848,15 @@ export default function IdeaDetail() {
               <div className="glass-card border-border-primary p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Clock className="w-5 h-5 text-text-secondary" />
-                  <h3 className="font-semibold text-text-primary">Timeline</h3>
+                  <h3 className="font-semibold text-text-primary">{t('ideaDetail.timeline')}</h3>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-text-secondary">Created:</span>
+                    <span className="text-text-secondary">{t('ideaDetail.created')}</span>
                     <p className="text-text-primary">{new Date(idea.created_at).toLocaleString()}</p>
                   </div>
                   <div>
-                    <span className="text-text-secondary">Updated:</span>
+                    <span className="text-text-secondary">{t('ideaDetail.updated')}</span>
                     <p className="text-text-primary">{new Date(idea.updated_at).toLocaleString()}</p>
                   </div>
                 </div>
@@ -863,13 +866,13 @@ export default function IdeaDetail() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Link2 className="w-5 h-5 text-text-secondary" />
-                    <h3 className="font-semibold text-text-primary">Connections</h3>
+                    <h3 className="font-semibold text-text-primary">{t('ideaDetail.connections')}</h3>
                   </div>
                   {loadingConnections && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
                 </div>
 
                 {connections.length === 0 ? (
-                  <p className="text-sm text-text-tertiary">No connections found</p>
+                  <p className="text-sm text-text-tertiary">{t('ideaDetail.noConnections')}</p>
                 ) : (
                   <div className="space-y-3">
                     {connections.map((conn) => (

@@ -1,0 +1,70 @@
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
+import { Language, getTranslation, TranslationKeys } from '../i18n/translations';
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+  translations: TranslationKeys;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+const LANGUAGE_STORAGE_KEY = 'commit_language';
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(() => {
+    // Try to get from localStorage, default to 'en'
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored === 'en' || stored === 'es' || stored === 'zh') {
+      return stored;
+    }
+    return 'en';
+  });
+
+  // Recalculate translations whenever language changes
+  const translations = useMemo(() => getTranslation(language), [language]);
+
+  useEffect(() => {
+    console.log('Language changed to:', language, 'saving to localStorage');
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  }, [language]);
+
+  const setLanguage = (lang: Language) => {
+    console.log('LanguageContext.setLanguage called with:', lang, 'current:', language);
+    setLanguageState(lang);
+  };
+
+  // Translation function with nested key support (e.g., 'login.welcomeBack')
+  const t = useMemo(() => {
+    return (key: string): string => {
+      const keys = key.split('.');
+      let value: any = translations;
+      
+      for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+          value = value[k];
+        } else {
+          return key; // Return key if translation not found
+        }
+      }
+      
+      return typeof value === 'string' ? value : key;
+    };
+  }, [translations]);
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t, translations }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+}
+

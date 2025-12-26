@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Command } from 'lucide-react';
-import { flatNavigationItems } from '../../config/navigation';
+import { getTranslatedFlatNavigationItems } from '../../config/navigation';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { t } = useLanguage();
+
+  const flatNavigationItems = useMemo(() => getTranslatedFlatNavigationItems(t), [t]);
 
   const filteredItems = flatNavigationItems.filter(item => {
     if (!item.available) return false;
@@ -74,7 +78,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search or jump to..."
+              placeholder={t('common.search')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-400"
@@ -87,7 +91,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
           <div className="max-h-96 overflow-y-auto">
             {filteredItems.length === 0 ? (
               <div className="px-4 py-8 text-center text-gray-500">
-                No results found
+{t('common.noResults')}
               </div>
             ) : (
               <div className="py-2">
