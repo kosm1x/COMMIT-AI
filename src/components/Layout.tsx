@@ -220,7 +220,7 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto pb-24 lg:pb-8">
-          <div className="max-w-7xl mx-auto w-full animate-slide-up">
+          <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] 3xl:max-w-none mx-auto w-full animate-slide-up">
             <div className="mb-6">
               <Breadcrumbs />
             </div>
