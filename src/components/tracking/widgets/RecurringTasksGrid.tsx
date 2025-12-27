@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { Repeat } from 'lucide-react';
 
 interface RecurringTask {
@@ -40,6 +41,7 @@ const getTaskColor = (taskId: string): { bg: string; shadow: string } => {
 
 export default function RecurringTasksGrid() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [tasks, setTasks] = useState<RecurringTask[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -131,7 +133,7 @@ export default function RecurringTasksGrid() {
     <div className="glass-card p-5 border border-white/40 dark:border-white/10">
       <h3 className="font-heading font-bold text-lg text-text-primary mb-4 flex items-center gap-2">
         <Repeat className="w-5 h-5 text-accent-primary" />
-        Daily Habits
+        {t('tracking.dailyHabits')}
       </h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -169,7 +171,7 @@ export default function RecurringTasksGrid() {
                         }
                         ${isToday ? 'ring-1 ring-text-tertiary ring-offset-1 dark:ring-offset-black' : ''}
                       `}
-                      title={`${date}${isCompleted ? ' - Completed' : ''}`}
+                      title={`${date}${isCompleted ? ` - ${t('tracking.completed')}` : ''}`}
                     />
                   );
                 })}

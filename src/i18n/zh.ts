@@ -240,6 +240,52 @@ export const zh = {
     thu: '四',
     fri: '五',
     sat: '六',
+    // StatsOverview widget
+    completedTasks: '已完成任务',
+    totalTasksFinished: '已完成任务总数',
+    completionRate: '完成率',
+    currentStreak: '当前连续',
+    days: '天',
+    keepItUp: '继续加油！',
+    activeGoals: '活跃目标',
+    inProgress: '进行中',
+    // RecurringTasksGrid widget
+    dailyHabits: '每日习惯',
+    completed: '已完成',
+    // UpcomingDeadlines widget
+    upcomingDeadlinesTitle: '即将到期的截止日期',
+    whatNeedsAttention: '需要你关注的事项',
+    deadline: '截止日期',
+    deadlines: '截止日期',
+    today: '今天',
+    tomorrow: '明天',
+    tmrw: '明',
+    noUpcomingDeadlines: '没有即将到期的截止日期',
+    allCaughtUp: '你已经全部完成了！',
+    // CreativeStats widget
+    ideasGenerated: '已生成想法',
+    thisDay: '今天',
+    thisWeek: '本周',
+    thisMonth: '本月',
+    mindMaps: '思维导图',
+    timeSpent: '花费时间',
+    // ActivityChart widget
+    activityOverTime: '随时间变化的活动',
+    ideas: '想法',
+    timeActive: '活跃时间',
+    ideasAbbrev: '想:',
+    mindMapsAbbrev: '图:',
+    // WordCloud widget
+    wordDensity: '词频密度',
+    noJournalEntriesFound: '未找到日记条目',
+    startJournalingToSeeFrequency: '开始写日记以查看词频',
+    occurrences: '出现次数',
+    // EmotionChart widget
+    emotionsOverTime: '随时间变化的情绪',
+    last3Months: '最近3个月',
+    noEmotionDataFound: '未找到情绪数据',
+    analyzeJournalToTrackEmotions: '分析日记条目以追踪情绪',
+    emotionTimeline: '情绪时间线',
   },
   // Map/Kanban
   map: {

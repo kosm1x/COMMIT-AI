@@ -1,4 +1,5 @@
 import { Heart } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { useCreativeData } from '../../../hooks/useCreativeData';
 import { useMemo, useState } from 'react';
 
@@ -8,6 +9,7 @@ interface EmotionChartProps {
 }
 
 export default function EmotionChart({ selectedDate, viewMode }: EmotionChartProps) {
+  const { t, language } = useLanguage();
   const { emotionData, periodEmotionData, dailyActivity, loading } = useCreativeData(selectedDate, viewMode);
   const [hoveredPoint, setHoveredPoint] = useState<{ emotion: string; value: number; date: string; x: number; y: number } | null>(null);
 
@@ -118,16 +120,16 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-accent-primary" />
-          <h3 className="text-sm font-heading font-bold text-text-primary">Emotions Over Time</h3>
+          <h3 className="text-sm font-heading font-bold text-text-primary">{t('tracking.emotionsOverTime')}</h3>
         </div>
-        <span className="text-xs text-text-tertiary">Last 3 months</span>
+        <span className="text-xs text-text-tertiary">{t('tracking.last3Months')}</span>
       </div>
       
       {filteredEmotions.length === 0 ? (
         <div className="text-center py-6 text-text-tertiary">
           <Heart className="w-8 h-8 mx-auto mb-2 opacity-20" />
-          <p className="text-xs font-medium">No emotion data found</p>
-          <p className="text-[10px] mt-1">Analyze journal entries to track emotions</p>
+          <p className="text-xs font-medium">{t('tracking.noEmotionDataFound')}</p>
+          <p className="text-[10px] mt-1">{t('tracking.analyzeJournalToTrackEmotions')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -261,7 +263,7 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
                               })}
                               onMouseLeave={() => setHoveredPoint(null)}
                             >
-                              <title>{`${line.emotion}: ${Math.round(point.y!)}%\n${dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</title>
+                              <title>{`${line.emotion}: ${Math.round(point.y!)}%\n${dateObj.toLocaleDateString(language === 'zh' ? 'zh-CN' : language === 'es' ? 'es-ES' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</title>
                             </circle>
                           );
                         })}
@@ -352,7 +354,7 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
                         transform={`rotate(-30, ${x}, ${chartHeight - padding.bottom + 20})`}
                         className="text-[10px] fill-current text-text-tertiary"
                       >
-                        {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {dateObj.toLocaleDateString(language === 'zh' ? 'zh-CN' : language === 'es' ? 'es-ES' : 'en-US', { month: 'short', day: 'numeric' })}
                       </text>
                     );
                   })}
@@ -379,7 +381,7 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
           {/* Timeline Grid (Period specific) */}
           {viewMode !== 'daily' && (
             <div>
-              <h4 className="text-xs font-semibold text-text-primary mb-2">Emotion Timeline</h4>
+              <h4 className="text-xs font-semibold text-text-primary mb-2">{t('tracking.emotionTimeline')}</h4>
               <div className={`grid gap-1 grid-cols-7`}>
                 {dailyActivity.map((day, index) => {
                   const dayEmotions = periodEmotionData.filter(e => {
@@ -407,7 +409,7 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
                     >
                       <div className="text-[9px] font-bold text-text-tertiary uppercase mb-0.5">
                         {viewMode === 'weekly' 
-                          ? day.date.toLocaleDateString('en-US', { weekday: 'narrow' })
+                          ? day.date.toLocaleDateString(language === 'zh' ? 'zh-CN' : language === 'es' ? 'es-ES' : 'en-US', { weekday: 'narrow' })
                           : day.date.getDate()}
                       </div>
                       <div className={`h-5 rounded flex items-center justify-center ${

@@ -316,24 +316,39 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
       setPeriodEmotionData(periodEmotions);
 
       const wordMap = new Map<string, number>();
+      // Stop words in multiple languages (English, Spanish, and common words)
       const stopWords = new Set([
+        // English
         'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
         'from', 'up', 'about', 'into', 'through', 'during', 'including', 'against', 'among',
-        'throughout', 'despite', 'towards', 'upon', 'concerning', 'to', 'of', 'in', 'for', 'on',
-        'with', 'at', 'by', 'from', 'up', 'about', 'into', 'through', 'during', 'i', 'me', 'my',
+        'throughout', 'despite', 'towards', 'upon', 'concerning', 'i', 'me', 'my',
         'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves',
         'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself',
         'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this',
         'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have',
         'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'will', 'would', 'should', 'could',
-        'may', 'might', 'must', 'can', 'cannot', 'could', 'would', 'should', 'may', 'might',
+        'may', 'might', 'must', 'can', 'cannot',
+        // Spanish
+        'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'o', 'pero', 'en', 'de', 'a',
+        'para', 'por', 'con', 'sin', 'sobre', 'entre', 'hasta', 'desde', 'durante', 'mediante',
+        'yo', 'me', 'mi', 'mío', 'mía', 'míos', 'mías', 'nosotros', 'nosotras', 'nuestro', 'nuestra',
+        'tú', 'te', 'ti', 'tu', 'tuyo', 'tuya', 'tuyos', 'tuyas', 'él', 'ella', 'ello', 'le', 'lo',
+        'la', 'les', 'los', 'su', 'suyo', 'suyos', 'suyas', 'ese', 'esa', 'eso', 'esos', 'esas',
+        'este', 'esta', 'esto', 'estos', 'estas', 'aquel', 'aquella', 'aquello', 'aquellos', 'aquellas',
+        'soy', 'eres', 'es', 'somos', 'sois', 'son', 'era', 'eras', 'éramos', 'erais', 'eran',
+        'fui', 'fuiste', 'fue', 'fuimos', 'fuisteis', 'fueron', 'ser', 'estar', 'tener', 'haber',
+        'hacer', 'poder', 'deber', 'querer', 'saber', 'decir', 'ir', 'venir', 'ver', 'dar',
       ]);
 
       allEntries.forEach(entry => {
         if (entry.content) {
+          // Use Unicode-aware regex to preserve accented characters
+          // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
+          // This preserves Spanish, Chinese, and other accented characters
           const words = entry.content
             .toLowerCase()
-            .replace(/[^\w\s]/g, ' ')
+            // Remove punctuation but preserve accented letters and numbers
+            .replace(/[^\p{L}\p{N}\s]/gu, ' ')
             .split(/\s+/)
             .filter((word: string) => word.length > 3 && !stopWords.has(word));
           

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { supabase } from '../../../lib/supabase';
 import { Calendar } from 'lucide-react';
 
@@ -14,6 +15,7 @@ interface UpcomingDeadline {
 
 export default function UpcomingDeadlines() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<UpcomingDeadline[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,9 +96,9 @@ export default function UpcomingDeadlines() {
     const deadlineDate = new Date(date);
     deadlineDate.setHours(0, 0, 0, 0);
 
-    if (deadlineDate.getTime() === today.getTime()) return 'Today';
-    if (deadlineDate.getTime() === tomorrow.getTime()) return 'Tomorrow';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (deadlineDate.getTime() === today.getTime()) return t('tracking.today');
+    if (deadlineDate.getTime() === tomorrow.getTime()) return t('tracking.tomorrow');
+    return date.toLocaleDateString(language === 'zh' ? 'zh-CN' : language === 'es' ? 'es-ES' : 'en-US', { month: 'short', day: 'numeric' });
   };
 
   const getPriorityColor = (priority: string) => {
@@ -138,13 +140,13 @@ export default function UpcomingDeadlines() {
             <Calendar className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-heading font-bold text-text-primary">Upcoming Deadlines</h2>
-            <p className="text-sm text-text-tertiary">What needs your attention soon</p>
+            <h2 className="text-xl font-heading font-bold text-text-primary">{t('tracking.upcomingDeadlinesTitle')}</h2>
+            <p className="text-sm text-text-tertiary">{t('tracking.whatNeedsAttention')}</p>
           </div>
         </div>
         {upcomingDeadlines.length > 0 && (
           <div className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-sm font-bold border border-red-200 dark:border-red-800">
-            {upcomingDeadlines.length} {upcomingDeadlines.length === 1 ? 'deadline' : 'deadlines'}
+            {upcomingDeadlines.length} {upcomingDeadlines.length === 1 ? t('tracking.deadline') : t('tracking.deadlines')}
           </div>
         )}
       </div>
@@ -152,14 +154,14 @@ export default function UpcomingDeadlines() {
         {upcomingDeadlines.length === 0 ? (
           <div className="text-center py-8 text-text-tertiary">
             <Calendar className="w-12 h-12 mx-auto mb-3 opacity-20" />
-            <p className="text-sm font-medium">No upcoming deadlines</p>
-            <p className="text-xs mt-1">You're all caught up!</p>
+            <p className="text-sm font-medium">{t('tracking.noUpcomingDeadlines')}</p>
+            <p className="text-xs mt-1">{t('tracking.allCaughtUp')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {upcomingDeadlines.map((deadline) => {
-              const isToday = formatDeadlineDate(deadline.due_date) === 'Today';
-              const isTomorrow = formatDeadlineDate(deadline.due_date) === 'Tomorrow';
+              const isToday = formatDeadlineDate(deadline.due_date) === t('tracking.today');
+              const isTomorrow = formatDeadlineDate(deadline.due_date) === t('tracking.tomorrow');
               
               return (
                 <div
@@ -182,7 +184,7 @@ export default function UpcomingDeadlines() {
                         : 'bg-blue-500 dark:bg-blue-600 text-white'
                     }`}
                   >
-                    {isToday ? 'Today' : isTomorrow ? 'Tmrw' : formatDeadlineDate(deadline.due_date)}
+                    {isToday ? t('tracking.today') : isTomorrow ? t('tracking.tmrw') : formatDeadlineDate(deadline.due_date)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-text-primary truncate mb-1">{deadline.title}</p>
@@ -192,10 +194,10 @@ export default function UpcomingDeadlines() {
                           deadline.priority
                         )}`}
                       >
-                        {deadline.priority}
+                        {t(`tracking.${deadline.priority}`)}
                       </span>
                       <span className="text-[10px] text-text-tertiary uppercase tracking-wide">
-                        {deadline.type}
+                        {t(`tracking.${deadline.type}`)}
                       </span>
                     </div>
                   </div>

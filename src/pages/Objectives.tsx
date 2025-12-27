@@ -299,6 +299,7 @@ export default function Objectives() {
         <div className={`${activeTab === 'goals' ? 'flex' : 'hidden'} lg:flex flex-1 lg:min-w-[240px] xl:min-w-[260px] 2xl:min-w-[280px] 3xl:min-w-[320px] max-w-full shrink`}>
           <GoalColumn
             goals={state.goals}
+            objectives={state.objectives}
             visions={state.visions}
             selectedVisionId={state.selectionPath.visionId}
             selectedGoalId={state.selectionPath.goalId}

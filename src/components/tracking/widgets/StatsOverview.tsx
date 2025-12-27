@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { supabase } from '../../../lib/supabase';
 import { CheckCircle2, Target, TrendingUp, Activity } from 'lucide-react';
 
 export default function StatsOverview() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [stats, setStats] = useState({
     completedTasks: 0,
     totalTasks: 0,
@@ -107,10 +109,10 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-green-600 mb-2">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="font-bold text-sm">Completed Tasks</span>
+            <span className="font-bold text-sm">{t('tracking.completedTasks')}</span>
           </div>
           <div className="text-3xl font-heading font-bold text-text-primary">{stats.completedTasks}</div>
-          <div className="text-xs text-text-tertiary mt-1">Total tasks finished</div>
+          <div className="text-xs text-text-tertiary mt-1">{t('tracking.totalTasksFinished')}</div>
         </div>
       </div>
 
@@ -121,7 +123,7 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-blue-600 mb-2">
             <Target className="w-5 h-5" />
-            <span className="font-bold text-sm">Completion Rate</span>
+            <span className="font-bold text-sm">{t('tracking.completionRate')}</span>
           </div>
           <div className="text-3xl font-heading font-bold text-text-primary">{stats.completionRate}%</div>
           <div className="w-full bg-blue-100 rounded-full h-1.5 mt-2 overflow-hidden">
@@ -140,10 +142,10 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-orange-600 mb-2">
             <TrendingUp className="w-5 h-5" />
-            <span className="font-bold text-sm">Current Streak</span>
+            <span className="font-bold text-sm">{t('tracking.currentStreak')}</span>
           </div>
-          <div className="text-3xl font-heading font-bold text-text-primary">{stats.streak} <span className="text-lg font-normal text-text-tertiary">days</span></div>
-          <div className="text-xs text-text-tertiary mt-1">Keep it up!</div>
+          <div className="text-3xl font-heading font-bold text-text-primary">{stats.streak} <span className="text-lg font-normal text-text-tertiary">{t('tracking.days')}</span></div>
+          <div className="text-xs text-text-tertiary mt-1">{t('tracking.keepItUp')}</div>
         </div>
       </div>
 
@@ -154,10 +156,10 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-purple-600 mb-2">
             <Activity className="w-5 h-5" />
-            <span className="font-bold text-sm">Active Goals</span>
+            <span className="font-bold text-sm">{t('tracking.activeGoals')}</span>
           </div>
           <div className="text-3xl font-heading font-bold text-text-primary">{stats.activeGoals}</div>
-          <div className="text-xs text-text-tertiary mt-1">In progress</div>
+          <div className="text-xs text-text-tertiary mt-1">{t('tracking.inProgress')}</div>
         </div>
       </div>
     </div>

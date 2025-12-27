@@ -1,4 +1,5 @@
 import { Lightbulb, Network, Clock } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { useCreativeData } from '../../../hooks/useCreativeData';
 
 interface CreativeStatsProps {
@@ -7,6 +8,7 @@ interface CreativeStatsProps {
 }
 
 export default function CreativeStats({ selectedDate, viewMode }: CreativeStatsProps) {
+  const { t } = useLanguage();
   const { stats, loading } = useCreativeData(selectedDate, viewMode);
 
   const formatTime = (minutes: number) => {
@@ -35,11 +37,11 @@ export default function CreativeStats({ selectedDate, viewMode }: CreativeStatsP
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 mb-2">
             <Lightbulb className="w-5 h-5" />
-            <span className="font-bold text-sm">Ideas Generated</span>
+            <span className="font-bold text-sm">{t('tracking.ideasGenerated')}</span>
           </div>
           <div className="text-3xl font-heading font-bold text-text-primary">{stats.totalIdeas}</div>
           <div className="text-xs text-text-tertiary mt-1">
-            {stats.ideasThisPeriod} this {viewMode === 'daily' ? 'day' : viewMode === 'weekly' ? 'week' : 'month'}
+            {stats.ideasThisPeriod} {viewMode === 'daily' ? t('tracking.thisDay') : viewMode === 'weekly' ? t('tracking.thisWeek') : t('tracking.thisMonth')}
           </div>
         </div>
       </div>
@@ -51,11 +53,11 @@ export default function CreativeStats({ selectedDate, viewMode }: CreativeStatsP
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 mb-2">
             <Network className="w-5 h-5" />
-            <span className="font-bold text-sm">Mind Maps</span>
+            <span className="font-bold text-sm">{t('tracking.mindMaps')}</span>
           </div>
           <div className="text-3xl font-heading font-bold text-text-primary">{stats.totalMindMaps}</div>
           <div className="text-xs text-text-tertiary mt-1">
-            {stats.mindMapsThisPeriod} this {viewMode === 'daily' ? 'day' : viewMode === 'weekly' ? 'week' : 'month'}
+            {stats.mindMapsThisPeriod} {viewMode === 'daily' ? t('tracking.thisDay') : viewMode === 'weekly' ? t('tracking.thisWeek') : t('tracking.thisMonth')}
           </div>
         </div>
       </div>
@@ -67,11 +69,11 @@ export default function CreativeStats({ selectedDate, viewMode }: CreativeStatsP
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
             <Clock className="w-5 h-5" />
-            <span className="font-bold text-sm">Time Spent</span>
+            <span className="font-bold text-sm">{t('tracking.timeSpent')}</span>
           </div>
           <div className="text-3xl font-heading font-bold text-text-primary">{formatTime(stats.totalTimeSpent)}</div>
           <div className="text-xs text-text-tertiary mt-1">
-            {formatTime(stats.timeSpentThisPeriod)} this {viewMode === 'daily' ? 'day' : viewMode === 'weekly' ? 'week' : 'month'}
+            {formatTime(stats.timeSpentThisPeriod)} {viewMode === 'daily' ? t('tracking.thisDay') : viewMode === 'weekly' ? t('tracking.thisWeek') : t('tracking.thisMonth')}
           </div>
         </div>
       </div>

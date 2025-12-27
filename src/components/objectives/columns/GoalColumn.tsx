@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
-import { Vision, Goal } from '../types';
+import { supabase } from '../../../lib/supabase';
+import { Vision, Goal, Objective } from '../types';
 import { GoalCard } from '../cards';
 
 interface GoalColumnProps {
   // All goals (we'll filter/display appropriately)
   goals: Goal[];
+  objectives: Objective[]; // All objectives (for displaying in goal cards)
   visions: Vision[];
   selectedVisionId: string | null;
   selectedGoalId: string | null;
@@ -26,6 +28,7 @@ interface GoalColumnProps {
 
 export function GoalColumn({
   goals,
+  objectives,
   visions,
   selectedVisionId,
   selectedGoalId,
@@ -43,6 +46,8 @@ export function GoalColumn({
 }: GoalColumnProps) {
   const { t } = useLanguage();
   const [showOrphaned, setShowOrphaned] = useState(true);
+  const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
+  const [goalObjectives, setGoalObjectives] = useState<Record<string, Objective[]>>({});
 
   // Split goals into vision-attached and orphaned
   // When filtering by family, we need to show all goals (not pre-filtered by selectedVisionId)
@@ -93,7 +98,68 @@ export function GoalColumn({
     await onDeleteGoal(id, !deleteAll); // If deleteAll is false, orphan descendants
   };
 
+  // Calculate objective counts for each goal
+  const objectiveCounts: Record<string, { total: number; completed: number }> = {};
+  goals.forEach(goal => {
+    const goalObjs = objectives.filter(obj => obj.goal_id === goal.id);
+    objectiveCounts[goal.id] = {
+      total: goalObjs.length,
+      completed: goalObjs.filter(obj => obj.status === 'completed').length,
+    };
+  });
+
+  const toggleGoalExpanded = async (goalId: string) => {
+    const newExpanded = new Set(expandedGoals);
+
+    if (newExpanded.has(goalId)) {
+      newExpanded.delete(goalId);
+    } else {
+      newExpanded.add(goalId);
+      // Load objectives for this goal if not already loaded
+      if (!goalObjectives[goalId]) {
+        const goalObjs = objectives.filter(obj => obj.goal_id === goalId);
+        setGoalObjectives(prev => ({
+          ...prev,
+          [goalId]: goalObjs
+        }));
+      }
+    }
+
+    setExpandedGoals(newExpanded);
+  };
+
+  // Clear expanded state when selected vision changes
+  useEffect(() => {
+    setExpandedGoals(new Set());
+    setGoalObjectives({});
+  }, [selectedVisionId]);
+
   const totalCount = displayVisionGoals.length + (showOrphaned ? visibleOrphanedGoals.length : 0);
+
+  const renderGoalCard = (goal: Goal) => (
+    <GoalCard
+      key={goal.id}
+      goal={goal}
+      visions={visions}
+      objectives={objectives}
+      isSelected={selectedGoalId === goal.id}
+      isInFamily={isInSelectedFamily('goal', goal.id)}
+      isEditing={editingGoalId === goal.id}
+      onSelect={() => onSelectGoal(goal)}
+      onStartEdit={() => setEditingGoalId(goal.id)}
+      onCancelEdit={() => setEditingGoalId(null)}
+      onSave={async (updates) => {
+        await onUpdateGoal(goal.id, updates);
+        setEditingGoalId(null);
+      }}
+      onDelete={() => handleDelete(goal.id)}
+      onTitleClick={(e) => onTitleClick('goal', goal.title, goal.description, e)}
+      objectiveCount={objectiveCounts[goal.id]}
+      isExpanded={expandedGoals.has(goal.id)}
+      onToggleExpand={() => toggleGoalExpanded(goal.id)}
+      goalObjectives={goalObjectives[goal.id] || []}
+    />
+  );
 
   return (
     <div className="flex-1 lg:min-w-[240px] xl:min-w-[260px] 2xl:min-w-[280px] 3xl:min-w-[320px] flex flex-col glass-card border border-white/40 max-w-full w-full shrink">
@@ -129,25 +195,7 @@ export function GoalColumn({
             </h3>
             <div className="space-y-2">
               {displayVisionGoals.length > 0 ? (
-                displayVisionGoals.map((goal) => (
-                  <GoalCard
-                    key={goal.id}
-                    goal={goal}
-                    visions={visions}
-                    isSelected={selectedGoalId === goal.id}
-                    isInFamily={isInSelectedFamily('goal', goal.id)}
-                    isEditing={editingGoalId === goal.id}
-                    onSelect={() => onSelectGoal(goal)}
-                    onStartEdit={() => setEditingGoalId(goal.id)}
-                    onCancelEdit={() => setEditingGoalId(null)}
-                    onSave={async (updates) => {
-                      await onUpdateGoal(goal.id, updates);
-                      setEditingGoalId(null);
-                    }}
-                    onDelete={() => handleDelete(goal.id)}
-                    onTitleClick={(e) => onTitleClick('goal', goal.title, goal.description, e)}
-                  />
-                ))
+                displayVisionGoals.map(renderGoalCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
                   {t('objectives.noGoalsYet')}
@@ -160,25 +208,7 @@ export function GoalColumn({
         {/* No vision selected - show all non-orphan goals */}
         {!selectedVision && displayVisionGoals.length > 0 && (
           <div className="space-y-2">
-            {displayVisionGoals.map((goal) => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                visions={visions}
-                isSelected={selectedGoalId === goal.id}
-                isInFamily={isInSelectedFamily('goal', goal.id)}
-                isEditing={editingGoalId === goal.id}
-                onSelect={() => onSelectGoal(goal)}
-                onStartEdit={() => setEditingGoalId(goal.id)}
-                onCancelEdit={() => setEditingGoalId(null)}
-                onSave={async (updates) => {
-                  await onUpdateGoal(goal.id, updates);
-                  setEditingGoalId(null);
-                }}
-                onDelete={() => handleDelete(goal.id)}
-                onTitleClick={(e) => onTitleClick('goal', goal.title, goal.description, e)}
-              />
-            ))}
+            {displayVisionGoals.map(renderGoalCard)}
           </div>
         )}
 
@@ -194,25 +224,7 @@ export function GoalColumn({
           {showOrphaned && (
             <div className="space-y-2">
               {visibleOrphanedGoals.length > 0 ? (
-                visibleOrphanedGoals.map((goal) => (
-                  <GoalCard
-                    key={goal.id}
-                    goal={goal}
-                    visions={visions}
-                    isSelected={selectedGoalId === goal.id}
-                    isInFamily={isInSelectedFamily('goal', goal.id)}
-                    isEditing={editingGoalId === goal.id}
-                    onSelect={() => onSelectGoal(goal)}
-                    onStartEdit={() => setEditingGoalId(goal.id)}
-                    onCancelEdit={() => setEditingGoalId(null)}
-                    onSave={async (updates) => {
-                      await onUpdateGoal(goal.id, updates);
-                      setEditingGoalId(null);
-                    }}
-                    onDelete={() => handleDelete(goal.id)}
-                    onTitleClick={(e) => onTitleClick('goal', goal.title, goal.description, e)}
-                  />
-                ))
+                visibleOrphanedGoals.map(renderGoalCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
                   {t('objectives.noOrphanedGoals')}

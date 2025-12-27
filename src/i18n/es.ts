@@ -240,6 +240,52 @@ export const es = {
     thu: 'Jue',
     fri: 'Vie',
     sat: 'Sáb',
+    // StatsOverview widget
+    completedTasks: 'Tareas Completadas',
+    totalTasksFinished: 'Total de tareas finalizadas',
+    completionRate: 'Tasa de Completación',
+    currentStreak: 'Racha Actual',
+    days: 'días',
+    keepItUp: '¡Sigue así!',
+    activeGoals: 'Metas Activas',
+    inProgress: 'En progreso',
+    // RecurringTasksGrid widget
+    dailyHabits: 'Hábitos Diarios',
+    completed: 'Completado',
+    // UpcomingDeadlines widget
+    upcomingDeadlinesTitle: 'Próximas Fechas Límite',
+    whatNeedsAttention: 'Lo que necesita tu atención pronto',
+    deadline: 'fecha límite',
+    deadlines: 'fechas límite',
+    today: 'Hoy',
+    tomorrow: 'Mañana',
+    tmrw: 'Mañ',
+    noUpcomingDeadlines: 'No hay fechas límite próximas',
+    allCaughtUp: '¡Estás al día!',
+    // CreativeStats widget
+    ideasGenerated: 'Ideas Generadas',
+    thisDay: 'este día',
+    thisWeek: 'esta semana',
+    thisMonth: 'este mes',
+    mindMaps: 'Mapas Mentales',
+    timeSpent: 'Tiempo Dedicado',
+    // ActivityChart widget
+    activityOverTime: 'Actividad a lo Largo del Tiempo',
+    ideas: 'Ideas',
+    timeActive: 'Tiempo Activo',
+    ideasAbbrev: 'I:',
+    mindMapsAbbrev: 'M:',
+    // WordCloud widget
+    wordDensity: 'Densidad de Palabras',
+    noJournalEntriesFound: 'No se encontraron entradas de diario',
+    startJournalingToSeeFrequency: 'Comienza a escribir en el diario para ver la frecuencia de palabras',
+    occurrences: 'apariciones',
+    // EmotionChart widget
+    emotionsOverTime: 'Emociones a lo Largo del Tiempo',
+    last3Months: 'Últimos 3 meses',
+    noEmotionDataFound: 'No se encontraron datos de emociones',
+    analyzeJournalToTrackEmotions: 'Analiza las entradas del diario para rastrear emociones',
+    emotionTimeline: 'Línea de Tiempo de Emociones',
   },
   // Map/Kanban
   map: {

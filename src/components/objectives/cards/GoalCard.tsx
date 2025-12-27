@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X, Link2 } from 'lucide-react';
-import { Goal, Vision } from '../types';
+import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, Flag } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { Goal, Vision, Objective } from '../types';
 import { getStatusIcon, formatLastEdited } from '../utils';
 
 interface GoalCardProps {
   goal: Goal;
   visions: Vision[];
+  objectives: Objective[]; // All objectives (for dropdown in card edit)
   isSelected: boolean;
   isInFamily: boolean;
   isEditing: boolean;
@@ -16,11 +18,18 @@ interface GoalCardProps {
   onDelete: () => void;
   onTitleClick: (e: React.MouseEvent) => void;
   onDragStart?: (e: React.DragEvent) => void;
+  // Objective count display
+  objectiveCount?: { total: number; completed: number };
+  // Expandable objectives
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  goalObjectives?: Objective[];
 }
 
 export function GoalCard({
   goal,
   visions,
+  objectives,
   isSelected,
   isInFamily,
   isEditing,
@@ -31,7 +40,12 @@ export function GoalCard({
   onDelete,
   onTitleClick,
   onDragStart,
+  objectiveCount,
+  isExpanded = false,
+  onToggleExpand,
+  goalObjectives = [],
 }: GoalCardProps) {
+  const { t } = useLanguage();
   const [editTitle, setEditTitle] = useState(goal.title);
   const [editDescription, setEditDescription] = useState(goal.description);
   const [editStatus, setEditStatus] = useState(goal.status);
@@ -196,6 +210,63 @@ export function GoalCard({
             <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-orange-500 bg-orange-50 w-fit px-1.5 py-0.5 rounded border border-orange-100">
               <Link2 className="w-3 h-3" />
               Orphaned
+            </div>
+          )}
+
+          {/* Objective count progress */}
+          {objectiveCount && objectiveCount.total > 0 && (
+            <div className="mt-3 pt-3 border-t border-border-secondary/50">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand?.();
+                }}
+                className="w-full flex items-center justify-between text-xs hover:bg-white/50 dark:bg-white/5 -mx-1 px-2 py-1 rounded transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  <span className="text-text-secondary font-medium">{t('objectives.objective')}</span>
+                </div>
+                <span className="text-text-tertiary">
+                  {objectiveCount.completed} / {objectiveCount.total}
+                </span>
+              </button>
+              <div className="mt-2 w-full bg-border-secondary rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-500 ${
+                    objectiveCount.completed === objectiveCount.total
+                      ? 'bg-green-500'
+                      : 'bg-blue-500'
+                  }`}
+                  style={{
+                    width: `${(objectiveCount.completed / objectiveCount.total) * 100}%`,
+                  }}
+                />
+              </div>
+
+              {isExpanded && goalObjectives.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {goalObjectives.map((objective) => (
+                    <div
+                      key={objective.id}
+                      className="flex items-start gap-2 text-xs bg-white/50 dark:bg-white/5 p-2 rounded-lg border border-white/50"
+                    >
+                      <div className="mt-0.5">
+                        {objective.status === 'completed' ? (
+                          <Flag className="w-3.5 h-3.5 text-green-600" />
+                        ) : (
+                          <Flag className="w-3.5 h-3.5 text-text-tertiary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium truncate ${objective.status === 'completed' ? 'text-text-tertiary line-through' : 'text-text-secondary'}`}>
+                          {objective.title}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </>

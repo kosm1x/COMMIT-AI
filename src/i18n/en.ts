@@ -240,6 +240,52 @@ export const en = {
     thu: 'Thu',
     fri: 'Fri',
     sat: 'Sat',
+    // StatsOverview widget
+    completedTasks: 'Completed Tasks',
+    totalTasksFinished: 'Total tasks finished',
+    completionRate: 'Completion Rate',
+    currentStreak: 'Current Streak',
+    days: 'days',
+    keepItUp: 'Keep it up!',
+    activeGoals: 'Active Goals',
+    inProgress: 'In progress',
+    // RecurringTasksGrid widget
+    dailyHabits: 'Daily Habits',
+    completed: 'Completed',
+    // UpcomingDeadlines widget
+    upcomingDeadlinesTitle: 'Upcoming Deadlines',
+    whatNeedsAttention: 'What needs your attention soon',
+    deadline: 'deadline',
+    deadlines: 'deadlines',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    tmrw: 'Tmrw',
+    noUpcomingDeadlines: 'No upcoming deadlines',
+    allCaughtUp: "You're all caught up!",
+    // CreativeStats widget
+    ideasGenerated: 'Ideas Generated',
+    thisDay: 'this day',
+    thisWeek: 'this week',
+    thisMonth: 'this month',
+    mindMaps: 'Mind Maps',
+    timeSpent: 'Time Spent',
+    // ActivityChart widget
+    activityOverTime: 'Activity Over Time',
+    ideas: 'Ideas',
+    timeActive: 'Time Active',
+    ideasAbbrev: 'I:',
+    mindMapsAbbrev: 'M:',
+    // WordCloud widget
+    wordDensity: 'Word Density',
+    noJournalEntriesFound: 'No journal entries found',
+    startJournalingToSeeFrequency: 'Start journaling to see word frequency',
+    occurrences: 'occurrences',
+    // EmotionChart widget
+    emotionsOverTime: 'Emotions Over Time',
+    last3Months: 'Last 3 months',
+    noEmotionDataFound: 'No emotion data found',
+    analyzeJournalToTrackEmotions: 'Analyze journal entries to track emotions',
+    emotionTimeline: 'Emotion Timeline',
   },
   // Map/Kanban
   map: {
