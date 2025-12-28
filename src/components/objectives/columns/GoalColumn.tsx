@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
-import { supabase } from '../../../lib/supabase';
 import { Vision, Goal, Objective } from '../types';
 import { GoalCard } from '../cards';
 

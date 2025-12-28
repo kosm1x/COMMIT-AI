@@ -143,18 +143,12 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (data) setTasks(data);
   }, [userId]);
 
-  const loadTaskCounts = useCallback(async () => {
-    if (!userId || objectives.length === 0) return;
-    const objectiveIds = objectives.map(o => o.id);
-    const { data } = await supabase
-      .from('tasks')
-      .select('objective_id, status')
-      .in('objective_id', objectiveIds)
-      .eq('user_id', userId);
-
-    if (data) {
-      const counts: Record<string, { total: number; completed: number }> = {};
-      data.forEach((task: { objective_id: string; status: string }) => {
+  // Compute task counts locally from tasks array (no extra API call needed)
+  // This is more efficient since we already have all tasks loaded
+  const computedTaskCounts = useMemo(() => {
+    const counts: Record<string, { total: number; completed: number }> = {};
+    tasks.forEach(task => {
+      if (task.objective_id) {
         if (!counts[task.objective_id]) {
           counts[task.objective_id] = { total: 0, completed: 0 };
         }
@@ -162,10 +156,15 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         if (task.status === 'completed') {
           counts[task.objective_id].completed++;
         }
-      });
-      setTaskCounts(counts);
-    }
-  }, [userId, objectives]);
+      }
+    });
+    return counts;
+  }, [tasks]);
+  
+  // Keep the loadTaskCounts for backwards compatibility, but it now just syncs computed counts
+  const loadTaskCounts = useCallback(async () => {
+    setTaskCounts(computedTaskCounts);
+  }, [computedTaskCounts]);
 
   const reloadAll = useCallback(async () => {
     setLoading(true);
@@ -183,12 +182,10 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     }
   }, [userId, reloadAll]);
 
-  // Load task counts when objectives change
+  // Sync task counts when computed counts change
   useEffect(() => {
-    if (objectives.length > 0) {
-      loadTaskCounts();
-    }
-  }, [objectives, loadTaskCounts]);
+    setTaskCounts(computedTaskCounts);
+  }, [computedTaskCounts]);
 
   // ===== RESOLVED SELECTIONS =====
   const selectedVision = useMemo(() => 
@@ -227,6 +224,26 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     [tasks]
   );
 
+  // ===== LOOKUP MAPS FOR O(1) ACCESS =====
+  // These maps enable efficient lookups in isInSelectedFamily and other computed properties
+  const goalsById = useMemo(() => {
+    const map = new Map<string, Goal>();
+    goals.forEach(g => map.set(g.id, g));
+    return map;
+  }, [goals]);
+
+  const objectivesById = useMemo(() => {
+    const map = new Map<string, Objective>();
+    objectives.forEach(o => map.set(o.id, o));
+    return map;
+  }, [objectives]);
+
+  const tasksById = useMemo(() => {
+    const map = new Map<string, Task>();
+    tasks.forEach(t => map.set(t.id, t));
+    return map;
+  }, [tasks]);
+
   // ===== VISIBILITY LOGIC =====
   // Goals visible: belongs to selected vision OR is orphan (when no vision selected or showing orphans section)
   const getVisibleGoals = useCallback(() => {
@@ -253,6 +270,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [tasks, selectionPath.objectiveId]);
 
   // ===== FAMILY TREE HELPERS =====
+  // Uses O(1) lookup maps instead of O(n) .find() calls for better performance
   const isInSelectedFamily = useCallback((type: 'vision' | 'goal' | 'objective' | 'task', id: string): boolean => {
     // If nothing is selected, nothing is in a family
     if (!selectionPath.visionId && !selectionPath.goalId && !selectionPath.objectiveId && !selectionPath.taskId) {
@@ -266,24 +284,24 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         if (selectionPath.visionId === id) return true;
         // 2. Selected goal belongs to it
         if (selectionPath.goalId) {
-          const goal = goals.find(g => g.id === selectionPath.goalId);
+          const goal = goalsById.get(selectionPath.goalId);
           if (goal?.vision_id === id) return true;
         }
         // 3. Selected objective's goal belongs to it
         if (selectionPath.objectiveId) {
-          const obj = objectives.find(o => o.id === selectionPath.objectiveId);
+          const obj = objectivesById.get(selectionPath.objectiveId);
           if (obj?.goal_id) {
-            const goal = goals.find(g => g.id === obj.goal_id);
+            const goal = goalsById.get(obj.goal_id);
             if (goal?.vision_id === id) return true;
           }
         }
         // 4. Selected task's objective's goal belongs to it
         if (selectionPath.taskId) {
-          const task = tasks.find(t => t.id === selectionPath.taskId);
+          const task = tasksById.get(selectionPath.taskId);
           if (task?.objective_id) {
-            const obj = objectives.find(o => o.id === task.objective_id);
+            const obj = objectivesById.get(task.objective_id);
             if (obj?.goal_id) {
-              const goal = goals.find(g => g.id === obj.goal_id);
+              const goal = goalsById.get(obj.goal_id);
               if (goal?.vision_id === id) return true;
             }
           }
@@ -294,19 +312,19 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         if (selectionPath.goalId === id) return true;
         // Goal is in family if selected vision contains it
         if (selectionPath.visionId) {
-          const goal = goals.find(g => g.id === id);
+          const goal = goalsById.get(id);
           if (goal?.vision_id === selectionPath.visionId) return true;
         }
         // Or if selected objective belongs to it
         if (selectionPath.objectiveId) {
-          const obj = objectives.find(o => o.id === selectionPath.objectiveId);
+          const obj = objectivesById.get(selectionPath.objectiveId);
           if (obj?.goal_id === id) return true;
         }
         // Or if selected task's objective belongs to it
         if (selectionPath.taskId) {
-          const task = tasks.find(t => t.id === selectionPath.taskId);
+          const task = tasksById.get(selectionPath.taskId);
           if (task?.objective_id) {
-            const obj = objectives.find(o => o.id === task.objective_id);
+            const obj = objectivesById.get(task.objective_id);
             if (obj?.goal_id === id) return true;
           }
         }
@@ -316,12 +334,12 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         if (selectionPath.objectiveId === id) return true;
         
         // Find this objective and trace its ancestry
-        const obj = objectives.find(o => o.id === id);
+        const obj = objectivesById.get(id);
         if (!obj) return false;
         
         // Check if selected vision is this objective's ancestor
         if (selectionPath.visionId && obj.goal_id) {
-          const parentGoal = goals.find(g => g.id === obj.goal_id);
+          const parentGoal = goalsById.get(obj.goal_id);
           if (parentGoal?.vision_id === selectionPath.visionId) return true;
         }
         
@@ -332,7 +350,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         
         // Check if selected task is this objective's descendant
         if (selectionPath.taskId) {
-          const task = tasks.find(t => t.id === selectionPath.taskId);
+          const task = tasksById.get(selectionPath.taskId);
           if (task?.objective_id === id) return true;
         }
         
@@ -342,7 +360,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         if (selectionPath.taskId === id) return true;
         
         // Find this task and trace its ancestry
-        const task = tasks.find(t => t.id === id);
+        const task = tasksById.get(id);
         if (!task) return false;
         
         // Check if selected objective is this task's direct parent
@@ -352,15 +370,15 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         
         // Check if selected goal is this task's ancestor (objective → goal)
         if (selectionPath.goalId && task.objective_id) {
-          const parentObjective = objectives.find(o => o.id === task.objective_id);
+          const parentObjective = objectivesById.get(task.objective_id);
           if (parentObjective?.goal_id === selectionPath.goalId) return true;
         }
         
         // Check if selected vision is this task's ancestor (objective → goal → vision)
         if (selectionPath.visionId && task.objective_id) {
-          const parentObjective = objectives.find(o => o.id === task.objective_id);
+          const parentObjective = objectivesById.get(task.objective_id);
           if (parentObjective?.goal_id) {
-            const parentGoal = goals.find(g => g.id === parentObjective.goal_id);
+            const parentGoal = goalsById.get(parentObjective.goal_id);
             if (parentGoal?.vision_id === selectionPath.visionId) return true;
           }
         }
@@ -370,7 +388,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
       default:
         return false;
     }
-  }, [selectionPath, goals, objectives, tasks]);
+  }, [selectionPath, goalsById, objectivesById, tasksById]);
 
   // ===== SELECTION ACTIONS =====
   const selectVision = useCallback((vision: Vision | null) => {
@@ -450,14 +468,19 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [userId, loadVisions]);
 
   const updateVision = useCallback(async (id: string, updates: Partial<Vision>): Promise<boolean> => {
+    // Optimistic update: apply changes immediately
+    const previousVisions = visions;
+    setVisions(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
+    
     const { error } = await supabase.from('visions').update(updates).eq('id', id);
     if (error) {
       console.error('Error updating vision:', error);
+      // Rollback on error
+      setVisions(previousVisions);
       return false;
     }
-    await loadVisions();
     return true;
-  }, [loadVisions]);
+  }, [visions]);
 
   const getVisionDescendantCounts = useCallback(async (id: string): Promise<{ goals: number; objectives: number; tasks: number }> => {
     if (!userId) return { goals: 0, objectives: 0, tasks: 0 };
@@ -516,8 +539,17 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [userId]);
 
   const deleteVision = useCallback(async (id: string, orphanDescendants: boolean = false): Promise<boolean> => {
+    // Store previous state for rollback
+    const previousVisions = visions;
+    const previousGoals = goals;
+    
+    // Optimistic update: remove vision immediately
+    setVisions(prev => prev.filter(v => v.id !== id));
+    
     if (orphanDescendants) {
-      // Orphan all goals that belong to this vision
+      // Optimistically orphan goals
+      setGoals(prev => prev.map(g => g.vision_id === id ? { ...g, vision_id: null } : g));
+      
       const { error: orphanError } = await supabase
         .from('goals')
         .update({ vision_id: null })
@@ -526,6 +558,9 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
       
       if (orphanError) {
         console.error('Error orphaning goals:', orphanError);
+        // Rollback
+        setVisions(previousVisions);
+        setGoals(previousGoals);
         return false;
       }
     }
@@ -533,17 +568,17 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     const { error } = await supabase.from('visions').delete().eq('id', id);
     if (error) {
       console.error('Error deleting vision:', error);
+      // Rollback
+      setVisions(previousVisions);
+      setGoals(previousGoals);
       return false;
     }
+    
     if (selectionPath.visionId === id) {
       clearSelection();
     }
-    await loadVisions();
-    await loadGoals();
-    await loadObjectives();
-    await loadTasks();
     return true;
-  }, [userId, selectionPath.visionId, clearSelection, loadVisions, loadGoals, loadObjectives, loadTasks]);
+  }, [userId, visions, goals, selectionPath.visionId, clearSelection]);
 
   const updateVisionOrder = useCallback(async (visionId: string, newOrder: number): Promise<void> => {
     await supabase.from('visions').update({ order: newOrder }).eq('id', visionId);
@@ -573,14 +608,19 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [userId, loadGoals]);
 
   const updateGoal = useCallback(async (id: string, updates: Partial<Goal>): Promise<boolean> => {
+    // Optimistic update: apply changes immediately
+    const previousGoals = goals;
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
+    
     const { error } = await supabase.from('goals').update(updates).eq('id', id);
     if (error) {
       console.error('Error updating goal:', error);
+      // Rollback on error
+      setGoals(previousGoals);
       return false;
     }
-    await loadGoals();
     return true;
-  }, [loadGoals]);
+  }, [goals]);
 
   const getGoalDescendantCounts = useCallback(async (id: string): Promise<{ objectives: number; tasks: number }> => {
     if (!userId) return { objectives: 0, tasks: 0 };
@@ -617,8 +657,17 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [userId]);
 
   const deleteGoal = useCallback(async (id: string, orphanDescendants: boolean = false): Promise<boolean> => {
+    // Store previous state for rollback
+    const previousGoals = goals;
+    const previousObjectives = objectives;
+    
+    // Optimistic update: remove goal immediately
+    setGoals(prev => prev.filter(g => g.id !== id));
+    
     if (orphanDescendants) {
-      // Orphan all objectives that belong to this goal
+      // Optimistically orphan objectives
+      setObjectives(prev => prev.map(o => o.goal_id === id ? { ...o, goal_id: null } : o));
+      
       const { error: orphanError } = await supabase
         .from('objectives')
         .update({ goal_id: null })
@@ -627,6 +676,9 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
       
       if (orphanError) {
         console.error('Error orphaning objectives:', orphanError);
+        // Rollback
+        setGoals(previousGoals);
+        setObjectives(previousObjectives);
         return false;
       }
     }
@@ -634,16 +686,17 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     const { error } = await supabase.from('goals').delete().eq('id', id);
     if (error) {
       console.error('Error deleting goal:', error);
+      // Rollback
+      setGoals(previousGoals);
+      setObjectives(previousObjectives);
       return false;
     }
+    
     if (selectionPath.goalId === id) {
       setSelectionPath(prev => ({ ...prev, goalId: null, objectiveId: null, taskId: null }));
     }
-    await loadGoals();
-    await loadObjectives();
-    await loadTasks();
     return true;
-  }, [userId, selectionPath.goalId, loadGoals, loadObjectives, loadTasks]);
+  }, [userId, goals, objectives, selectionPath.goalId]);
 
   const createObjective = useCallback(async (title: string, description: string, priority: string, goalId: string | null, targetDate: string): Promise<Objective | null> => {
     if (!userId) return null;
@@ -669,14 +722,19 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [userId, loadObjectives]);
 
   const updateObjective = useCallback(async (id: string, updates: Partial<Objective>): Promise<boolean> => {
+    // Optimistic update: apply changes immediately
+    const previousObjectives = objectives;
+    setObjectives(prev => prev.map(o => o.id === id ? { ...o, ...updates } : o));
+    
     const { error } = await supabase.from('objectives').update(updates).eq('id', id);
     if (error) {
       console.error('Error updating objective:', error);
+      // Rollback on error
+      setObjectives(previousObjectives);
       return false;
     }
-    await loadObjectives();
     return true;
-  }, [loadObjectives]);
+  }, [objectives]);
 
   const getObjectiveDescendantCounts = useCallback(async (id: string): Promise<{ tasks: number }> => {
     if (!userId) return { tasks: 0 };
@@ -693,8 +751,24 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [userId]);
 
   const deleteObjective = useCallback(async (id: string, orphanDescendants: boolean = false): Promise<boolean> => {
+    // Store previous state for rollback
+    const previousObjectives = objectives;
+    const previousTasks = tasks;
+    
+    // Optimistic update: remove objective immediately
+    setObjectives(prev => prev.filter(o => o.id !== id));
+    
+    // Also remove from task counts
+    setTaskCounts(prev => {
+      const counts = { ...prev };
+      delete counts[id];
+      return counts;
+    });
+    
     if (orphanDescendants) {
-      // Orphan all tasks that belong to this objective
+      // Optimistically orphan tasks
+      setTasks(prev => prev.map(t => t.objective_id === id ? { ...t, objective_id: null } : t));
+      
       const { error: orphanError } = await supabase
         .from('tasks')
         .update({ objective_id: null })
@@ -703,6 +777,9 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
       
       if (orphanError) {
         console.error('Error orphaning tasks:', orphanError);
+        // Rollback
+        setObjectives(previousObjectives);
+        setTasks(previousTasks);
         return false;
       }
     }
@@ -710,15 +787,17 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     const { error } = await supabase.from('objectives').delete().eq('id', id);
     if (error) {
       console.error('Error deleting objective:', error);
+      // Rollback
+      setObjectives(previousObjectives);
+      setTasks(previousTasks);
       return false;
     }
+    
     if (selectionPath.objectiveId === id) {
       setSelectionPath(prev => ({ ...prev, objectiveId: null, taskId: null }));
     }
-    await loadObjectives();
-    await loadTasks();
     return true;
-  }, [userId, selectionPath.objectiveId, loadObjectives, loadTasks]);
+  }, [userId, objectives, tasks, selectionPath.objectiveId]);
 
   const createTask = useCallback(async (title: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean): Promise<Task | null> => {
     if (!userId) return null;
@@ -745,29 +824,82 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [userId, loadTasks, loadTaskCounts]);
 
   const updateTask = useCallback(async (id: string, updates: Partial<Task>): Promise<boolean> => {
+    // Optimistic update: apply changes immediately
+    const previousTasks = tasks;
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    
+    // Optimistically update task counts if status changed
+    if (updates.status !== undefined) {
+      const task = tasks.find(t => t.id === id);
+      if (task?.objective_id) {
+        setTaskCounts(prev => {
+          const counts = { ...prev };
+          const objId = task.objective_id!;
+          if (counts[objId]) {
+            const wasCompleted = task.status === 'completed';
+            const isCompleted = updates.status === 'completed';
+            if (wasCompleted && !isCompleted) {
+              counts[objId] = { ...counts[objId], completed: counts[objId].completed - 1 };
+            } else if (!wasCompleted && isCompleted) {
+              counts[objId] = { ...counts[objId], completed: counts[objId].completed + 1 };
+            }
+          }
+          return counts;
+        });
+      }
+    }
+    
     const { error } = await supabase.from('tasks').update(updates).eq('id', id);
     if (error) {
       console.error('Error updating task:', error);
+      // Rollback on error
+      setTasks(previousTasks);
+      await loadTaskCounts(); // Reload counts on error
       return false;
     }
-    await loadTasks();
-    await loadTaskCounts();
     return true;
-  }, [loadTasks, loadTaskCounts]);
+  }, [tasks, loadTaskCounts]);
 
   const deleteTask = useCallback(async (id: string): Promise<boolean> => {
+    // Store previous state for rollback
+    const previousTasks = tasks;
+    const previousTaskCounts = taskCounts;
+    const taskToDelete = tasks.find(t => t.id === id);
+    
+    // Optimistic update: remove task immediately
+    setTasks(prev => prev.filter(t => t.id !== id));
+    
+    // Update task counts optimistically
+    if (taskToDelete?.objective_id) {
+      setTaskCounts(prev => {
+        const counts = { ...prev };
+        const objId = taskToDelete.objective_id!;
+        if (counts[objId]) {
+          counts[objId] = {
+            total: counts[objId].total - 1,
+            completed: taskToDelete.status === 'completed' 
+              ? counts[objId].completed - 1 
+              : counts[objId].completed,
+          };
+        }
+        return counts;
+      });
+    }
+    
     const { error } = await supabase.from('tasks').delete().eq('id', id);
     if (error) {
       console.error('Error deleting task:', error);
+      // Rollback
+      setTasks(previousTasks);
+      setTaskCounts(previousTaskCounts);
       return false;
     }
+    
     if (selectionPath.taskId === id) {
       setSelectionPath(prev => ({ ...prev, taskId: null }));
     }
-    await loadTasks();
-    await loadTaskCounts();
     return true;
-  }, [selectionPath.taskId, loadTasks, loadTaskCounts]);
+  }, [tasks, taskCounts, selectionPath.taskId]);
 
   const toggleTaskStatus = useCallback(async (task: Task): Promise<void> => {
     if (task.is_recurring) {

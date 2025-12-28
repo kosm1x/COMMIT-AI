@@ -248,10 +248,10 @@ export const zh = {
     days: '天',
     keepItUp: '继续加油！',
     activeGoals: '活跃目标',
-    inProgress: '进行中',
+    inProgressGoals: '进行中',
     // RecurringTasksGrid widget
     dailyHabits: '每日习惯',
-    completed: '已完成',
+    completedLabel: '已完成',
     // UpcomingDeadlines widget
     upcomingDeadlinesTitle: '即将到期的截止日期',
     whatNeedsAttention: '需要你关注的事项',

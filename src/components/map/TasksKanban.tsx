@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
@@ -47,6 +48,7 @@ const getStatusColumns = (t: (key: string) => string) => [
 export default function TasksKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectTask, highlightedItemId }: TasksKanbanProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const STATUS_COLUMNS = getStatusColumns(t);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [objectives, setObjectives] = useState<Objective[]>([]);
@@ -320,7 +322,12 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
                         } ${isSelected ? 'ring-2 ring-teal-500 rounded px-1' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onSelectTask(isSelected ? null : task.id);
+                          navigate('/objectives', { 
+                            state: { 
+                              selectTask: task.id,
+                              timestamp: Date.now() // Ensure each navigation is unique
+                            } 
+                          });
                         }}
                       >
                         {task.title}

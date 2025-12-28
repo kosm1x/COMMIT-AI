@@ -7,7 +7,7 @@ import { getStatusIcon, formatLastEdited } from '../utils';
 interface GoalCardProps {
   goal: Goal;
   visions: Vision[];
-  objectives: Objective[]; // All objectives (for dropdown in card edit)
+  objectives?: Objective[]; // All objectives (for dropdown in card edit) - optional as not currently used
   isSelected: boolean;
   isInFamily: boolean;
   isEditing: boolean;
@@ -29,7 +29,7 @@ interface GoalCardProps {
 export function GoalCard({
   goal,
   visions,
-  objectives,
+  // objectives, // Not used currently but kept in interface for future expansion
   isSelected,
   isInFamily,
   isEditing,

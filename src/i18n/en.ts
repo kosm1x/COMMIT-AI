@@ -248,10 +248,10 @@ export const en = {
     days: 'days',
     keepItUp: 'Keep it up!',
     activeGoals: 'Active Goals',
-    inProgress: 'In progress',
+    inProgressGoals: 'In progress',
     // RecurringTasksGrid widget
     dailyHabits: 'Daily Habits',
-    completed: 'Completed',
+    completedLabel: 'Completed',
     // UpcomingDeadlines widget
     upcomingDeadlinesTitle: 'Upcoming Deadlines',
     whatNeedsAttention: 'What needs your attention soon',

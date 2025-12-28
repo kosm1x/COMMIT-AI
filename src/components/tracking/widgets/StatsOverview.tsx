@@ -159,7 +159,7 @@ export default function StatsOverview() {
             <span className="font-bold text-sm">{t('tracking.activeGoals')}</span>
           </div>
           <div className="text-3xl font-heading font-bold text-text-primary">{stats.activeGoals}</div>
-          <div className="text-xs text-text-tertiary mt-1">{t('tracking.inProgress')}</div>
+          <div className="text-xs text-text-tertiary mt-1">{t('tracking.inProgressGoals')}</div>
         </div>
       </div>
     </div>

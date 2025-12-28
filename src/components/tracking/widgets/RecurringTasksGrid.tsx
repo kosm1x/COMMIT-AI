@@ -171,7 +171,7 @@ export default function RecurringTasksGrid() {
                         }
                         ${isToday ? 'ring-1 ring-text-tertiary ring-offset-1 dark:ring-offset-black' : ''}
                       `}
-                      title={`${date}${isCompleted ? ` - ${t('tracking.completed')}` : ''}`}
+                      title={`${date}${isCompleted ? ` - ${t('tracking.completedLabel')}` : ''}`}
                     />
                   );
                 })}

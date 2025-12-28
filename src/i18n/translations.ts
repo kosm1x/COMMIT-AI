@@ -16,3 +16,4 @@ export const getTranslation = (lang: Language): TranslationKeys => {
   return translations[lang] || translations.en;
 };
 
+

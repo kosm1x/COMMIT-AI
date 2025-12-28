@@ -1,17 +1,29 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import Login from './pages/Login';
-import Journal from './pages/Journal';
-import Objectives from './pages/Objectives';
-import Map from './pages/Map';
-import Ideate from './pages/Ideate';
-import IdeaDetail from './pages/IdeaDetail';
-import Tracking from './pages/Tracking';
 import Layout from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { hasSupabaseConfig } from './lib/supabase';
+
+// Lazy-loaded page components for code splitting
+const Journal = lazy(() => import('./pages/Journal'));
+const Objectives = lazy(() => import('./pages/Objectives'));
+const Map = lazy(() => import('./pages/Map'));
+const Ideate = lazy(() => import('./pages/Ideate'));
+const IdeaDetail = lazy(() => import('./pages/IdeaDetail'));
+const Tracking = lazy(() => import('./pages/Tracking'));
+
+// Lightweight loading fallback for route transitions
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[200px]">
+      <div className="w-8 h-8 border-3 border-accent-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -68,67 +80,71 @@ VITE_GROQ_API_KEY=your_groq_api_key_here`}
   }
 
   return (
-    <Routes>
-      <Route path="/ideate/:id" element={
-        <ErrorBoundary section="Idea Detail">
-          <IdeaDetail />
-        </ErrorBoundary>
-      } />
-      <Route path="/reset-password" element={<Login />} />
-      <Route path="*" element={
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Navigate to="/journal" replace />} />
-            <Route path="/journal" element={
-              <ErrorBoundary section="Journal">
-                <Journal />
-              </ErrorBoundary>
-            } />
-            <Route path="/vision" element={
-              <ErrorBoundary section="Vision">
-                <Objectives />
-              </ErrorBoundary>
-            } />
-            <Route path="/goals" element={
-              <ErrorBoundary section="Goals">
-                <Objectives />
-              </ErrorBoundary>
-            } />
-            <Route path="/objectives" element={
-              <ErrorBoundary section="Objectives">
-                <Objectives />
-              </ErrorBoundary>
-            } />
-            <Route path="/tasks" element={
-              <ErrorBoundary section="Tasks">
-                <Objectives />
-              </ErrorBoundary>
-            } />
-            <Route path="/boards" element={
-              <ErrorBoundary section="Strategic Map">
-                <Map />
-              </ErrorBoundary>
-            } />
-            <Route path="/mindmap" element={
-              <ErrorBoundary section="Mind Map">
-                <Map />
-              </ErrorBoundary>
-            } />
-            <Route path="/ideate" element={
-              <ErrorBoundary section="Ideation">
-                <Ideate />
-              </ErrorBoundary>
-            } />
-            <Route path="/track" element={
-              <ErrorBoundary section="Tracking">
-                <Tracking />
-              </ErrorBoundary>
-            } />
-            <Route path="*" element={<Navigate to="/journal" replace />} />
-          </Routes>
-        </Layout>
-      } />
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/ideate/:id" element={
+          <ErrorBoundary section="Idea Detail">
+            <IdeaDetail />
+          </ErrorBoundary>
+        } />
+        <Route path="/reset-password" element={<Login />} />
+        <Route path="*" element={
+          <Layout>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Navigate to="/journal" replace />} />
+                <Route path="/journal" element={
+                  <ErrorBoundary section="Journal">
+                    <Journal />
+                  </ErrorBoundary>
+                } />
+                <Route path="/vision" element={
+                  <ErrorBoundary section="Vision">
+                    <Objectives />
+                  </ErrorBoundary>
+                } />
+                <Route path="/goals" element={
+                  <ErrorBoundary section="Goals">
+                    <Objectives />
+                  </ErrorBoundary>
+                } />
+                <Route path="/objectives" element={
+                  <ErrorBoundary section="Objectives">
+                    <Objectives />
+                  </ErrorBoundary>
+                } />
+                <Route path="/tasks" element={
+                  <ErrorBoundary section="Tasks">
+                    <Objectives />
+                  </ErrorBoundary>
+                } />
+                <Route path="/boards" element={
+                  <ErrorBoundary section="Strategic Map">
+                    <Map />
+                  </ErrorBoundary>
+                } />
+                <Route path="/mindmap" element={
+                  <ErrorBoundary section="Mind Map">
+                    <Map />
+                  </ErrorBoundary>
+                } />
+                <Route path="/ideate" element={
+                  <ErrorBoundary section="Ideation">
+                    <Ideate />
+                  </ErrorBoundary>
+                } />
+                <Route path="/track" element={
+                  <ErrorBoundary section="Tracking">
+                    <Tracking />
+                  </ErrorBoundary>
+                } />
+                <Route path="*" element={<Navigate to="/journal" replace />} />
+              </Routes>
+            </Suspense>
+          </Layout>
+        } />
+      </Routes>
+    </Suspense>
   );
 }
 
