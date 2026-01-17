@@ -64,11 +64,13 @@ export interface ObjectivesState {
   updateGoal: (id: string, updates: Partial<Goal>) => Promise<boolean>;
   deleteGoal: (id: string, orphanDescendants?: boolean) => Promise<boolean>;
   getGoalDescendantCounts: (id: string) => Promise<{ objectives: number; tasks: number }>;
+  toggleGoalStatus: (goal: Goal) => Promise<void>;
   
   createObjective: (title: string, description: string, priority: string, goalId: string | null, targetDate: string) => Promise<Objective | null>;
   updateObjective: (id: string, updates: Partial<Objective>) => Promise<boolean>;
   deleteObjective: (id: string, orphanDescendants?: boolean) => Promise<boolean>;
   getObjectiveDescendantCounts: (id: string) => Promise<{ tasks: number }>;
+  toggleObjectiveStatus: (objective: Objective) => Promise<void>;
   
   createTask: (title: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => Promise<Task | null>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<boolean>;
@@ -913,6 +915,16 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     });
   }, [updateTask]);
 
+  const toggleObjectiveStatus = useCallback(async (objective: Objective): Promise<void> => {
+    const newStatus = objective.status === 'completed' ? 'not_started' : 'completed';
+    await updateObjective(objective.id, { status: newStatus });
+  }, [updateObjective]);
+
+  const toggleGoalStatus = useCallback(async (goal: Goal): Promise<void> => {
+    const newStatus = goal.status === 'completed' ? 'not_started' : 'completed';
+    await updateGoal(goal.id, { status: newStatus });
+  }, [updateGoal]);
+
   const markRecurringTaskCompletedToday = useCallback(async (taskId: string): Promise<void> => {
     if (!userId) return;
     const today = new Date().toISOString().split('T')[0];
@@ -990,11 +1002,13 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     updateGoal,
     deleteGoal,
     getGoalDescendantCounts,
+    toggleGoalStatus,
     
     createObjective,
     updateObjective,
     deleteObjective,
     getObjectiveDescendantCounts,
+    toggleObjectiveStatus,
     
     createTask,
     updateTask,

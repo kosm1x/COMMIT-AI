@@ -19,6 +19,7 @@ interface GoalColumnProps {
   onCreateGoal: () => void;
   onUpdateGoal: (id: string, updates: Partial<Goal>) => Promise<boolean>;
   onDeleteGoal: (id: string, orphanDescendants?: boolean) => Promise<boolean>;
+  onToggleGoalStatus: (goal: Goal) => Promise<void>;
   onTitleClick: (type: 'vision' | 'goal' | 'objective' | 'task', title: string, description: string, e: React.MouseEvent) => void;
   getGoalDescendantCounts: (id: string) => Promise<{ objectives: number; tasks: number }>;
   // Selected vision for context header
@@ -39,6 +40,7 @@ export function GoalColumn({
   onCreateGoal,
   onUpdateGoal,
   onDeleteGoal,
+  onToggleGoalStatus,
   onTitleClick,
   getGoalDescendantCounts,
   selectedVision,
@@ -152,6 +154,7 @@ export function GoalColumn({
         setEditingGoalId(null);
       }}
       onDelete={() => handleDelete(goal.id)}
+      onToggleStatus={() => onToggleGoalStatus(goal)}
       onTitleClick={(e) => onTitleClick('goal', goal.title, goal.description, e)}
       objectiveCount={objectiveCounts[goal.id]}
       isExpanded={expandedGoals.has(goal.id)}

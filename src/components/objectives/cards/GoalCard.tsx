@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, Flag } from 'lucide-react';
+import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, Flag, CheckCircle2, Circle } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { Goal, Vision, Objective } from '../types';
-import { getStatusIcon, formatLastEdited } from '../utils';
+import { formatLastEdited } from '../utils';
 
 interface GoalCardProps {
   goal: Goal;
@@ -17,6 +17,7 @@ interface GoalCardProps {
   onSave: (updates: Partial<Goal>) => Promise<void>;
   onDelete: () => void;
   onTitleClick: (e: React.MouseEvent) => void;
+  onToggleStatus: () => void;
   onDragStart?: (e: React.DragEvent) => void;
   // Objective count display
   objectiveCount?: { total: number; completed: number };
@@ -39,6 +40,7 @@ export function GoalCard({
   onSave,
   onDelete,
   onTitleClick,
+  onToggleStatus,
   onDragStart,
   objectiveCount,
   isExpanded = false,
@@ -161,114 +163,132 @@ export function GoalCard({
         </div>
       ) : (
         <>
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 flex-1">
-              {getStatusIcon(goal.status)}
-              <h3
-                className="font-semibold text-text-primary text-sm leading-snug hover:text-accent-primary transition-colors cursor-pointer"
-                onClick={onTitleClick}
-              >
-                {goal.title}
-              </h3>
-            </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartEdit();
-                }}
-                className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-          {goal.description && (
-            <p className="text-xs text-text-secondary mb-3 line-clamp-2 leading-relaxed">
-              {goal.description}
-            </p>
-          )}
-          <div className="flex items-center justify-between text-[10px] text-text-tertiary">
-            {goal.target_date && (
-              <div className="flex items-center gap-1 bg-white/50 dark:bg-white/5 px-1.5 py-0.5 rounded border border-border-secondary">
-                <Calendar className="w-3 h-3" />
-                {new Date(goal.target_date).toLocaleDateString()}
-              </div>
-            )}
-            <span className="ml-auto">{formatLastEdited(goal.last_edited_at)}</span>
-          </div>
-          {isOrphan && (
-            <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-orange-500 bg-orange-50 w-fit px-1.5 py-0.5 rounded border border-orange-100">
-              <Link2 className="w-3 h-3" />
-              Orphaned
-            </div>
-          )}
-
-          {/* Objective count progress */}
-          {objectiveCount && objectiveCount.total > 0 && (
-            <div className="mt-3 pt-3 border-t border-border-secondary/50">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleExpand?.();
-                }}
-                className="w-full flex items-center justify-between text-xs hover:bg-white/50 dark:bg-white/5 -mx-1 px-2 py-1 rounded transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                  <span className="text-text-secondary font-medium">{t('objectives.objective')}</span>
+          <div className="flex items-start gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleStatus();
+              }}
+              className="mt-0.5 flex-shrink-0 transition-transform active:scale-90"
+            >
+              {goal.status === 'completed' ? (
+                <CheckCircle2 className="w-6 h-6 text-green-600" />
+              ) : (
+                <Circle className="w-6 h-6 text-text-tertiary hover:text-green-600 transition-colors" />
+              )}
+            </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 flex-1">
+                  <h3
+                    className={`font-semibold text-sm leading-snug ${
+                      goal.status === 'completed' ? 'text-text-tertiary line-through' : 'text-text-primary'
+                    } hover:text-accent-primary transition-colors cursor-pointer`}
+                    onClick={onTitleClick}
+                  >
+                    {goal.title}
+                  </h3>
                 </div>
-                <span className="text-text-tertiary">
-                  {objectiveCount.completed} / {objectiveCount.total}
-                </span>
-              </button>
-              <div className="mt-2 w-full bg-border-secondary rounded-full h-1.5 overflow-hidden">
-                <div
-                  className={`h-1.5 rounded-full transition-all duration-500 ${
-                    objectiveCount.completed === objectiveCount.total
-                      ? 'bg-green-500'
-                      : 'bg-blue-500'
-                  }`}
-                  style={{
-                    width: `${(objectiveCount.completed / objectiveCount.total) * 100}%`,
-                  }}
-                />
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStartEdit();
+                    }}
+                    className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
+                    className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
+              {goal.description && (
+                <p className="text-xs text-text-secondary mb-3 line-clamp-2 leading-relaxed">
+                  {goal.description}
+                </p>
+              )}
+              <div className="flex items-center justify-between text-[10px] text-text-tertiary">
+                {goal.target_date && (
+                  <div className="flex items-center gap-1 bg-white/50 dark:bg-white/5 px-1.5 py-0.5 rounded border border-border-secondary">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(goal.target_date).toLocaleDateString()}
+                  </div>
+                )}
+                <span className="ml-auto">{formatLastEdited(goal.last_edited_at)}</span>
+              </div>
+              {isOrphan && (
+                <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-orange-500 bg-orange-50 w-fit px-1.5 py-0.5 rounded border border-orange-100">
+                  <Link2 className="w-3 h-3" />
+                  Orphaned
+                </div>
+              )}
 
-              {isExpanded && goalObjectives.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {goalObjectives.map((objective) => (
-                    <div
-                      key={objective.id}
-                      className="flex items-start gap-2 text-xs bg-white/50 dark:bg-white/5 p-2 rounded-lg border border-white/50"
-                    >
-                      <div className="mt-0.5">
-                        {objective.status === 'completed' ? (
-                          <Flag className="w-3.5 h-3.5 text-green-600" />
-                        ) : (
-                          <Flag className="w-3.5 h-3.5 text-text-tertiary" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-medium truncate ${objective.status === 'completed' ? 'text-text-tertiary line-through' : 'text-text-secondary'}`}>
-                          {objective.title}
-                        </p>
-                      </div>
+              {/* Objective count progress */}
+              {objectiveCount && objectiveCount.total > 0 && (
+                <div className="mt-3 pt-3 border-t border-border-secondary/50">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleExpand?.();
+                    }}
+                    className="w-full flex items-center justify-between text-xs hover:bg-white/50 dark:bg-white/5 -mx-1 px-2 py-1 rounded transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                      <span className="text-text-secondary font-medium">{t('objectives.objective')}</span>
                     </div>
-                  ))}
+                    <span className="text-text-tertiary">
+                      {objectiveCount.completed} / {objectiveCount.total}
+                    </span>
+                  </button>
+                  <div className="mt-2 w-full bg-border-secondary rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        objectiveCount.completed === objectiveCount.total
+                          ? 'bg-green-500'
+                          : 'bg-blue-500'
+                      }`}
+                      style={{
+                        width: `${(objectiveCount.completed / objectiveCount.total) * 100}%`,
+                      }}
+                    />
+                  </div>
+
+                  {isExpanded && goalObjectives.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {goalObjectives.map((objective) => (
+                        <div
+                          key={objective.id}
+                          className="flex items-start gap-2 text-xs bg-white/50 dark:bg-white/5 p-2 rounded-lg border border-white/50"
+                        >
+                          <div className="mt-0.5">
+                            {objective.status === 'completed' ? (
+                              <Flag className="w-3.5 h-3.5 text-green-600" />
+                            ) : (
+                              <Flag className="w-3.5 h-3.5 text-text-tertiary" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium truncate ${objective.status === 'completed' ? 'text-text-tertiary line-through' : 'text-text-secondary'}`}>
+                              {objective.title}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </div>
         </>
       )}
     </div>

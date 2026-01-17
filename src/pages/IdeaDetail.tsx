@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { findIdeaConnections, transformIdeaText } from '../services/aiService';
-import AIAssistantPanel from '../components/AIAssistantPanel';
+import Editor from 'react-simple-code-editor';
+
+// Lazy-load AIAssistantPanel to reduce initial bundle size
+const AIAssistantPanel = lazy(() => import('../components/AIAssistantPanel'));
 import {
   Save,
   Trash2,
@@ -58,8 +61,8 @@ export default function IdeaDetail() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  // Only track selection for selection menu and programmatic edits, not for natural typing
   const [selection, setSelection] = useState<{ start: number; end: number; text: string }>({
     start: 0,
     end: 0,
@@ -73,6 +76,9 @@ export default function IdeaDetail() {
     criticalAnalysis?: { strengths: string[]; challenges: string[]; assumptions: string[]; alternativePerspectives: string[] } | null;
     relatedConcepts?: Array<{ concept: string; description: string; relevance: string; resources: string[] }>;
   }>({});
+  
+  const loadedIdeaIdRef = useRef<string | null>(null);
+  const isInitialLoadRef = useRef(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -80,33 +86,80 @@ export default function IdeaDetail() {
       return;
     }
 
+    // Only load if:
+    // 1. We have a user and ID
+    // 2. The ID has changed (we haven't loaded this ID yet)
     if (user && id) {
+      // If this is the same ID we already loaded, don't reload
+      if (loadedIdeaIdRef.current === id) {
+        return;
+      }
+      
+      // ID changed, reset the loaded ref and load
+      loadedIdeaIdRef.current = id;
+      isInitialLoadRef.current = true;
       loadIdea();
     }
   }, [user, id, authLoading]);
 
-  // Clear AI cache when idea ID changes or when idea content changes
+  // Clear AI cache when idea ID changes (not on every keystroke to avoid extra re-renders)
   useEffect(() => {
     setAiCache({});
-  }, [id, idea?.title, idea?.content]);
+  }, [id]);
+
+  // Handle page visibility changes - preserve state when tab goes to background
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // When tab becomes visible again, don't reload if we already have the idea
+      if (document.visibilityState === 'visible' && idea && loadedIdeaIdRef.current === id) {
+        // State is preserved, no need to reload
+        return;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [idea, id]);
 
   const loadIdea = async () => {
+    // Don't reload if we already have the idea loaded for this ID
+    const currentId = id;
+    if (!currentId || loadedIdeaIdRef.current !== currentId) {
+      // ID mismatch, this shouldn't happen but handle gracefully
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('ideas')
         .select('*')
-        .eq('id', id)
+        .eq('id', currentId)
         .eq('user_id', user?.id)
         .single();
 
       if (error) throw error;
-      setIdea(data);
-
-      await loadConnections(data);
+      
+      // Only update if we got valid data and it's for the current ID
+      if (data && data.id === currentId) {
+        setIdea(data);
+        isInitialLoadRef.current = false;
+        
+        // Defer connection loading to avoid blocking first paint
+        // Uses requestIdleCallback with setTimeout fallback for Safari
+        const scheduleIdle = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 100));
+        scheduleIdle(() => {
+          loadConnections(data);
+        });
+      }
     } catch (error) {
       console.error('Error loading idea:', error);
-      navigate('/ideate');
+      // Only navigate away if this was an initial load, not a background refresh
+      if (isInitialLoadRef.current) {
+        navigate('/ideate');
+      }
     } finally {
       setLoading(false);
     }
@@ -248,15 +301,16 @@ export default function IdeaDetail() {
   };
 
   const captureSelection = () => {
-    const el = textareaRef.current;
+    // Get the editor's internal textarea element
+    const el = document.querySelector('#idea-content-editor') as HTMLTextAreaElement;
     if (!el || !editorRef.current) return;
     const start = el.selectionStart || 0;
     const end = el.selectionEnd || 0;
     const text = el.value.slice(start, end);
     setSelection({ start, end, text });
     
-    // Show selection menu if text is selected
-    if (text.trim().length >= 3) {
+    // Show selection menu only if meaningful text is selected (user intentionally selected text)
+    if (text.trim().length >= 3 && start !== end) {
       // Use a small delay to ensure selection is complete
       setTimeout(() => {
         // Calculate position based on selection in textarea
@@ -305,46 +359,61 @@ export default function IdeaDetail() {
 
   const replaceSelection = (replacement: string) => {
     if (!idea) return;
+    const el = document.querySelector('#idea-content-editor') as HTMLTextAreaElement;
     const content = idea.content || '';
     if (selection.text && selection.end > selection.start) {
       const before = content.slice(0, selection.start);
       const after = content.slice(selection.end);
       const newContent = `${before}${replacement}${after}`;
-      setIdea({ ...idea, content: newContent });
-      // update selection to new text
       const newStart = selection.start;
       const newEnd = selection.start + replacement.length;
+      
+      setIdea({ ...idea, content: newContent });
       setSelection({ start: newStart, end: newEnd, text: replacement });
-      // restore selection in textarea
+      
+      // Restore selection after React re-renders the editor
+      // Use requestAnimationFrame to ensure DOM is updated
       requestAnimationFrame(() => {
-        if (textareaRef.current) {
-          textareaRef.current.selectionStart = newStart;
-          textareaRef.current.selectionEnd = newEnd;
+        if (el) {
+          el.focus();
+          el.setSelectionRange(newStart, newEnd);
         }
       });
     } else {
+      // No selection, replace all content
       setIdea({ ...idea, content: replacement });
       const newStart = 0;
       const newEnd = replacement.length;
       setSelection({ start: newStart, end: newEnd, text: replacement });
+      requestAnimationFrame(() => {
+        if (el) {
+          el.focus();
+          el.setSelectionRange(newStart, newEnd);
+        }
+      });
     }
   };
 
   const insertAtCursor = (textToInsert: string) => {
     if (!idea) return;
+    const el = document.querySelector('#idea-content-editor') as HTMLTextAreaElement;
+    if (!el) return;
+    
     const content = idea.content || '';
-    const cursorPos = selection.start;
+    const cursorPos = el.selectionStart || 0; // Get current position from editor's textarea
     const before = content.slice(0, cursorPos);
     const after = content.slice(cursorPos);
     const newContent = `${before}${textToInsert}${after}`;
-    setIdea({ ...idea, content: newContent });
-    // Move cursor to end of inserted text
     const newPos = cursorPos + textToInsert.length;
+    
+    setIdea({ ...idea, content: newContent });
     setSelection({ start: newPos, end: newPos, text: '' });
+    
+    // Move cursor to end of inserted text after React re-renders
     requestAnimationFrame(() => {
-      if (textareaRef.current) {
-        textareaRef.current.selectionStart = newPos;
-        textareaRef.current.selectionEnd = newPos;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(newPos, newPos);
       }
     });
   };
@@ -503,8 +572,9 @@ export default function IdeaDetail() {
     if (!selectionMenu) return;
     const text = selectionMenu.text;
     setSelectionMenu(null);
-    if (textareaRef.current) {
-      textareaRef.current.blur();
+    const el = document.querySelector('#idea-content-editor') as HTMLTextAreaElement;
+    if (el) {
+      el.blur();
       window.getSelection()?.removeAllRanges();
     }
     // Navigate to Ideate page with selected text as input
@@ -517,8 +587,9 @@ export default function IdeaDetail() {
     const title = text.length > 50 ? text.substring(0, 47) + '...' : text;
     handleCreateTask(title, text, 'medium');
     setSelectionMenu(null);
-    if (textareaRef.current) {
-      textareaRef.current.blur();
+    const el = document.querySelector('#idea-content-editor') as HTMLTextAreaElement;
+    if (el) {
+      el.blur();
       window.getSelection()?.removeAllRanges();
     }
   };
@@ -527,8 +598,9 @@ export default function IdeaDetail() {
     if (!selectionMenu) return;
     navigate('/mindmap', { state: { problemStatement: selectionMenu.text } });
     setSelectionMenu(null);
-    if (textareaRef.current) {
-      textareaRef.current.blur();
+    const el = document.querySelector('#idea-content-editor') as HTMLTextAreaElement;
+    if (el) {
+      el.blur();
       window.getSelection()?.removeAllRanges();
     }
   };
@@ -667,15 +739,24 @@ export default function IdeaDetail() {
       </div>
 
       {showAIPanel && (
-        <AIAssistantPanel
-          ideaTitle={idea.title}
-          ideaContent={idea.content}
-          onClose={() => setShowAIPanel(false)}
-          onSaveAsNewIdea={handleSaveAsNewIdea}
-          onCreateTask={handleCreateTask}
-          cache={aiCache}
-          onCacheUpdate={setAiCache}
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-bg-primary rounded-lg p-6 flex items-center gap-3">
+              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+              <span className="text-text-secondary">Loading AI Assistant...</span>
+            </div>
+          </div>
+        }>
+          <AIAssistantPanel
+            ideaTitle={idea.title}
+            ideaContent={idea.content}
+            onClose={() => setShowAIPanel(false)}
+            onSaveAsNewIdea={handleSaveAsNewIdea}
+            onCreateTask={handleCreateTask}
+            cache={aiCache}
+            onCacheUpdate={setAiCache}
+          />
+        </Suspense>
       )}
 
       <div className="flex-1 overflow-y-auto">
@@ -726,15 +807,25 @@ export default function IdeaDetail() {
                         ))}
                       </div>
                     </div>
-                    <textarea
-                      ref={textareaRef}
-                      value={idea.content}
-                      onChange={(e) => setIdea({ ...idea, content: e.target.value })}
-                      onSelect={captureSelection}
-                      onKeyUp={captureSelection}
+                    <div 
+                      className="w-full h-96 border border-border-primary bg-bg-primary rounded-lg focus-within:ring-2 focus-within:ring-yellow-500 focus-within:border-transparent overflow-auto"
                       onMouseUp={captureSelection}
-                      className="w-full h-96 px-4 py-3 border border-border-primary bg-bg-primary rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none font-mono text-sm"
-                    />
+                    >
+                      <Editor
+                        value={idea.content}
+                        onValueChange={(content) => setIdea({ ...idea, content })}
+                        highlight={(code) => code}
+                        padding={16}
+                        textareaId="idea-content-editor"
+                        className="font-mono text-sm"
+                        style={{
+                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                          fontSize: '0.875rem',
+                          minHeight: '100%',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
                     
                     {/* Selection Menu */}
                     {selectionMenu && (

@@ -396,30 +396,30 @@ export default function MindMapView() {
             loadMindMap(mindMap);
           }
         }}
-        className={`flex-shrink-0 w-48 p-3 rounded-lg border-2 cursor-pointer transition-all hover:scale-105 ${
+        className={`flex-shrink-0 w-40 sm:w-48 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all hover:scale-105 ${
           currentMindMap?.id === mindMap.id
             ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
             : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-blue-300 dark:hover:border-blue-700'
         }`}
       >
-        <div className="flex items-start justify-between mb-2">
-          <h4 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 flex-1">
+        <div className="flex items-start justify-between mb-1 sm:mb-2">
+          <h4 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2 flex-1">
             {mindMap.title}
           </h4>
           {currentMindMap?.id === mindMap.id && (
-            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1 ml-2"></div>
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1 ml-2"></div>
           )}
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">
-          {mindMap.problem_statement.substring(0, 80)}...
+        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-1 sm:mb-2 line-clamp-2">
+          {mindMap.problem_statement.substring(0, 60)}...
         </p>
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-white/10">
-          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+        <div className="flex items-center justify-between mt-1 sm:mt-2 pt-1 sm:pt-2 border-t border-gray-200 dark:border-white/10">
+          <span className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500">
             {new Date(mindMap.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
-          <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
-            <Network className="w-3 h-3" />
-            Map
+          <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500">
+            <Network className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+            <span className="hidden sm:inline">Map</span>
           </div>
         </div>
       </div>
@@ -427,28 +427,29 @@ export default function MindMapView() {
   };
 
   return (
-    <div className="h-full flex">
-      <div className={`flex-1 flex flex-col p-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-gray-50 dark:bg-black' : ''}`}>
-        <div className={`bg-white dark:bg-white/5 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-6 ${isFullscreen ? 'hidden' : 'mb-6'}`}>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+    <div className="h-full flex flex-col sm:flex-row overflow-hidden">
+      <div className={`flex-1 flex flex-col p-3 sm:p-4 lg:p-6 min-w-0 overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 bg-gray-50 dark:bg-black' : ''}`}>
+        <div className={`bg-white dark:bg-white/5 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-3 sm:p-4 lg:p-6 flex-shrink-0 ${isFullscreen ? 'hidden' : 'mb-3 sm:mb-4 lg:mb-6'}`}>
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Generate Mind Map from Problem
           </h2>
           <textarea
             value={problemStatement}
             onChange={(e) => setProblemStatement(e.target.value)}
             placeholder="Describe your problem or challenge here... The AI will break it down into a structured mind map."
-            className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-black/40 text-text-primary"
-            rows={4}
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-black/40 text-text-primary text-sm sm:text-base"
+            rows={3}
           />
-          <div className="space-y-2 mt-4">
-            <div className="flex items-center gap-3">
+          <div className="space-y-2 mt-3 sm:mt-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <button
                 onClick={handleGenerate}
                 disabled={generating || !problemStatement.trim()}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-lg shadow-blue-500/20"
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-lg shadow-blue-500/20 text-sm sm:text-base"
               >
-                <Sparkles className="w-5 h-5" />
-                {generating ? 'Generating...' : 'Generate & Save Mind Map'}
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">{generating ? 'Generating...' : 'Generate & Save Mind Map'}</span>
+                <span className="sm:hidden">{generating ? 'Generating...' : 'Generate'}</span>
               </button>
               <button
                 onClick={(e) => {
@@ -456,10 +457,11 @@ export default function MindMapView() {
                   e.stopPropagation();
                   setShowHistory(!showHistory);
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-medium"
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-medium text-sm sm:text-base"
               >
-                <History className="w-5 h-5" />
-                All History ({savedMindMaps.length})
+                <History className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">All History ({savedMindMaps.length})</span>
+                <span className="sm:hidden">History ({savedMindMaps.length})</span>
               </button>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -469,17 +471,17 @@ export default function MindMapView() {
 
           {/* Navigation History Snapshots */}
           {navigationHistory.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-              <div className="flex items-center gap-2 mb-3">
-                <History className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-white/10">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <History className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 dark:text-gray-400" />
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Session History
                 </h3>
-                <span className="text-xs text-gray-400 dark:text-gray-500">
+                <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
                   ({navigationHistory.length} {navigationHistory.length === 1 ? 'map' : 'maps'})
                 </span>
               </div>
-              <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+              <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 custom-scrollbar">
                 {navigationHistory.map((item, index) => renderHistorySnapshot(item.mindMap, index))}
               </div>
             </div>
@@ -487,57 +489,57 @@ export default function MindMapView() {
         </div>
 
         {currentMindMap && (
-          <div className={`bg-white dark:bg-white/5 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 flex-1 flex flex-col overflow-hidden ${isFullscreen ? 'h-full' : ''}`}>
-            <div className="p-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
+          <div className={`bg-white dark:bg-white/5 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 flex-1 flex flex-col overflow-hidden min-h-0 ${isFullscreen ? 'h-full' : ''}`}>
+            <div className="p-2 sm:p-3 lg:p-4 border-b border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 flex-shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={handleNavigateBack}
                     disabled={historyIndex < 0}
-                    className="flex items-center gap-1 px-2 py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    className="flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm font-medium"
                     title="Go back"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                   <button
                     onClick={handleNavigateForward}
                     disabled={historyIndex >= navigationHistory.length - 1}
-                    className="flex items-center gap-1 px-2 py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    className="flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm font-medium"
                     title="Go forward"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{currentMindMap.title}</h3>
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 dark:text-white truncate">{currentMindMap.title}</h3>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                 <button
                   onClick={() => openCreateModal('goal')}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
-                  <Target className="w-4 h-4" />
-                  Goal
+                  <Target className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Goal</span>
                 </button>
                 <button
                   onClick={() => openCreateModal('objective')}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm font-medium"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
-                  <Flag className="w-4 h-4" />
-                  Objective
+                  <Flag className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Objective</span>
                 </button>
                 <button
                   onClick={() => openCreateModal('task')}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors text-sm font-medium"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
-                  <CheckSquare className="w-4 h-4" />
-                  Task
+                  <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Task</span>
                 </button>
                 <button
                   onClick={() => openCreateModal('idea')}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors text-sm font-medium"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  Ideate
+                  <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Ideate</span>
                 </button>
                 <button
                   onClick={() => {
@@ -547,22 +549,22 @@ export default function MindMapView() {
                       setShowHistory(true);
                     }
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors text-sm font-medium"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors text-xs sm:text-sm font-medium"
                   title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                 >
-                  {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                  {isFullscreen ? <Minimize className="w-3 h-3 sm:w-4 sm:h-4" /> : <Maximize className="w-3 h-3 sm:w-4 sm:h-4" />}
                 </button>
               </div>
             </div>
             {selectedNodes.length > 0 && (
-              <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-900 dark:text-blue-100">
+              <div className="px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex-shrink-0">
+                <p className="text-xs sm:text-sm text-blue-900 dark:text-blue-100">
                   <strong>Selected:</strong> {selectedNodes[selectedNodes.length - 1]}
-                  <span className="ml-2 text-xs opacity-75">(Double-click to create new tree from this node)</span>
+                  <span className="hidden sm:inline ml-2 text-xs opacity-75">(Double-click to create new tree from this node)</span>
                 </p>
               </div>
             )}
-            <div className="flex-1 overflow-auto p-6 bg-white dark:bg-black/40">
+            <div className="flex-1 overflow-auto p-3 sm:p-4 lg:p-6 bg-white dark:bg-black/40 min-h-0">
               <div
                 ref={diagramRef}
                 className="flex items-center justify-center min-h-full"
@@ -572,58 +574,71 @@ export default function MindMapView() {
         )}
 
         {!currentMindMap && !generating && (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">Enter a problem and generate a mind map to get started</p>
+          <div className="flex-1 flex items-center justify-center text-gray-400 min-h-0">
+            <div className="text-center px-4">
+              <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 opacity-50" />
+              <p className="text-sm sm:text-base lg:text-lg">Enter a problem and generate a mind map to get started</p>
             </div>
           </div>
         )}
       </div>
 
+      {/* History Sidebar - Responsive: overlay on mobile, side panel on desktop */}
       {showHistory && !isFullscreen && (
-        <div className="w-80 bg-white dark:bg-black border-l border-gray-200 dark:border-white/10 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between flex-shrink-0">
-            <h3 className="font-bold text-gray-900 dark:text-white">Saved Mind Maps</h3>
-            <button
-              onClick={() => setShowHistory(false)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded text-text-secondary"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2 min-h-0">
-            {savedMindMaps.map((map) => (
-              <div
-                key={map.id}
-                className="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+        <>
+          {/* Mobile overlay backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setShowHistory(false)}
+          />
+          
+          {/* Sidebar */}
+          <div className="fixed right-0 top-0 bottom-0 w-[85vw] sm:w-80 max-w-sm bg-white dark:bg-black border-l border-gray-200 dark:border-white/10 flex flex-col overflow-hidden z-50 lg:relative lg:z-auto lg:w-64 xl:w-80 shadow-xl lg:shadow-none">
+            <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between flex-shrink-0">
+              <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">Saved Mind Maps</h3>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded text-text-secondary"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <button
-                    onClick={() => loadMindMap(map)}
-                    className="flex-1 text-left"
-                  >
-                    <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1">{map.title}</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(map.created_at).toLocaleDateString()}
-                    </p>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(map.id)}
-                    className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-4 space-y-2 min-h-0">
+              {savedMindMaps.map((map) => (
+                <div
+                  key={map.id}
+                  className="p-2 sm:p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      onClick={() => {
+                        loadMindMap(map);
+                        setShowHistory(false); // Close sidebar on mobile after selection
+                      }}
+                      className="flex-1 text-left min-w-0"
+                    >
+                      <h4 className="font-medium text-gray-900 dark:text-white text-xs sm:text-sm mb-1 truncate">{map.title}</h4>
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(map.created_at).toLocaleDateString()}
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(map.id)}
+                      className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded flex-shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {savedMindMaps.length === 0 && (
-              <div className="text-center py-8 text-sm text-gray-400">
-                No saved mind maps yet
-              </div>
-            )}
+              ))}
+              {savedMindMaps.length === 0 && (
+                <div className="text-center py-8 text-xs sm:text-sm text-gray-400">
+                  No saved mind maps yet
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {createModal.type && (

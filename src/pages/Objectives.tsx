@@ -311,6 +311,7 @@ export default function Objectives() {
             onCreateGoal={() => setShowGoalForm(true)}
             onUpdateGoal={state.updateGoal}
             onDeleteGoal={state.deleteGoal}
+            onToggleGoalStatus={state.toggleGoalStatus}
             onTitleClick={handleTitleClick}
             getGoalDescendantCounts={state.getGoalDescendantCounts}
             selectedVision={state.selectedVision}
@@ -332,6 +333,7 @@ export default function Objectives() {
             onCreateObjective={() => setShowObjectiveForm(true)}
             onUpdateObjective={state.updateObjective}
             onDeleteObjective={state.deleteObjective}
+            onToggleObjectiveStatus={state.toggleObjectiveStatus}
             onTitleClick={handleTitleClick}
             getObjectiveDescendantCounts={state.getObjectiveDescendantCounts}
             selectedGoal={state.selectedGoal}

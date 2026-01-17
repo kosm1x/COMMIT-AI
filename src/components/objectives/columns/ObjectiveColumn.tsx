@@ -18,6 +18,7 @@ interface ObjectiveColumnProps {
   onCreateObjective: () => void;
   onUpdateObjective: (id: string, updates: Partial<Objective>) => Promise<boolean>;
   onDeleteObjective: (id: string, orphanDescendants?: boolean) => Promise<boolean>;
+  onToggleObjectiveStatus: (objective: Objective) => Promise<void>;
   onTitleClick: (type: 'vision' | 'goal' | 'objective' | 'task', title: string, description: string, e: React.MouseEvent) => void;
   getObjectiveDescendantCounts: (id: string) => Promise<{ tasks: number }>;
   selectedGoal: Goal | null;
@@ -37,6 +38,7 @@ export function ObjectiveColumn({
   onCreateObjective,
   onUpdateObjective,
   onDeleteObjective,
+  onToggleObjectiveStatus,
   onTitleClick,
   getObjectiveDescendantCounts,
   selectedGoal,
@@ -146,6 +148,7 @@ export function ObjectiveColumn({
         setEditingObjectiveId(null);
       }}
       onDelete={() => handleDelete(objective.id)}
+      onToggleStatus={() => onToggleObjectiveStatus(objective)}
       onTitleClick={(e) => onTitleClick('objective', objective.title, objective.description, e)}
       taskCount={taskCounts[objective.id]}
       isExpanded={expandedObjectives.has(objective.id)}

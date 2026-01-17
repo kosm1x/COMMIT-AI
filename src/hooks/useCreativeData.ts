@@ -164,23 +164,44 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
 
-    const [allIdeasResult, allMindMapsResult, ideasResult, mindMapsResult] = await Promise.all([
-      supabase.from('ideas').select('id, created_at').eq('user_id', user!.id),
-      supabase.from('mind_maps').select('id, created_at').eq('user_id', user!.id),
-      supabase.from('ideas').select('id, created_at').eq('user_id', user!.id)
+    // Optimization: Use count queries for totals (no data transfer, just counts)
+    // And only fetch created_at for period data (needed for daily bucketing)
+    const [
+      totalIdeasResult,
+      totalMindMapsResult,
+      ideasResult,
+      mindMapsResult
+    ] = await Promise.all([
+      // Count-only queries for totals (much faster, no data transfer)
+      supabase.from('ideas').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
+      supabase.from('mind_maps').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
+      // Period data - only fetch created_at for bucketing
+      supabase.from('ideas').select('created_at').eq('user_id', user!.id)
         .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: true }),
-      supabase.from('mind_maps').select('id, created_at').eq('user_id', user!.id)
+        .lte('created_at', endDate.toISOString()),
+      supabase.from('mind_maps').select('created_at').eq('user_id', user!.id)
         .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: true }),
+        .lte('created_at', endDate.toISOString()),
     ]);
 
-    const allIdeas = allIdeasResult.data || [];
-    const allMindMaps = allMindMapsResult.data || [];
+    const totalIdeas = totalIdeasResult.count ?? 0;
+    const totalMindMaps = totalMindMapsResult.count ?? 0;
     const periodIdeas = ideasResult.data || [];
     const periodMindMaps = mindMapsResult.data || [];
+
+    // Pre-bucket period data by date key to avoid O(n * days) filtering
+    const ideasByDate = new Map<string, number>();
+    const mindMapsByDate = new Map<string, number>();
+    
+    for (const idea of periodIdeas) {
+      const dateKey = idea.created_at.split('T')[0];
+      ideasByDate.set(dateKey, (ideasByDate.get(dateKey) || 0) + 1);
+    }
+    
+    for (const map of periodMindMaps) {
+      const dateKey = map.created_at.split('T')[0];
+      mindMapsByDate.set(dateKey, (mindMapsByDate.get(dateKey) || 0) + 1);
+    }
 
     const days: DayActivity[] = [];
     const daysCount = viewMode === 'daily' ? 1 : viewMode === 'weekly' ? 7 : getDaysInMonth(selectedDate);
@@ -193,26 +214,15 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
         currentDay.setDate(i + 1);
       }
       currentDay.setHours(0, 0, 0, 0);
-      const nextDay = new Date(currentDay);
-      nextDay.setDate(currentDay.getDate() + 1);
-
-      const dayIdeas = periodIdeas.filter(idea => {
-        const created = new Date(idea.created_at);
-        return created >= currentDay && created < nextDay;
-      });
-
-      const dayMindMaps = periodMindMaps.filter(map => {
-        const created = new Date(map.created_at);
-        return created >= currentDay && created < nextDay;
-      });
 
       const dayKey = currentDay.toISOString().split('T')[0];
       const dayTime = parseInt(localStorage.getItem(`time_spent_${user!.id}_${dayKey}`) || '0');
 
+      // O(1) lookup instead of O(n) filtering
       days.push({
         date: currentDay,
-        ideas: dayIdeas.length,
-        mindMaps: dayMindMaps.length,
+        ideas: ideasByDate.get(dayKey) || 0,
+        mindMaps: mindMapsByDate.get(dayKey) || 0,
         timeSpent: dayTime,
       });
     }
@@ -233,8 +243,8 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
     const periodTime = days.reduce((sum, d) => sum + Math.min(d.timeSpent, 1440), 0);
     
     setStats({
-      totalIdeas: allIdeas.length,
-      totalMindMaps: allMindMaps.length,
+      totalIdeas,
+      totalMindMaps,
       totalTimeSpent: totalTime,
       ideasThisPeriod: periodIdeas.length,
       mindMapsThisPeriod: periodMindMaps.length,
