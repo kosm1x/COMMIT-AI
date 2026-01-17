@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { generateMindMap } from '../../services/aiService';
 import type { MermaidConfig } from 'mermaid';
@@ -44,6 +45,7 @@ interface NavigationState {
 export default function MindMapView() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [problemStatement, setProblemStatement] = useState('');
@@ -135,7 +137,7 @@ export default function MindMapView() {
       addNodeClickHandlers();
     } catch (error) {
       console.error('Error rendering mermaid:', error);
-      diagramRef.current.innerHTML = `<div class="text-red-600 p-4">Error rendering mind map. Please try regenerating.</div>`;
+      diagramRef.current.innerHTML = `<div class="text-red-600 p-4">${t('map.errorRendering')}</div>`;
     }
   };
 
@@ -191,8 +193,8 @@ export default function MindMapView() {
     try {
       // Build context from current tree and previous context
       const newContext = contextChain 
-        ? `${contextChain}\n\nPrevious Tree: ${currentMindMap.title}\nProblem: ${currentMindMap.problem_statement}`
-        : `Previous Tree: ${currentMindMap.title}\nProblem: ${currentMindMap.problem_statement}`;
+        ? `${contextChain}\n\n${t('map.previousTree')} ${currentMindMap.title}\n${t('map.problem')} ${currentMindMap.problem_statement}`
+        : `${t('map.previousTree')} ${currentMindMap.title}\n${t('map.problem')} ${currentMindMap.problem_statement}`;
       
       const result = await generateMindMap(cleanText, newContext);
 
@@ -304,7 +306,7 @@ export default function MindMapView() {
 
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this mind map?')) return;
+    if (!confirm(t('map.deleteMindMapConfirm'))) return;
 
     await supabase.from('mind_maps').delete().eq('id', id);
     loadSavedMindMaps();
@@ -331,7 +333,7 @@ export default function MindMapView() {
 
   const openCreateModal = (type: 'goal' | 'objective' | 'task' | 'idea') => {
     if (selectedNodes.length === 0) {
-      alert('Please select a node from the mind map first');
+      alert(t('map.selectNodeFirst'));
       return;
     }
     
@@ -351,7 +353,7 @@ export default function MindMapView() {
     const itemData: any = {
       user_id: user!.id,
       title: createModal.nodeText,
-      description: `Created from mind map: ${currentMindMap?.title}`,
+      description: `${t('map.createdFromMindMap')} ${currentMindMap?.title}`,
     };
 
     let table = '';
@@ -377,7 +379,11 @@ export default function MindMapView() {
     if (!error) {
       setCreateModal({ type: null, nodeText: '' });
       setSelectedNodes([]);
-      alert(`${createModal.type} created successfully!`);
+      const typeLabel = createModal.type === 'goal' ? t('objectives.goal') : 
+                        createModal.type === 'objective' ? t('objectives.objective') : 
+                        createModal.type === 'task' ? t('objectives.task') : 
+                        t('ideate.title');
+      alert(t('map.createdSuccessfully').replace('{{type}}', typeLabel));
     }
   };
 
@@ -419,7 +425,7 @@ export default function MindMapView() {
           </span>
           <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500">
             <Network className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-            <span className="hidden sm:inline">Map</span>
+            <span className="hidden sm:inline">{t('map.mapLabel')}</span>
           </div>
         </div>
       </div>
@@ -431,12 +437,12 @@ export default function MindMapView() {
       <div className={`flex-1 flex flex-col p-3 sm:p-4 lg:p-6 min-w-0 overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 bg-gray-50 dark:bg-black' : ''}`}>
         <div className={`bg-white dark:bg-white/5 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-3 sm:p-4 lg:p-6 flex-shrink-0 ${isFullscreen ? 'hidden' : 'mb-3 sm:mb-4 lg:mb-6'}`}>
           <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
-            Generate Mind Map from Problem
+            {t('map.generateFromProblem')}
           </h2>
           <textarea
             value={problemStatement}
             onChange={(e) => setProblemStatement(e.target.value)}
-            placeholder="Describe your problem or challenge here... The AI will break it down into a structured mind map."
+            placeholder={t('map.placeholder')}
             className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-black/40 text-text-primary text-sm sm:text-base"
             rows={3}
           />
@@ -448,8 +454,8 @@ export default function MindMapView() {
                 className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-lg shadow-blue-500/20 text-sm sm:text-base"
               >
                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">{generating ? 'Generating...' : 'Generate & Save Mind Map'}</span>
-                <span className="sm:hidden">{generating ? 'Generating...' : 'Generate'}</span>
+                <span className="hidden sm:inline">{generating ? t('map.generating') : t('map.generateAndSave')}</span>
+                <span className="sm:hidden">{generating ? t('map.generating') : t('ideate.generate')}</span>
               </button>
               <button
                 onClick={(e) => {
@@ -460,12 +466,12 @@ export default function MindMapView() {
                 className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-medium text-sm sm:text-base"
               >
                 <History className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">All History ({savedMindMaps.length})</span>
-                <span className="sm:hidden">History ({savedMindMaps.length})</span>
+                <span className="hidden sm:inline">{t('map.allHistory')} ({savedMindMaps.length})</span>
+                <span className="sm:hidden">{t('map.history')} ({savedMindMaps.length})</span>
               </button>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Mind maps are automatically saved for future reference
+              {t('map.autoSavedDescription')}
             </p>
           </div>
 
@@ -475,10 +481,10 @@ export default function MindMapView() {
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <History className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 dark:text-gray-400" />
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Session History
+                  {t('map.sessionHistory')}
                 </h3>
                 <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
-                  ({navigationHistory.length} {navigationHistory.length === 1 ? 'map' : 'maps'})
+                  ({navigationHistory.length} {navigationHistory.length === 1 ? t('map.map') : t('map.maps')})
                 </span>
               </div>
               <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 custom-scrollbar">
@@ -497,7 +503,7 @@ export default function MindMapView() {
                     onClick={handleNavigateBack}
                     disabled={historyIndex < 0}
                     className="flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm font-medium"
-                    title="Go back"
+                    title={t('map.goBack')}
                   >
                     <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
@@ -505,7 +511,7 @@ export default function MindMapView() {
                     onClick={handleNavigateForward}
                     disabled={historyIndex >= navigationHistory.length - 1}
                     className="flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm font-medium"
-                    title="Go forward"
+                    title={t('map.goForward')}
                   >
                     <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
@@ -518,28 +524,28 @@ export default function MindMapView() {
                   className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
                   <Target className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Goal</span>
+                  <span className="hidden sm:inline">{t('objectives.goal')}</span>
                 </button>
                 <button
                   onClick={() => openCreateModal('objective')}
                   className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
                   <Flag className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Objective</span>
+                  <span className="hidden sm:inline">{t('objectives.objective')}</span>
                 </button>
                 <button
                   onClick={() => openCreateModal('task')}
                   className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
                   <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Task</span>
+                  <span className="hidden sm:inline">{t('objectives.task')}</span>
                 </button>
                 <button
                   onClick={() => openCreateModal('idea')}
                   className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors text-xs sm:text-sm font-medium"
                 >
                   <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Ideate</span>
+                  <span className="hidden sm:inline">{t('nav.ideate')}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -550,7 +556,7 @@ export default function MindMapView() {
                     }
                   }}
                   className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors text-xs sm:text-sm font-medium"
-                  title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  title={isFullscreen ? t('map.exitFullscreen') : t('map.enterFullscreen')}
                 >
                   {isFullscreen ? <Minimize className="w-3 h-3 sm:w-4 sm:h-4" /> : <Maximize className="w-3 h-3 sm:w-4 sm:h-4" />}
                 </button>
@@ -559,8 +565,8 @@ export default function MindMapView() {
             {selectedNodes.length > 0 && (
               <div className="px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 flex-shrink-0">
                 <p className="text-xs sm:text-sm text-blue-900 dark:text-blue-100">
-                  <strong>Selected:</strong> {selectedNodes[selectedNodes.length - 1]}
-                  <span className="hidden sm:inline ml-2 text-xs opacity-75">(Double-click to create new tree from this node)</span>
+                  <strong>{t('map.selected')}</strong> {selectedNodes[selectedNodes.length - 1]}
+                  <span className="hidden sm:inline ml-2 text-xs opacity-75">{t('map.doubleClickInstruction')}</span>
                 </p>
               </div>
             )}
@@ -577,7 +583,7 @@ export default function MindMapView() {
           <div className="flex-1 flex items-center justify-center text-gray-400 min-h-0">
             <div className="text-center px-4">
               <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 opacity-50" />
-              <p className="text-sm sm:text-base lg:text-lg">Enter a problem and generate a mind map to get started</p>
+              <p className="text-sm sm:text-base lg:text-lg">{t('map.emptyState')}</p>
             </div>
           </div>
         )}
@@ -595,7 +601,7 @@ export default function MindMapView() {
           {/* Sidebar */}
           <div className="fixed right-0 top-0 bottom-0 w-[85vw] sm:w-80 max-w-sm bg-white dark:bg-black border-l border-gray-200 dark:border-white/10 flex flex-col overflow-hidden z-50 lg:relative lg:z-auto lg:w-64 xl:w-80 shadow-xl lg:shadow-none">
             <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between flex-shrink-0">
-              <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">Saved Mind Maps</h3>
+              <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">{t('map.savedMindMaps')}</h3>
               <button
                 onClick={() => setShowHistory(false)}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded text-text-secondary"
@@ -633,7 +639,7 @@ export default function MindMapView() {
               ))}
               {savedMindMaps.length === 0 && (
                 <div className="text-center py-8 text-xs sm:text-sm text-gray-400">
-                  No saved mind maps yet
+                  {t('map.noSavedMindMaps')}
                 </div>
               )}
             </div>
@@ -645,10 +651,13 @@ export default function MindMapView() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-black rounded-xl p-6 max-w-md w-full border border-gray-200 dark:border-white/10 shadow-xl">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-              Create {createModal.type.charAt(0).toUpperCase() + createModal.type.slice(1)}
+              {t('map.createItem').replace('{{type}}', createModal.type === 'goal' ? t('objectives.goal') : 
+                createModal.type === 'objective' ? t('objectives.objective') : 
+                createModal.type === 'task' ? t('objectives.task') : 
+                t('ideate.title'))}
             </h2>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('ideaDetail.title')}</label>
               <input
                 type="text"
                 value={createModal.nodeText}
@@ -663,13 +672,13 @@ export default function MindMapView() {
                 onClick={() => setCreateModal({ type: null, nodeText: '' })}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-text-secondary"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreateItem}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
-                Create
+                {t('common.create')}
               </button>
             </div>
           </div>

@@ -2,16 +2,22 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Loader2, Mail, Lock, Globe } from 'lucide-react';
+import { ArrowRight, Loader2, Mail, Lock } from 'lucide-react';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { language, setLanguage, t } = useLanguage();
+  const { setLanguage, t } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
-  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+
+  // Set English as default language on login page (only when component mounts)
+  useEffect(() => {
+    setLanguage('en');
+    // Note: This sets English temporarily for the login page
+    // Once logged in, the user's saved language preference from localStorage will be used
+  }, [setLanguage]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -148,19 +154,6 @@ export default function Login() {
         {/* Right Side - Auth Form */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-4 sm:px-8">
           <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/50 shadow-glass rounded-3xl p-8 sm:p-10 animate-scale-in relative">
-            {/* Language Selector Button */}
-            <div className="absolute top-4 right-4 z-50">
-              <button
-                onClick={() => setShowLanguageSelector(!showLanguageSelector)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/40 hover:bg-white/70 transition-all"
-                title={t('language.selectLanguage')}
-              >
-                <Globe className="w-4 h-4 text-text-secondary" />
-                <span className="text-sm font-medium text-text-secondary">
-                  {language === 'en' ? 'EN' : language === 'es' ? 'ES' : 'ZH'}
-                </span>
-              </button>
-            </div>
             <div className="text-center mb-8">
               <div className="flex justify-center mb-3">
                 <img 
@@ -416,60 +409,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-      {/* Click outside to close language selector */}
-      {showLanguageSelector && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={(e) => {
-            console.log('Backdrop clicked, target:', e.target);
-            setShowLanguageSelector(false);
-          }}
-        />
-      )}
-      {/* Language Selector Dropdown */}
-      {showLanguageSelector && (
-        <div className="fixed top-20 right-8 w-40 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-border-primary overflow-hidden z-50">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('Setting language to EN, current:', language);
-              setLanguage('en');
-              setShowLanguageSelector(false);
-            }}
-            className={`w-full px-4 py-2 text-left text-sm hover:bg-bg-tertiary transition-colors ${
-              language === 'en' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
-            }`}
-          >
-            {t('language.english')}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('Setting language to ES, current:', language);
-              setLanguage('es');
-              setShowLanguageSelector(false);
-            }}
-            className={`w-full px-4 py-2 text-left text-sm hover:bg-bg-tertiary transition-colors ${
-              language === 'es' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
-            }`}
-          >
-            {t('language.spanish')}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('Setting language to ZH, current:', language);
-              setLanguage('zh');
-              setShowLanguageSelector(false);
-            }}
-            className={`w-full px-4 py-2 text-left text-sm hover:bg-bg-tertiary transition-colors ${
-              language === 'zh' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
-            }`}
-          >
-            {t('language.chinese')}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

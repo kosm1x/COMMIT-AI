@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LogOut, Menu, X, Search, ChevronLeft, ChevronRight, Command, Moon, Sun } from 'lucide-react';
+import { LogOut, Menu, X, Search, ChevronLeft, ChevronRight, Command, Moon, Sun, Globe, User, ChevronDown } from 'lucide-react';
 import { getTranslatedNavigationGroups } from '../config/navigation';
 import NavigationGroup from './navigation/NavigationGroup';
 import CommandPalette from './navigation/CommandPalette';
@@ -20,17 +20,36 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const navigationGroups = useMemo(() => getTranslatedNavigationGroups(t), [t]);
 
   useKeyboardShortcuts({
     onOpenCommandPalette: () => setCommandPaletteOpen(true),
   });
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userMenuOpen]);
 
   return (
     <div className="min-h-screen bg-bg-secondary flex">
@@ -92,63 +111,194 @@ export default function Layout({ children }: LayoutProps) {
         <div className="p-4 border-t border-border-secondary/50 bg-bg-secondary/30">
           {!sidebarCollapsed ? (
             <div className="animate-fade-in">
-              <div className="flex items-center gap-3 mb-3 p-2 rounded-xl bg-white/50 dark:bg-white/5 border border-border-secondary">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-text-primary truncate">My Workspace</p>
-                  <p className="text-[10px] text-text-tertiary truncate">{user?.email}</p>
-                </div>
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="w-full flex items-center gap-3 mb-3 p-2 rounded-xl bg-white/50 dark:bg-white/5 border border-border-secondary hover:bg-white/70 dark:hover:bg-white/10 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-xs font-semibold text-text-primary truncate">My Workspace</p>
+                    <p className="text-[10px] text-text-tertiary truncate">{user?.email}</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-text-tertiary transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {/* User Menu Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-border-primary overflow-hidden z-50 animate-in slide-in-from-bottom-2">
+                    {/* Language Selector */}
+                    <div className="p-2 border-b border-border-secondary">
+                      <div className="px-2 py-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-1">
+                        {t('language.selectLanguage')}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setLanguage('en');
+                          setUserMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                          language === 'en' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        {t('language.english')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLanguage('es');
+                          setUserMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                          language === 'es' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        {t('language.spanish')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLanguage('zh');
+                          setUserMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                          language === 'zh' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        {t('language.chinese')}
+                      </button>
+                    </div>
+                    
+                    {/* Theme Toggle */}
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-bg-tertiary transition-colors"
+                    >
+                      {theme === 'light' ? (
+                        <Moon className="w-3.5 h-3.5" />
+                      ) : (
+                        <Sun className="w-3.5 h-3.5" />
+                      )}
+                      {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                    </button>
+                    
+                    {/* Sign Out */}
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      {t('nav.signOut')}
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={toggleTheme}
-                  className="flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-text-secondary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
-                  title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-                >
-                  {theme === 'light' ? (
-                    <Moon className="w-3.5 h-3.5" />
-                  ) : (
-                    <Sun className="w-3.5 h-3.5" />
-                  )}
-                  {theme === 'light' ? 'Dark' : 'Light'}
-                </button>
-                <button
-                  onClick={signOut}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-medium text-text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  {t('nav.signOut')}
-                </button>
-                <button
                   onClick={() => setSidebarCollapsed(true)}
-                  className="p-2 text-text-tertiary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-medium text-text-tertiary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
+                  Collapse
                 </button>
               </div>
             </div>
           ) : (
             <div className="flex flex-col gap-3 items-center">
-              <button
-                onClick={toggleTheme}
-                className="p-2 text-text-secondary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
-                title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-              >
-                {theme === 'light' ? (
-                  <Moon className="w-5 h-5" />
-                ) : (
-                  <Sun className="w-5 h-5" />
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="p-2 text-text-secondary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
+                  title={user?.email}
+                >
+                  <User className="w-5 h-5" />
+                </button>
+                
+                {/* User Menu Dropdown (Collapsed) */}
+                {userMenuOpen && (
+                  <div className="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-border-primary overflow-hidden z-50 animate-in slide-in-from-bottom-2">
+                    {/* Language Selector */}
+                    <div className="p-2 border-b border-border-secondary">
+                      <div className="px-2 py-1.5 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-1">
+                        {t('language.selectLanguage')}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setLanguage('en');
+                          setUserMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                          language === 'en' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        {t('language.english')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLanguage('es');
+                          setUserMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                          language === 'es' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        {t('language.spanish')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLanguage('zh');
+                          setUserMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                          language === 'zh' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                        }`}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        {t('language.chinese')}
+                      </button>
+                    </div>
+                    
+                    {/* Theme Toggle */}
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-bg-tertiary transition-colors"
+                    >
+                      {theme === 'light' ? (
+                        <Moon className="w-3.5 h-3.5" />
+                      ) : (
+                        <Sun className="w-3.5 h-3.5" />
+                      )}
+                      {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                    </button>
+                    
+                    {/* Sign Out */}
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      {t('nav.signOut')}
+                    </button>
+                  </div>
                 )}
-              </button>
-              <button
-                onClick={signOut}
-                className="p-2 text-text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title={t('nav.signOut')}
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
+              </div>
               <button
                 onClick={() => setSidebarCollapsed(false)}
                 className="p-2 text-text-tertiary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
