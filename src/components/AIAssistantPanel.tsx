@@ -87,7 +87,7 @@ export default function AIAssistantPanel({
   onCacheUpdate,
 }: AIAssistantPanelProps) {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTool, setActiveTool] = useState<ToolType>(null);
   const [loading, setLoading] = useState(false);
   const [divergentPaths, setDivergentPaths] = useState<DivergentPath[]>(cache?.divergentPaths || []);
@@ -372,10 +372,10 @@ export default function AIAssistantPanel({
             <div className="flex items-start gap-3">
               <GitBranch className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-text-primary mb-1">Explore Divergent Paths</h3>
-                <p className="text-sm text-text-secondary">
-                  Discover alternative approaches and directions for your idea
-                </p>
+              <h3 className="font-semibold text-text-primary mb-1">{t('ideate.aiAssistant.exploreDivergent')}</h3>
+              <p className="text-sm text-text-secondary">
+                {t('ideate.aiAssistant.exploreDivergentDesc')}
+              </p>
               </div>
             </div>
           </button>
@@ -383,7 +383,7 @@ export default function AIAssistantPanel({
           {activeTool === 'divergent' && (
             <div className="ml-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-text-tertiary">Divergent Paths</span>
+                <span className="text-xs text-text-tertiary">{t('ideate.aiAssistant.divergentPaths')}</span>
                 <button
                   onClick={() => handleRefresh('divergent')}
                   disabled={loading}
@@ -391,7 +391,7 @@ export default function AIAssistantPanel({
                   title="Refresh results"
                 >
                   <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                  Refresh
+                  {t('ideate.aiAssistant.refresh')}
                 </button>
               </div>
               {loading ? (
@@ -422,11 +422,11 @@ export default function AIAssistantPanel({
                     <p className="text-sm text-text-secondary mb-2">{path.description}</p>
                     <div className="space-y-2 text-sm">
                       <div>
-                        <span className="font-medium text-text-primary">Approach: </span>
+                        <span className="font-medium text-text-primary">{t('ideate.aiAssistant.approach')} </span>
                         <span className="text-text-secondary">{path.approach}</span>
                       </div>
                       <div>
-                        <span className="font-medium text-text-primary">Outcome: </span>
+                        <span className="font-medium text-text-primary">{t('ideate.aiAssistant.outcome')} </span>
                         <span className="text-text-secondary">{path.potentialOutcome}</span>
                       </div>
                     </div>
@@ -448,9 +448,9 @@ export default function AIAssistantPanel({
           <div className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-text-primary mb-1">Suggest Next Steps</h3>
+              <h3 className="font-semibold text-text-primary mb-1">{t('ideate.aiAssistant.suggestNextSteps')}</h3>
               <p className="text-sm text-text-secondary">
-                Get actionable steps to move your idea forward
+                {t('ideate.aiAssistant.suggestNextStepsDesc')}
               </p>
             </div>
           </div>
@@ -459,7 +459,7 @@ export default function AIAssistantPanel({
         {activeTool === 'nextSteps' && (
           <div className="ml-4 space-y-2 animate-in slide-in-from-top-2 duration-300">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-text-tertiary">Next Steps</span>
+              <span className="text-xs text-text-tertiary">{t('ideate.aiAssistant.nextSteps')}</span>
               <button
                 onClick={() => handleRefresh('nextSteps')}
                 disabled={loading}
@@ -543,9 +543,9 @@ export default function AIAssistantPanel({
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-text-primary mb-1">Critical Analysis</h3>
+              <h3 className="font-semibold text-text-primary mb-1">{t('ideate.aiAssistant.criticalAnalysis')}</h3>
               <p className="text-sm text-text-secondary">
-                Get balanced feedback with strengths and challenges
+                {t('ideate.aiAssistant.criticalAnalysisDesc')}
               </p>
             </div>
           </div>
@@ -554,7 +554,7 @@ export default function AIAssistantPanel({
         {activeTool === 'critical' && (
           <div className="ml-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-text-tertiary">Critical Analysis</span>
+              <span className="text-xs text-text-tertiary">{t('ideate.aiAssistant.criticalAnalysis')}</span>
               {criticalAnalysis && (
                 <button
                   onClick={() => handleRefresh('critical')}
@@ -563,7 +563,7 @@ export default function AIAssistantPanel({
                   title="Refresh results"
                 >
                   <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                  Refresh
+                  {t('ideate.aiAssistant.refresh')}
                 </button>
               )}
             </div>
@@ -574,7 +574,7 @@ export default function AIAssistantPanel({
             ) : criticalAnalysis ? (
               <>
                 <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3 select-text">
-                  <h4 className="font-semibold text-green-900 dark:text-green-300 mb-2 text-sm">Strengths</h4>
+                  <h4 className="font-semibold text-green-900 dark:text-green-300 mb-2 text-sm">{t('ideate.aiAssistant.strengths')}</h4>
                   <ul className="space-y-1">
                     {criticalAnalysis.strengths.map((strength, index) => (
                       <li key={index} className="text-sm text-green-800 dark:text-green-300 flex gap-2">
@@ -586,7 +586,7 @@ export default function AIAssistantPanel({
                 </div>
 
                 <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-3 select-text">
-                  <h4 className="font-semibold text-orange-900 dark:text-orange-300 mb-2 text-sm">Challenges</h4>
+                  <h4 className="font-semibold text-orange-900 dark:text-orange-300 mb-2 text-sm">{t('ideate.aiAssistant.challenges')}</h4>
                   <ul className="space-y-1">
                     {criticalAnalysis.challenges.map((challenge, index) => (
                       <li key={index} className="text-sm text-orange-800 dark:text-orange-300 flex gap-2">
@@ -599,7 +599,7 @@ export default function AIAssistantPanel({
 
                 <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 select-text">
                   <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2 text-sm">
-                    Key Assumptions to Test
+                    {t('ideate.aiAssistant.assumptions')}
                   </h4>
                   <ul className="space-y-1">
                     {criticalAnalysis.assumptions.map((assumption, index) => (
@@ -613,7 +613,7 @@ export default function AIAssistantPanel({
 
                 <div className="bg-bg-tertiary border border-border-primary rounded-lg p-3 select-text">
                   <h4 className="font-semibold text-text-primary mb-2 text-sm">
-                    Alternative Perspectives
+                    {t('ideate.aiAssistant.alternatives')}
                   </h4>
                   <ul className="space-y-1">
                     {criticalAnalysis.alternativePerspectives.map((perspective, index) => (
@@ -640,9 +640,9 @@ export default function AIAssistantPanel({
           <div className="flex items-start gap-3">
             <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-text-primary mb-1">Related Concepts</h3>
+              <h3 className="font-semibold text-text-primary mb-1">{t('ideate.aiAssistant.relatedConcepts')}</h3>
               <p className="text-sm text-text-secondary">
-                Discover frameworks and ideas that connect to yours
+                {t('ideate.aiAssistant.relatedConceptsDesc')}
               </p>
             </div>
           </div>
@@ -651,7 +651,7 @@ export default function AIAssistantPanel({
         {activeTool === 'concepts' && (
           <div className="ml-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-text-tertiary">Related Concepts</span>
+              <span className="text-xs text-text-tertiary">{t('ideate.aiAssistant.relatedConcepts')}</span>
               <button
                 onClick={() => handleRefresh('concepts')}
                 disabled={loading}
@@ -679,13 +679,13 @@ export default function AIAssistantPanel({
                   <p className="text-sm text-text-secondary mb-2 select-text">{concept.description}</p>
                   <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800 rounded p-2 mb-2 select-text">
                     <p className="text-xs text-purple-900 dark:text-purple-300">
-                      <span className="font-medium">Relevance: </span>
+                      <span className="font-medium">{t('ideate.aiAssistant.relevance')} </span>
                       <span className="select-text">{concept.relevance}</span>
                     </p>
                   </div>
                   {concept.resources.length > 0 && (
                     <div className="select-text">
-                      <p className="text-xs font-medium text-text-primary mb-1">Resources:</p>
+                      <p className="text-xs font-medium text-text-primary mb-1">{t('ideate.aiAssistant.resources')}</p>
                       <ul className="space-y-0.5">
                         {concept.resources.map((resource, rIndex) => (
                           <li key={rIndex} className="text-xs text-text-secondary flex gap-1">

@@ -601,7 +601,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
 
   if (!textResponse) {
     console.warn('[findIdeaConnections] API call failed, using fallback similarity check');
-    return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas);
+    return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas, undefined, language);
   }
 
   console.log('[findIdeaConnections] API response received, length:', textResponse.length);
@@ -663,57 +663,94 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
       // If no AI connections found, use strict fallback
       if (filteredConnections.length === 0) {
         console.log('[findIdeaConnections] No AI connections found, using strict fallback similarity check');
-        return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas, currentIdeaMeta);
+        return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas, currentIdeaMeta, language);
       }
       
       return filteredConnections;
     } else {
       console.warn('[findIdeaConnections] Could not extract JSON from response, using fallback');
-      return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas);
+      return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas, undefined, language);
     }
   } catch (error) {
     console.error('[findIdeaConnections] Error parsing connections:', error);
     console.error('[findIdeaConnections] Response was:', textResponse.substring(0, 500));
-    return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas);
+    return findSimilarIdeasFallback(currentIdea, currentTitle, currentContent, existingIdeas, undefined, language);
   }
 }
 
 // Common English stopwords to filter out when extracting keywords
-const STOPWORDS = new Set([
-  'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
-  'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had',
-  'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must',
-  'shall', 'can', 'need', 'dare', 'ought', 'used', 'it', 'its', 'this', 'that', 'these',
-  'those', 'i', 'you', 'he', 'she', 'we', 'they', 'what', 'which', 'who', 'whom',
-  'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most',
-  'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than',
-  'too', 'very', 'just', 'also', 'now', 'here', 'there', 'then', 'once', 'if', 'about',
-  'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under',
-  'again', 'further', 'any', 'your', 'my', 'our', 'their', 'his', 'her', 'up', 'down',
-  'out', 'off', 'over', 'under', 'while', 'because', 'until', 'although', 'though',
-  'since', 'unless', 'however', 'therefore', 'thus', 'hence', 'yet', 'still', 'already',
-  'always', 'never', 'often', 'sometimes', 'usually', 'generally', 'probably', 'perhaps',
-  'maybe', 'really', 'actually', 'basically', 'simply', 'get', 'got', 'make', 'made',
-  'like', 'use', 'using', 'used', 'way', 'ways', 'thing', 'things', 'something', 'nothing',
-  'everything', 'anything', 'someone', 'anyone', 'everyone', 'one', 'two', 'first', 'new',
-]);
+// Multi-language stopwords
+const STOPWORDS: Record<string, Set<string>> = {
+  en: new Set([
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
+    'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had',
+    'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must',
+    'shall', 'can', 'need', 'dare', 'ought', 'used', 'it', 'its', 'this', 'that', 'these',
+    'those', 'i', 'you', 'he', 'she', 'we', 'they', 'what', 'which', 'who', 'whom',
+    'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most',
+    'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than',
+    'too', 'very', 'just', 'also', 'now', 'here', 'there', 'then', 'once', 'if', 'about',
+    'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under',
+    'again', 'further', 'any', 'your', 'my', 'our', 'their', 'his', 'her', 'up', 'down',
+    'out', 'off', 'over', 'under', 'while', 'because', 'until', 'although', 'though',
+    'since', 'unless', 'however', 'therefore', 'thus', 'hence', 'yet', 'still', 'already',
+    'always', 'never', 'often', 'sometimes', 'usually', 'generally', 'probably', 'perhaps',
+    'maybe', 'really', 'actually', 'basically', 'simply', 'get', 'got', 'make', 'made',
+    'like', 'use', 'using', 'used', 'way', 'ways', 'thing', 'things', 'something', 'nothing',
+    'everything', 'anything', 'someone', 'anyone', 'everyone', 'one', 'two', 'first', 'new',
+  ]),
+  es: new Set([
+    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'o', 'pero', 'en', 'con',
+    'de', 'del', 'al', 'a', 'para', 'por', 'como', 'es', 'son', 'era', 'fueron', 'ser',
+    'estar', 'he', 'ha', 'han', 'haber', 'tener', 'tiene', 'tienen', 'hacer', 'hace', 'hacen',
+    'lo', 'le', 'les', 'se', 'su', 'sus', 'mi', 'mis', 'tu', 'tus', 'este', 'ese', 'aquel',
+    'esta', 'esa', 'aquella', 'estos', 'esos', 'aquellos', 'yo', 'tú', 'él', 'ella', 'nosotros',
+    'vosotros', 'ellos', 'ellas', 'que', 'quien', 'cual', 'cuando', 'donde', 'por qué', 'cómo',
+    'todo', 'cada', 'muy', 'más', 'menos', 'otro', 'otra', 'algunos', 'algunas', 'ninguno',
+    'ninguna', 'solo', 'también', 'tampoco', 'sí', 'no', 'ni', 'ahora', 'entonces', 'aquí',
+    'allí', 'después', 'antes', 'durante', 'sobre', 'bajo', 'entre', 'desde', 'hasta', 'sin',
+    'según', 'si', 'aunque', 'porque', 'mientras', 'cuando', 'siempre', 'nunca', 'ya', 'aún',
+    'todavía', 'puede', 'pueden', 'debe', 'deben', 'decir', 'dice', 'dicen', 'dar', 'da', 'dan',
+  ]),
+  zh: new Set([
+    '的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', '一', '一个', '上',
+    '也', '很', '到', '说', '要', '去', '你', '会', '着', '没有', '看', '好', '自己', '这',
+    '那', '里', '他', '她', '它', '们', '为', '与', '中', '对', '而', '用', '能', '可以',
+    '但', '却', '或', '因为', '所以', '如果', '虽然', '但是', '然后', '因此', '现在', '已经',
+    '还', '又', '再', '更', '最', '太', '非常', '比较', '什么', '怎么', '为什么', '多少',
+    '哪里', '谁', '怎样', '这个', '那个', '这些', '那些', '每个', '所有', '一些', '几个',
+    '其他', '别的', '另外', '自', '之', '于', '以', '及', '乃', '则', '将', '由', '从',
+    '给', '向', '让', '被', '把', '得', '过', '着', '了', '啊', '吗', '呢', '吧', '哦',
+  ]),
+};
 
-// Extract significant keywords from text (title + content)
-function extractKeywords(text: string, maxKeywords: number = 30): string[] {
-  // Normalize and tokenize
-  const normalized = text.toLowerCase()
-    .replace(/[^\w\s]/g, ' ')  // Remove punctuation
-    .replace(/\s+/g, ' ')      // Normalize whitespace
-    .trim();
+// Extract significant keywords from text (title + content) with language awareness
+function extractKeywords(text: string, maxKeywords: number = 30, language: 'en' | 'es' | 'zh' = 'en'): string[] {
+  const stopwordsSet = STOPWORDS[language] || STOPWORDS.en;
   
-  const words = normalized.split(' ');
+  // For Chinese, use character-based matching (2+ characters)
+  // For Spanish/English, use word-based matching (3+ characters)
+  let words: string[];
+  if (language === 'zh') {
+    // Chinese: extract sequences of Chinese characters
+    const matches = text.match(/[\u4e00-\u9fa5]{2,}/g) || [];
+    words = matches;
+  } else {
+    // Spanish/English: normalize and tokenize
+    const normalized = text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')  // Remove punctuation
+      .replace(/\s+/g, ' ')      // Normalize whitespace
+      .trim();
+    words = normalized.split(' ');
+  }
   
   // Count word frequency
   const wordFreq: Map<string, number> = new Map();
   
   for (const word of words) {
-    // Filter: min 3 chars, not a stopword, not a number
-    if (word.length >= 3 && !STOPWORDS.has(word) && !/^\d+$/.test(word)) {
+    const minLength = language === 'zh' ? 2 : 3;
+    // Filter: min length, not a stopword, not a number
+    if (word.length >= minLength && !stopwordsSet.has(word) && !/^\d+$/.test(word)) {
       wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
     }
   }
@@ -767,7 +804,8 @@ function findSimilarIdeasFallback(
   currentTitle: string,
   currentContent: string,
   existingIdeas: { id: string; title: string; content: string; tags?: string[] }[],
-  currentIdeaMeta?: { title: string; tags?: string[] }
+  currentIdeaMeta?: { title: string; tags?: string[] },
+  language: 'en' | 'es' | 'zh' = 'en'
 ): IdeaConnection[] {
   const connections: IdeaConnection[] = [];
   const currentTitleLower = currentTitle.toLowerCase().trim();
@@ -785,8 +823,8 @@ function findSimilarIdeasFallback(
   
   // Extract keywords from current idea (title + content combined for richer analysis)
   const currentFullText = `${currentTitle} ${currentTitle} ${currentContent}`; // Title weighted 2x
-  const currentKeywords = extractKeywords(currentFullText, 40);
-  const currentTitleKeywords = extractKeywords(currentTitle, 10);
+  const currentKeywords = extractKeywords(currentFullText, 40, language);
+  const currentTitleKeywords = extractKeywords(currentTitle, 10, language);
   
   console.log(`[findSimilarIdeasFallback] Current idea keywords: ${currentKeywords.slice(0, 10).join(', ')}...`);
   
@@ -797,8 +835,8 @@ function findSimilarIdeasFallback(
     
     // Extract keywords from comparison idea
     const ideaFullText = `${idea.title} ${idea.title} ${idea.content}`;
-    const ideaKeywords = extractKeywords(ideaFullText, 40);
-    const ideaTitleKeywords = extractKeywords(idea.title, 10);
+    const ideaKeywords = extractKeywords(ideaFullText, 40, language);
+    const ideaTitleKeywords = extractKeywords(idea.title, 10, language);
     
     let bestScore = 0;
     let bestReason = '';
