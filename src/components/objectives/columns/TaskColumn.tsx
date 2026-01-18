@@ -22,6 +22,7 @@ interface TaskColumnProps {
   onToggleTaskStatus: (task: Task) => Promise<void>;
   onMarkRecurringCompletedToday: (taskId: string) => Promise<void>;
   onTitleClick: (type: 'vision' | 'goal' | 'objective' | 'task', title: string, description: string, e: React.MouseEvent) => void;
+  onConvertToObjective?: (task: Task, targetGoalId: string | null) => Promise<void>;
   selectedObjective: Objective | null;
 }
 
@@ -41,6 +42,7 @@ export function TaskColumn({
   onToggleTaskStatus,
   onMarkRecurringCompletedToday,
   onTitleClick,
+  onConvertToObjective,
   selectedObjective,
 }: TaskColumnProps) {
   const { user } = useAuth();
@@ -127,6 +129,7 @@ export function TaskColumn({
       onToggleStatus={() => onToggleTaskStatus(task)}
       onMarkRecurringCompletedToday={() => onMarkRecurringCompletedToday(task.id)}
       isRecurringCompletedToday={recurringCompletedToday[task.id] || false}
+      onConvertToObjective={onConvertToObjective ? (targetGoalId) => onConvertToObjective(task, targetGoalId) : undefined}
     />
   );
 

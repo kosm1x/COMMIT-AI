@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
+import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, CheckCircle2, Circle, RefreshCw } from 'lucide-react';
 import { Objective, Goal, Task } from '../types';
 import { formatLastEdited, getPriorityColor } from '../utils';
+import { formatShortDate } from '../../../utils/trackingStats';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface ObjectiveCardProps {
   objective: Objective;
@@ -16,6 +18,8 @@ interface ObjectiveCardProps {
   onDelete: () => void;
   onTitleClick: (e: React.MouseEvent) => void;
   onToggleStatus: () => void;
+  onConvertToGoal?: (targetVisionId: string | null) => void;
+  onConvertToTask?: (targetObjectiveId: string | null) => void;
   onDragStart?: (e: React.DragEvent) => void;
   // Task count display
   taskCount?: { total: number; completed: number };
@@ -38,18 +42,22 @@ export function ObjectiveCard({
   onDelete,
   onTitleClick,
   onToggleStatus,
+  onConvertToGoal,
+  onConvertToTask,
   onDragStart,
   taskCount,
   isExpanded = false,
   onToggleExpand,
   tasks = [],
 }: ObjectiveCardProps) {
+  const { t } = useLanguage();
   const [editTitle, setEditTitle] = useState(objective.title);
   const [editDescription, setEditDescription] = useState(objective.description);
   const [editStatus, setEditStatus] = useState(objective.status);
   const [editPriority, setEditPriority] = useState(objective.priority);
   const [editTargetDate, setEditTargetDate] = useState(objective.target_date || '');
   const [editGoalId, setEditGoalId] = useState<string | null>(objective.goal_id);
+  const [showConvertMenu, setShowConvertMenu] = useState(false);
 
   useEffect(() => {
     if (isEditing) {
@@ -208,7 +216,17 @@ export function ObjectiveCard({
                     {objective.title}
                   </h3>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowConvertMenu(!showConvertMenu);
+                    }}
+                    className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors"
+                    title={t('objectives.convert')}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -227,6 +245,33 @@ export function ObjectiveCard({
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
+                  {showConvertMenu && (
+                    <div
+                      className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-border-primary rounded-lg shadow-lg z-10 py-1 min-w-[180px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onConvertToGoal?.(null);
+                          setShowConvertMenu(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
+                      >
+                        {t('objectives.convertToGoal')}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onConvertToTask?.(null);
+                          setShowConvertMenu(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
+                      >
+                        {t('objectives.convertToTask')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               {objective.description && (
@@ -238,7 +283,7 @@ export function ObjectiveCard({
                 {objective.target_date && (
                   <div className="flex items-center gap-1 bg-white/50 dark:bg-white/5 px-1.5 py-0.5 rounded border border-border-secondary">
                     <Calendar className="w-3 h-3" />
-                    {new Date(objective.target_date).toLocaleDateString()}
+                    {formatShortDate(new Date(objective.target_date))}
                   </div>
                 )}
               </div>

@@ -21,6 +21,8 @@ interface ObjectiveColumnProps {
   onToggleObjectiveStatus: (objective: Objective) => Promise<void>;
   onTitleClick: (type: 'vision' | 'goal' | 'objective' | 'task', title: string, description: string, e: React.MouseEvent) => void;
   getObjectiveDescendantCounts: (id: string) => Promise<{ tasks: number }>;
+  onConvertToGoal?: (objective: Objective, targetVisionId: string | null) => Promise<void>;
+  onConvertToTask?: (objective: Objective, targetObjectiveId: string | null) => Promise<void>;
   selectedGoal: Goal | null;
   taskCounts: Record<string, { total: number; completed: number }>;
 }
@@ -41,6 +43,8 @@ export function ObjectiveColumn({
   onToggleObjectiveStatus,
   onTitleClick,
   getObjectiveDescendantCounts,
+  onConvertToGoal,
+  onConvertToTask,
   selectedGoal,
   taskCounts,
 }: ObjectiveColumnProps) {
@@ -150,6 +154,8 @@ export function ObjectiveColumn({
       onDelete={() => handleDelete(objective.id)}
       onToggleStatus={() => onToggleObjectiveStatus(objective)}
       onTitleClick={(e) => onTitleClick('objective', objective.title, objective.description, e)}
+      onConvertToGoal={onConvertToGoal ? (targetVisionId) => onConvertToGoal(objective, targetVisionId) : undefined}
+      onConvertToTask={onConvertToTask ? (targetObjectiveId) => onConvertToTask(objective, targetObjectiveId) : undefined}
       taskCount={taskCounts[objective.id]}
       isExpanded={expandedObjectives.has(objective.id)}
       onToggleExpand={() => toggleObjectiveExpanded(objective.id)}

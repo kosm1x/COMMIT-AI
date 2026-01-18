@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, Flag, CheckCircle2, Circle } from 'lucide-react';
+import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, Flag, CheckCircle2, Circle, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { Goal, Vision, Objective } from '../types';
 import { formatLastEdited } from '../utils';
+import { formatShortDate } from '../../../utils/trackingStats';
 
 interface GoalCardProps {
   goal: Goal;
@@ -18,6 +19,8 @@ interface GoalCardProps {
   onDelete: () => void;
   onTitleClick: (e: React.MouseEvent) => void;
   onToggleStatus: () => void;
+  onConvertToVision?: () => void;
+  onConvertToObjective?: (targetGoalId: string | null) => void;
   onDragStart?: (e: React.DragEvent) => void;
   // Objective count display
   objectiveCount?: { total: number; completed: number };
@@ -41,6 +44,8 @@ export function GoalCard({
   onDelete,
   onTitleClick,
   onToggleStatus,
+  onConvertToVision,
+  onConvertToObjective,
   onDragStart,
   objectiveCount,
   isExpanded = false,
@@ -53,6 +58,7 @@ export function GoalCard({
   const [editStatus, setEditStatus] = useState(goal.status);
   const [editTargetDate, setEditTargetDate] = useState(goal.target_date || '');
   const [editVisionId, setEditVisionId] = useState<string | null>(goal.vision_id);
+  const [showConvertMenu, setShowConvertMenu] = useState(false);
 
   useEffect(() => {
     if (isEditing) {
@@ -189,7 +195,17 @@ export function GoalCard({
                     {goal.title}
                   </h3>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowConvertMenu(!showConvertMenu);
+                    }}
+                    className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
+                    title={t('objectives.convert')}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -208,6 +224,33 @@ export function GoalCard({
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
+                  {showConvertMenu && (
+                    <div
+                      className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-border-primary rounded-lg shadow-lg z-10 py-1 min-w-[180px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onConvertToVision?.();
+                          setShowConvertMenu(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
+                      >
+                        {t('objectives.convertToVision')}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onConvertToObjective?.(null);
+                          setShowConvertMenu(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
+                      >
+                        {t('objectives.convertToObjective')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               {goal.description && (
@@ -219,7 +262,7 @@ export function GoalCard({
                 {goal.target_date && (
                   <div className="flex items-center gap-1 bg-white/50 dark:bg-white/5 px-1.5 py-0.5 rounded border border-border-secondary">
                     <Calendar className="w-3 h-3" />
-                    {new Date(goal.target_date).toLocaleDateString()}
+                    {formatShortDate(new Date(goal.target_date))}
                   </div>
                 )}
                 <span className="ml-auto">{formatLastEdited(goal.last_edited_at)}</span>

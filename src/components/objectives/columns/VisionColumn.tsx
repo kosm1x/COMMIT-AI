@@ -18,6 +18,7 @@ interface VisionColumnProps {
   onUpdateVisionOrder: (visionId: string, newOrder: number) => Promise<void>;
   onTitleClick: (type: 'vision' | 'goal' | 'objective' | 'task', title: string, description: string, e: React.MouseEvent) => void;
   getVisionDescendantCounts: (id: string) => Promise<{ goals: number; objectives: number; tasks: number }>;
+  onConvertToGoal?: (vision: Vision, targetVisionId: string | null) => Promise<void>;
   // For family emphasis calculation
   goals: Goal[];
   objectives: Objective[];
@@ -38,6 +39,7 @@ export function VisionColumn({
   onUpdateVisionOrder,
   onTitleClick,
   getVisionDescendantCounts,
+  onConvertToGoal,
 }: VisionColumnProps) {
   const { t } = useLanguage();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
@@ -168,6 +170,7 @@ export function VisionColumn({
             }}
             onDelete={() => handleDelete(vision.id)}
             onTitleClick={(e) => onTitleClick('vision', vision.title, vision.description, e)}
+            onConvertToGoal={onConvertToGoal ? (targetVisionId) => onConvertToGoal(vision, targetVisionId) : undefined}
             onDragStart={(e) => handleDragStart(e, vision.id)}
             onDragEnter={(e) => handleDragEnter(e, vision.id)}
             onDragLeave={handleDragLeave}

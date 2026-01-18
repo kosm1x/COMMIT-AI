@@ -116,16 +116,48 @@ export function getDaysInMonth(date: Date): number {
 }
 
 export function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  const year = date.getFullYear();
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const day = date.getDate();
+  return `${month} ${day}, ${year}`;
 }
 
 export function formatShortDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  });
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const day = date.getDate();
+  return `${month} ${day}`;
 }
+
+export function formatDateTime(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const day = date.getDate();
+  const hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${month} ${day}, ${year} ${displayHours}:${minutes} ${ampm}`;
+}
+
+export function formatTime(date: Date): string {
+  const hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${minutes} ${ampm}`;
+}
+
+export function formatMonthYear(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  return `${month} ${year}`;
+}
+
+export function formatWeekday(date: Date): string {
+  return date.toLocaleDateString('en-US', { weekday: 'short' });
+}
+
+export function formatWeekdayNarrow(date: Date): string {
+  return date.toLocaleDateString('en-US', { weekday: 'narrow' });
+}
+

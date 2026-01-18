@@ -10,6 +10,7 @@ import CommandPalette from './navigation/CommandPalette';
 import BottomTabBar from './navigation/BottomTabBar';
 import QuickActions from './navigation/QuickActions';
 import Breadcrumbs from './navigation/Breadcrumbs';
+import WelcomeModal from './WelcomeModal';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 interface LayoutProps {
@@ -26,6 +27,7 @@ export default function Layout({ children }: LayoutProps) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const navigationGroups = useMemo(() => getTranslatedNavigationGroups(t), [t]);
@@ -52,7 +54,9 @@ export default function Layout({ children }: LayoutProps) {
   }, [userMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-bg-secondary flex">
+    <>
+      <WelcomeModal />
+      <div className="min-h-screen bg-bg-secondary flex">
       {/* Desktop Sidebar */}
       <aside
         className={`${
@@ -325,20 +329,21 @@ export default function Layout({ children }: LayoutProps) {
         }`}
       >
         <div className="h-full flex flex-col">
-          <div className="p-4 flex items-center justify-between border-b border-border-secondary">
+          <div className="p-3 flex items-center justify-between border-b border-border-secondary">
             <button
               onClick={() => {
                 navigate('/');
                 setSidebarOpen(false);
               }}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
               title={t('nav.goToHome')}
             >
               <img 
                 src="/logo-icon.png" 
                 alt="COMMIT" 
-                className="w-40 h-40 object-contain"
+                className="w-16 h-16 object-contain"
               />
+              <span className="text-sm font-bold text-text-primary">COMMIT</span>
             </button>
             <button 
               onClick={() => setSidebarOpen(false)}
@@ -347,7 +352,7 @@ export default function Layout({ children }: LayoutProps) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <nav className="flex-1 p-4 overflow-y-auto">
+          <nav className="flex-1 p-3 overflow-y-auto">
             {navigationGroups.map((group) => (
               <NavigationGroup
                 key={group.id}
@@ -357,14 +362,98 @@ export default function Layout({ children }: LayoutProps) {
               />
             ))}
           </nav>
-          <div className="p-4 border-t border-border-secondary">
+          <div className="border-t border-border-secondary">
+            {/* Collapsible User Workspace */}
             <button
-              onClick={signOut}
-              className="w-full flex items-center gap-3 px-4 py-3 text-text-secondary hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors font-medium"
+              onClick={() => setMobileWorkspaceOpen(!mobileWorkspaceOpen)}
+              className="w-full flex items-center justify-between p-3 hover:bg-bg-tertiary transition-colors"
             >
-              <LogOut className="w-5 h-5" />
-              Sign Out
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                  {user?.email?.charAt(0).toUpperCase()}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-semibold text-text-primary">My Workspace</p>
+                  <p className="text-[10px] text-text-tertiary truncate max-w-[140px]">{user?.email}</p>
+                </div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-text-tertiary transition-transform ${mobileWorkspaceOpen ? 'rotate-180' : ''}`} />
             </button>
+            
+            {/* Collapsible Content */}
+            {mobileWorkspaceOpen && (
+              <div className="px-3 pb-3 space-y-2 animate-in slide-in-from-top-2">
+                {/* Language Selector */}
+                <div>
+                  <div className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-1.5 px-2">
+                    {t('language.selectLanguage')}
+                  </div>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => {
+                        setLanguage('en');
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                        language === 'en' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                      }`}
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      {t('language.english')}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLanguage('es');
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                        language === 'es' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                      }`}
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      {t('language.spanish')}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLanguage('zh');
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs hover:bg-bg-tertiary transition-colors ${
+                        language === 'zh' ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-primary'
+                      }`}
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      {t('language.chinese')}
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                    setSidebarOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
+                >
+                  {theme === 'light' ? (
+                    <Moon className="w-4 h-4" />
+                  ) : (
+                    <Sun className="w-4 h-4" />
+                  )}
+                  {theme === 'light' ? t('common.darkMode') : t('common.lightMode')}
+                </button>
+                
+                {/* Sign Out */}
+                <button
+                  onClick={signOut}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t('nav.signOut')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -408,5 +497,6 @@ export default function Layout({ children }: LayoutProps) {
         onOpen={() => setQuickActionsOpen(true)}
       />
     </div>
+    </>
   );
 }

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X } from 'lucide-react';
+import { Edit2, Trash2, Calendar, Save, X, RefreshCw } from 'lucide-react';
+import { formatShortDate } from '../../../utils/trackingStats';
 import { Vision } from '../types';
 import { getStatusIcon, formatLastEdited } from '../utils';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface VisionCardProps {
   vision: Vision;
@@ -14,6 +16,7 @@ interface VisionCardProps {
   onSave: (updates: Partial<Vision>) => Promise<void>;
   onDelete: () => void;
   onTitleClick: (e: React.MouseEvent) => void;
+  onConvertToGoal?: (targetVisionId: string | null) => void;
   // Drag and drop
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnter?: (e: React.DragEvent) => void;
@@ -34,6 +37,7 @@ export function VisionCard({
   onSave,
   onDelete,
   onTitleClick,
+  onConvertToGoal,
   onDragStart,
   onDragEnter,
   onDragLeave,
@@ -41,10 +45,12 @@ export function VisionCard({
   isDragged = false,
   isDraggedOver = false,
 }: VisionCardProps) {
+  const { t } = useLanguage();
   const [editTitle, setEditTitle] = useState(vision.title);
   const [editDescription, setEditDescription] = useState(vision.description);
   const [editStatus, setEditStatus] = useState(vision.status);
   const [editTargetDate, setEditTargetDate] = useState(vision.target_date || '');
+  const [showConvertMenu, setShowConvertMenu] = useState(false);
 
   // Sync edit state when editing starts or vision changes
   useEffect(() => {
@@ -154,7 +160,17 @@ export function VisionCard({
                 {vision.title}
               </h3>
             </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowConvertMenu(!showConvertMenu);
+                }}
+                className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors"
+                title={t('objectives.convert')}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -173,6 +189,23 @@ export function VisionCard({
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
+              {showConvertMenu && (
+                <div
+                  className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-border-primary rounded-lg shadow-lg z-10 py-1 min-w-[180px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onConvertToGoal?.(null);
+                      setShowConvertMenu(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
+                  >
+                    {t('objectives.convertToGoal')}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           {vision.description && (
@@ -184,7 +217,7 @@ export function VisionCard({
             {vision.target_date && (
               <div className="flex items-center gap-1 bg-white/50 dark:bg-white/5 px-1.5 py-0.5 rounded border border-border-secondary">
                 <Calendar className="w-3 h-3" />
-                {new Date(vision.target_date).toLocaleDateString()}
+                {formatShortDate(new Date(vision.target_date))}
               </div>
             )}
             <span className="ml-auto">{formatLastEdited(vision.last_edited_at)}</span>

@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { generateMindMap } from '../../services/aiService';
+import { formatShortDate } from '../../utils/trackingStats';
 import type { MermaidConfig } from 'mermaid';
 import {
   Sparkles,
@@ -45,14 +46,17 @@ interface NavigationState {
 export default function MindMapView() {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [problemStatement, setProblemStatement] = useState('');
   const [currentMindMap, setCurrentMindMap] = useState<MindMap | null>(null);
   const [savedMindMaps, setSavedMindMaps] = useState<MindMap[]>([]);
   const [generating, setGenerating] = useState(false);
-  const [showHistory, setShowHistory] = useState(true);
+  // Initialize showHistory to false on mobile (screen width < 1024px), true on desktop
+  const [showHistory, setShowHistory] = useState(() => {
+    return typeof window !== 'undefined' && window.innerWidth >= 1024;
+  });
   const [createModal, setCreateModal] = useState<CreateItemModal>({ type: null, nodeText: '' });
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -196,7 +200,7 @@ export default function MindMapView() {
         ? `${contextChain}\n\n${t('map.previousTree')} ${currentMindMap.title}\n${t('map.problem')} ${currentMindMap.problem_statement}`
         : `${t('map.previousTree')} ${currentMindMap.title}\n${t('map.problem')} ${currentMindMap.problem_statement}`;
       
-      const result = await generateMindMap(cleanText, newContext);
+      const result = await generateMindMap(cleanText, newContext, language);
 
       const { data, error } = await supabase
         .from('mind_maps')
@@ -251,7 +255,7 @@ export default function MindMapView() {
 
     setGenerating(true);
     try {
-      const result = await generateMindMap(problemStatement);
+      const result = await generateMindMap(problemStatement, undefined, language);
 
       const { data, error } = await supabase
         .from('mind_maps')
@@ -421,7 +425,7 @@ export default function MindMapView() {
         </p>
         <div className="flex items-center justify-between mt-1 sm:mt-2 pt-1 sm:pt-2 border-t border-gray-200 dark:border-white/10">
           <span className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500">
-            {new Date(mindMap.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {formatShortDate(new Date(mindMap.created_at))}
           </span>
           <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500">
             <Network className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -625,7 +629,7 @@ export default function MindMapView() {
                     >
                       <h4 className="font-medium text-gray-900 dark:text-white text-xs sm:text-sm mb-1 truncate">{map.title}</h4>
                       <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(map.created_at).toLocaleDateString()}
+                        {formatShortDate(new Date(map.created_at))}
                       </p>
                     </button>
                     <button

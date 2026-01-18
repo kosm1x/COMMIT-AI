@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { analyzeJournalEntry } from '../services/aiService';
+import { formatShortDate } from '../utils/trackingStats';
 import {
   Calendar,
   Plus,
@@ -40,7 +41,17 @@ export default function Journal() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [content, setContent] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Get local date string without UTC conversion
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -207,7 +218,7 @@ export default function Journal() {
     setSelectedEntry(null);
     setContent('');
     setAnalysis(null);
-    setSelectedDate(new Date().toISOString().split('T')[0]);
+    setSelectedDate(getLocalDateString());
   };
 
   const handleDelete = async () => {
@@ -244,10 +255,7 @@ export default function Journal() {
         </button>
         <span className="text-sm font-medium text-text-secondary">
           {selectedEntry
-            ? new Date(selectedEntry.entry_date + 'T00:00:00').toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              })
+            ? formatShortDate(new Date(selectedEntry.entry_date + 'T00:00:00'))
             : t('journal.newEntry')}
         </span>
         <button
@@ -316,10 +324,7 @@ export default function Journal() {
                   <div className="flex items-center gap-2">
                     <Calendar className={`w-3.5 h-3.5 ${selectedEntry?.id === entry.id ? 'text-white/80' : 'text-text-tertiary'}`} />
                     <span className={`text-xs font-medium ${selectedEntry?.id === entry.id ? 'text-white/90' : 'text-text-secondary'}`}>
-                      {new Date(entry.entry_date + 'T00:00:00').toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {formatShortDate(new Date(entry.entry_date + 'T00:00:00'))}
                     </span>
                   </div>
                   {entry.primary_emotion && (

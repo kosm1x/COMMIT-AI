@@ -41,6 +41,7 @@ export interface Task {
   due_date: string | null;
   completed_at: string | null;
   notes: string;
+  document_links: Array<{ url: string; label: string }>;
   last_edited_at: string;
   is_recurring: boolean;
 }

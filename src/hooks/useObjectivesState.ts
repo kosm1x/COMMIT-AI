@@ -78,6 +78,14 @@ export interface ObjectivesState {
   toggleTaskStatus: (task: Task) => Promise<void>;
   markRecurringTaskCompletedToday: (taskId: string) => Promise<void>;
   
+  // Conversion functions (convert between types)
+  convertVisionToGoal: (vision: Vision, targetVisionId: string | null) => Promise<Goal | null>;
+  convertGoalToVision: (goal: Goal) => Promise<Vision | null>;
+  convertGoalToObjective: (goal: Goal, targetGoalId: string | null) => Promise<Objective | null>;
+  convertObjectiveToGoal: (objective: Objective, targetVisionId: string | null) => Promise<Goal | null>;
+  convertObjectiveToTask: (objective: Objective, targetObjectiveId: string | null) => Promise<Task | null>;
+  convertTaskToObjective: (task: Task, targetGoalId: string | null) => Promise<Objective | null>;
+  
   // Reload functions
   reloadAll: () => Promise<void>;
   reloadVisions: () => Promise<void>;
@@ -949,6 +957,298 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     await loadTasks();
   }, [userId, loadTasks]);
 
+  // ===== CONVERSION OPERATIONS =====
+  
+  const convertVisionToGoal = useCallback(async (vision: Vision, targetVisionId: string | null): Promise<Goal | null> => {
+    if (!userId) return null;
+    
+    // Create new goal from vision
+    const { data: newGoal, error: goalError } = await supabase
+      .from('goals')
+      .insert({
+        user_id: userId,
+        title: vision.title,
+        description: vision.description,
+        status: vision.status,
+        target_date: vision.target_date,
+        vision_id: targetVisionId,
+      })
+      .select()
+      .single();
+    
+    if (goalError || !newGoal) {
+      console.error('Error converting vision to goal:', goalError);
+      return null;
+    }
+    
+    // Update all goals that belonged to this vision to belong to the new goal's parent vision
+    const { data: childGoals } = await supabase
+      .from('goals')
+      .select('id')
+      .eq('vision_id', vision.id);
+    
+    if (childGoals && childGoals.length > 0) {
+      // Convert child goals to objectives under the new goal
+      for (const childGoal of childGoals) {
+        const { data: goalData } = await supabase
+          .from('goals')
+          .select('*')
+          .eq('id', childGoal.id)
+          .single();
+        
+        if (goalData) {
+          await supabase
+            .from('objectives')
+            .insert({
+              user_id: userId,
+              title: goalData.title,
+              description: goalData.description,
+              status: goalData.status,
+              target_date: goalData.target_date,
+              priority: 'medium',
+              goal_id: newGoal.id,
+            });
+        }
+      }
+    }
+    
+    // Delete the original vision
+    await supabase.from('visions').delete().eq('id', vision.id);
+    
+    // Reload data
+    await Promise.all([loadVisions(), loadGoals(), loadObjectives()]);
+    
+    return newGoal;
+  }, [userId, loadVisions, loadGoals, loadObjectives]);
+  
+  const convertGoalToVision = useCallback(async (goal: Goal): Promise<Vision | null> => {
+    if (!userId) return null;
+    
+    // Create new vision from goal
+    const { data: newVision, error: visionError } = await supabase
+      .from('visions')
+      .insert({
+        user_id: userId,
+        title: goal.title,
+        description: goal.description,
+        status: goal.status,
+        target_date: goal.target_date,
+      })
+      .select()
+      .single();
+    
+    if (visionError || !newVision) {
+      console.error('Error converting goal to vision:', visionError);
+      return null;
+    }
+    
+    // Update all objectives that belonged to this goal to become goals under the new vision
+    const { data: childObjectives } = await supabase
+      .from('objectives')
+      .select('*')
+      .eq('goal_id', goal.id);
+    
+    if (childObjectives && childObjectives.length > 0) {
+      for (const obj of childObjectives) {
+        await supabase
+          .from('goals')
+          .insert({
+            user_id: userId,
+            title: obj.title,
+            description: obj.description,
+            status: obj.status,
+            target_date: obj.target_date,
+            vision_id: newVision.id,
+          });
+      }
+    }
+    
+    // Delete the original goal
+    await supabase.from('goals').delete().eq('id', goal.id);
+    
+    // Reload data
+    await Promise.all([loadVisions(), loadGoals(), loadObjectives()]);
+    
+    return newVision;
+  }, [userId, loadVisions, loadGoals, loadObjectives]);
+  
+  const convertGoalToObjective = useCallback(async (goal: Goal, targetGoalId: string | null): Promise<Objective | null> => {
+    if (!userId) return null;
+    
+    // Create new objective from goal
+    const { data: newObjective, error: objError } = await supabase
+      .from('objectives')
+      .insert({
+        user_id: userId,
+        title: goal.title,
+        description: goal.description,
+        status: goal.status,
+        target_date: goal.target_date,
+        priority: 'medium',
+        goal_id: targetGoalId,
+      })
+      .select()
+      .single();
+    
+    if (objError || !newObjective) {
+      console.error('Error converting goal to objective:', objError);
+      return null;
+    }
+    
+    // Convert child objectives to tasks under the new objective
+    const { data: childObjectives } = await supabase
+      .from('objectives')
+      .select('*')
+      .eq('goal_id', goal.id);
+    
+    if (childObjectives && childObjectives.length > 0) {
+      for (const obj of childObjectives) {
+        await supabase
+          .from('tasks')
+          .insert({
+            user_id: userId,
+            title: obj.title,
+            description: obj.description,
+            status: obj.status,
+            due_date: obj.target_date,
+            priority: obj.priority,
+            objective_id: newObjective.id,
+          });
+      }
+    }
+    
+    // Delete the original goal
+    await supabase.from('goals').delete().eq('id', goal.id);
+    
+    // Reload data
+    await Promise.all([loadGoals(), loadObjectives(), loadTasks()]);
+    
+    return newObjective;
+  }, [userId, loadGoals, loadObjectives, loadTasks]);
+  
+  const convertObjectiveToGoal = useCallback(async (objective: Objective, targetVisionId: string | null): Promise<Goal | null> => {
+    if (!userId) return null;
+    
+    // Create new goal from objective
+    const { data: newGoal, error: goalError } = await supabase
+      .from('goals')
+      .insert({
+        user_id: userId,
+        title: objective.title,
+        description: objective.description,
+        status: objective.status,
+        target_date: objective.target_date,
+        vision_id: targetVisionId,
+      })
+      .select()
+      .single();
+    
+    if (goalError || !newGoal) {
+      console.error('Error converting objective to goal:', goalError);
+      return null;
+    }
+    
+    // Convert child tasks to objectives under the new goal
+    const { data: childTasks } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('objective_id', objective.id);
+    
+    if (childTasks && childTasks.length > 0) {
+      for (const task of childTasks) {
+        await supabase
+          .from('objectives')
+          .insert({
+            user_id: userId,
+            title: task.title,
+            description: task.description || '',
+            status: task.status,
+            target_date: task.due_date,
+            priority: task.priority,
+            goal_id: newGoal.id,
+          });
+      }
+    }
+    
+    // Delete the original objective
+    await supabase.from('objectives').delete().eq('id', objective.id);
+    
+    // Reload data
+    await Promise.all([loadGoals(), loadObjectives(), loadTasks()]);
+    
+    return newGoal;
+  }, [userId, loadGoals, loadObjectives, loadTasks]);
+  
+  const convertObjectiveToTask = useCallback(async (objective: Objective, targetObjectiveId: string | null): Promise<Task | null> => {
+    if (!userId) return null;
+    
+    // Create new task from objective
+    const { data: newTask, error: taskError } = await supabase
+      .from('tasks')
+      .insert({
+        user_id: userId,
+        title: objective.title,
+        description: objective.description,
+        status: objective.status,
+        due_date: objective.target_date,
+        priority: objective.priority,
+        objective_id: targetObjectiveId,
+      })
+      .select()
+      .single();
+    
+    if (taskError || !newTask) {
+      console.error('Error converting objective to task:', taskError);
+      return null;
+    }
+    
+    // Delete child tasks (or orphan them)
+    await supabase
+      .from('tasks')
+      .update({ objective_id: null })
+      .eq('objective_id', objective.id);
+    
+    // Delete the original objective
+    await supabase.from('objectives').delete().eq('id', objective.id);
+    
+    // Reload data
+    await Promise.all([loadObjectives(), loadTasks()]);
+    
+    return newTask;
+  }, [userId, loadObjectives, loadTasks]);
+  
+  const convertTaskToObjective = useCallback(async (task: Task, targetGoalId: string | null): Promise<Objective | null> => {
+    if (!userId) return null;
+    
+    // Create new objective from task
+    const { data: newObjective, error: objError } = await supabase
+      .from('objectives')
+      .insert({
+        user_id: userId,
+        title: task.title,
+        description: task.description || '',
+        status: task.status,
+        target_date: task.due_date,
+        priority: task.priority,
+        goal_id: targetGoalId,
+      })
+      .select()
+      .single();
+    
+    if (objError || !newObjective) {
+      console.error('Error converting task to objective:', objError);
+      return null;
+    }
+    
+    // Delete the original task
+    await supabase.from('tasks').delete().eq('id', task.id);
+    
+    // Reload data
+    await Promise.all([loadObjectives(), loadTasks()]);
+    
+    return newObjective;
+  }, [userId, loadObjectives, loadTasks]);
+
   return {
     // Raw data
     visions,
@@ -1015,6 +1315,14 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     deleteTask,
     toggleTaskStatus,
     markRecurringTaskCompletedToday,
+    
+    // Conversion operations
+    convertVisionToGoal,
+    convertGoalToVision,
+    convertGoalToObjective,
+    convertObjectiveToGoal,
+    convertObjectiveToTask,
+    convertTaskToObjective,
     
     // Reload functions
     reloadAll,

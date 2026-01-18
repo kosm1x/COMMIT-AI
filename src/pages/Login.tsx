@@ -43,12 +43,19 @@ export default function Login() {
     setSuccess('');
     setLoading(true);
 
-    const { error } = isSignUp
-      ? await signUp(email, password)
-      : await signIn(email, password);
-
-    if (error) {
-      setError(error.message);
+    if (isSignUp) {
+      const { error } = await signUp(email, password);
+      if (error) {
+        setError(error.message);
+      } else {
+        // Show success message for email confirmation
+        setSuccess(t('login.signUpSuccess'));
+      }
+    } else {
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError(error.message);
+      }
     }
     setLoading(false);
   };
@@ -375,6 +382,18 @@ export default function Login() {
                   <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
                     <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
                     {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl animate-fade-in">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
+                      <Mail className="w-4 h-4" />
+                      <span className="font-medium text-sm">{t('login.checkYourEmail')}</span>
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      {success}
+                    </p>
                   </div>
                 )}
 

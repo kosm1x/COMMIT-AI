@@ -7,6 +7,7 @@ import { X, Network, Lightbulb, Eye, Target, Flag, ListTodo } from 'lucide-react
 import { useObjectivesState } from '../hooks/useObjectivesState';
 import { VisionColumn, GoalColumn, ObjectiveColumn, TaskColumn } from '../components/objectives/columns';
 import { VisionForm, GoalForm, ObjectiveForm, TaskForm } from '../components/objectives/modals';
+import { Vision, Goal, Objective, Task } from '../components/objectives/types';
 
 type ItemType = 'vision' | 'goal' | 'objective' | 'task';
 
@@ -230,6 +231,31 @@ export default function Objectives() {
     }
   };
 
+  // Conversion handlers - Fully functional
+  const handleConvertVisionToGoal = async (vision: Vision) => {
+    await state.convertVisionToGoal(vision, null);
+  };
+
+  const handleConvertGoalToVision = async (goal: Goal) => {
+    await state.convertGoalToVision(goal);
+  };
+
+  const handleConvertGoalToObjective = async (goal: Goal) => {
+    await state.convertGoalToObjective(goal, null);
+  };
+
+  const handleConvertObjectiveToGoal = async (objective: Objective) => {
+    await state.convertObjectiveToGoal(objective, null);
+  };
+
+  const handleConvertObjectiveToTask = async (objective: Objective) => {
+    await state.convertObjectiveToTask(objective, null);
+  };
+
+  const handleConvertTaskToObjective = async (task: Task) => {
+    await state.convertTaskToObjective(task, null);
+  };
+
   // Tab configuration
   const tabs = [
     { id: 'vision' as const, label: t('objectives.vision'), icon: Eye, count: state.visions.length },
@@ -289,6 +315,7 @@ export default function Objectives() {
             onUpdateVisionOrder={state.updateVisionOrder}
             onTitleClick={handleTitleClick}
             getVisionDescendantCounts={state.getVisionDescendantCounts}
+            onConvertToGoal={handleConvertVisionToGoal}
             goals={state.goals}
             objectives={state.objectives}
             tasks={state.tasks}
@@ -314,6 +341,8 @@ export default function Objectives() {
             onToggleGoalStatus={state.toggleGoalStatus}
             onTitleClick={handleTitleClick}
             getGoalDescendantCounts={state.getGoalDescendantCounts}
+            onConvertToVision={handleConvertGoalToVision}
+            onConvertToObjective={handleConvertGoalToObjective}
             selectedVision={state.selectedVision}
           />
         </div>
@@ -336,6 +365,8 @@ export default function Objectives() {
             onToggleObjectiveStatus={state.toggleObjectiveStatus}
             onTitleClick={handleTitleClick}
             getObjectiveDescendantCounts={state.getObjectiveDescendantCounts}
+            onConvertToGoal={handleConvertObjectiveToGoal}
+            onConvertToTask={handleConvertObjectiveToTask}
             selectedGoal={state.selectedGoal}
             taskCounts={state.taskCounts}
           />
@@ -359,6 +390,7 @@ export default function Objectives() {
             onToggleTaskStatus={state.toggleTaskStatus}
             onMarkRecurringCompletedToday={state.markRecurringTaskCompletedToday}
             onTitleClick={handleTitleClick}
+            onConvertToObjective={handleConvertTaskToObjective}
             selectedObjective={state.selectedObjective}
           />
         </div>

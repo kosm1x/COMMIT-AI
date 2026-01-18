@@ -55,7 +55,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clear local state first
+      setUser(null);
+      setSession(null);
+      
+      // Sign out from Supabase (this clears auth tokens from storage)
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      }
+      
+      // Don't clear ALL localStorage - let Supabase handle auth storage
+      // This preserves language preferences, theme, etc.
+      
+      // Force reload to login page
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+      setUser(null);
+      setSession(null);
+      window.location.href = '/';
+    }
   };
 
   const resetPassword = async (email: string) => {

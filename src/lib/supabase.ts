@@ -7,7 +7,15 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // This allows the app to load and show an error message instead of crashing
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      persistSession: true,        // Persist session in localStorage
+      autoRefreshToken: true,       // Auto-refresh tokens before expiry
+      detectSessionInUrl: true,     // Detect session from URL (password reset, etc.)
+      storage: window.localStorage, // Explicit storage specification
+    },
+  }
 );
 
 export const hasSupabaseConfig = !!(supabaseUrl && supabaseAnonKey);

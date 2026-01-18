@@ -678,11 +678,94 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
   }
 }
 
-// Strict fallback function prioritizing title similarity, then tags
+// Common English stopwords to filter out when extracting keywords
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
+  'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had',
+  'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must',
+  'shall', 'can', 'need', 'dare', 'ought', 'used', 'it', 'its', 'this', 'that', 'these',
+  'those', 'i', 'you', 'he', 'she', 'we', 'they', 'what', 'which', 'who', 'whom',
+  'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most',
+  'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than',
+  'too', 'very', 'just', 'also', 'now', 'here', 'there', 'then', 'once', 'if', 'about',
+  'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under',
+  'again', 'further', 'any', 'your', 'my', 'our', 'their', 'his', 'her', 'up', 'down',
+  'out', 'off', 'over', 'under', 'while', 'because', 'until', 'although', 'though',
+  'since', 'unless', 'however', 'therefore', 'thus', 'hence', 'yet', 'still', 'already',
+  'always', 'never', 'often', 'sometimes', 'usually', 'generally', 'probably', 'perhaps',
+  'maybe', 'really', 'actually', 'basically', 'simply', 'get', 'got', 'make', 'made',
+  'like', 'use', 'using', 'used', 'way', 'ways', 'thing', 'things', 'something', 'nothing',
+  'everything', 'anything', 'someone', 'anyone', 'everyone', 'one', 'two', 'first', 'new',
+]);
+
+// Extract significant keywords from text (title + content)
+function extractKeywords(text: string, maxKeywords: number = 30): string[] {
+  // Normalize and tokenize
+  const normalized = text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')  // Remove punctuation
+    .replace(/\s+/g, ' ')      // Normalize whitespace
+    .trim();
+  
+  const words = normalized.split(' ');
+  
+  // Count word frequency
+  const wordFreq: Map<string, number> = new Map();
+  
+  for (const word of words) {
+    // Filter: min 3 chars, not a stopword, not a number
+    if (word.length >= 3 && !STOPWORDS.has(word) && !/^\d+$/.test(word)) {
+      wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
+    }
+  }
+  
+  // Sort by frequency and return top keywords
+  return Array.from(wordFreq.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxKeywords)
+    .map(([word]) => word);
+}
+
+// Calculate content similarity score using keyword overlap
+function calculateContentSimilarity(
+  keywords1: string[],
+  keywords2: string[]
+): { score: number; commonKeywords: string[] } {
+  if (keywords1.length === 0 || keywords2.length === 0) {
+    return { score: 0, commonKeywords: [] };
+  }
+  
+  const set1 = new Set(keywords1);
+  const set2 = new Set(keywords2);
+  
+  // Find common keywords
+  const commonKeywords = keywords1.filter(k => set2.has(k));
+  
+  // Jaccard-like similarity with position weighting
+  // Earlier keywords (more frequent) get more weight
+  let weightedScore = 0;
+  for (let i = 0; i < commonKeywords.length; i++) {
+    const pos1 = keywords1.indexOf(commonKeywords[i]);
+    const pos2 = keywords2.indexOf(commonKeywords[i]);
+    // Higher weight for keywords that appear early (high frequency) in both lists
+    const positionWeight = 1 / (1 + Math.min(pos1, pos2) * 0.1);
+    weightedScore += positionWeight;
+  }
+  
+  // Normalize by the size of the smaller keyword set
+  const minSize = Math.min(set1.size, set2.size);
+  const normalizedScore = minSize > 0 ? (weightedScore / minSize) * 100 : 0;
+  
+  return {
+    score: Math.min(100, normalizedScore),
+    commonKeywords: commonKeywords.slice(0, 5), // Top 5 for display
+  };
+}
+
+// Improved fallback function with content analysis
 function findSimilarIdeasFallback(
   _currentIdea: string,
   currentTitle: string,
-  _currentContent: string,
+  currentContent: string,
   existingIdeas: { id: string; title: string; content: string; tags?: string[] }[],
   currentIdeaMeta?: { title: string; tags?: string[] }
 ): IdeaConnection[] {
@@ -690,7 +773,7 @@ function findSimilarIdeasFallback(
   const currentTitleLower = currentTitle.toLowerCase().trim();
   const currentTags = new Set((currentIdeaMeta?.tags || []).map(t => t.toLowerCase().trim()));
   
-  // Normalize title for comparison (remove special chars, lowercase)
+  // Normalize title for comparison
   const normalizeTitle = (title: string): string => {
     return title.toLowerCase()
       .replace(/[^\w\s]/g, ' ')
@@ -700,12 +783,28 @@ function findSimilarIdeasFallback(
   
   const normalizedCurrentTitle = normalizeTitle(currentTitle);
   
+  // Extract keywords from current idea (title + content combined for richer analysis)
+  const currentFullText = `${currentTitle} ${currentTitle} ${currentContent}`; // Title weighted 2x
+  const currentKeywords = extractKeywords(currentFullText, 40);
+  const currentTitleKeywords = extractKeywords(currentTitle, 10);
+  
+  console.log(`[findSimilarIdeasFallback] Current idea keywords: ${currentKeywords.slice(0, 10).join(', ')}...`);
+  
   existingIdeas.forEach(idea => {
     const ideaTitleLower = idea.title.toLowerCase().trim();
     const normalizedIdeaTitle = normalizeTitle(idea.title);
     const ideaTags = new Set((idea.tags || []).map(t => t.toLowerCase().trim()));
     
-    // PRIORITY 1: Exact or near-exact title match
+    // Extract keywords from comparison idea
+    const ideaFullText = `${idea.title} ${idea.title} ${idea.content}`;
+    const ideaKeywords = extractKeywords(ideaFullText, 40);
+    const ideaTitleKeywords = extractKeywords(idea.title, 10);
+    
+    let bestScore = 0;
+    let bestReason = '';
+    let bestType: 'similar' | 'complementary' | 'prerequisite' | 'related' = 'related';
+    
+    // PRIORITY 1: Exact title match (highest confidence)
     if (currentTitleLower === ideaTitleLower) {
       connections.push({
         ideaId: idea.id,
@@ -717,87 +816,99 @@ function findSimilarIdeasFallback(
       return;
     }
     
-    // Check for very similar normalized titles (high similarity threshold)
+    // PRIORITY 2: Title word similarity
     const currentTitleWords = normalizedCurrentTitle.split(/\s+/).filter(w => w.length >= 2);
     const ideaTitleWords = normalizedIdeaTitle.split(/\s+/).filter(w => w.length >= 2);
     
     if (currentTitleWords.length > 0 && ideaTitleWords.length > 0) {
-      const commonWords = currentTitleWords.filter(w => ideaTitleWords.includes(w));
-      const similarityRatio = commonWords.length / Math.max(currentTitleWords.length, ideaTitleWords.length);
+      const commonTitleWords = currentTitleWords.filter(w => ideaTitleWords.includes(w));
+      const titleSimilarityRatio = commonTitleWords.length / Math.max(currentTitleWords.length, ideaTitleWords.length);
       
-      // Require at least 60% word overlap for title similarity
-      if (similarityRatio >= 0.6 && commonWords.length >= 2) {
-        connections.push({
-          ideaId: idea.id,
-          ideaTitle: idea.title,
-          connectionType: 'similar',
-          strength: Math.min(90, 70 + Math.round(similarityRatio * 20)),
-          reason: `Very similar title (${commonWords.length} common words)`,
-        });
-        return;
-      }
-      
-      // Moderate title similarity (50% overlap, 2+ words)
-      if (similarityRatio >= 0.5 && commonWords.length >= 2) {
-        connections.push({
-          ideaId: idea.id,
-          ideaTitle: idea.title,
-          connectionType: 'similar',
-          strength: 75,
-          reason: `Similar title (${commonWords.length} common words)`,
-        });
-        return;
+      if (titleSimilarityRatio >= 0.5 && commonTitleWords.length >= 2) {
+        const titleScore = 70 + Math.round(titleSimilarityRatio * 25);
+        if (titleScore > bestScore) {
+          bestScore = titleScore;
+          bestReason = `Similar titles (${commonTitleWords.join(', ')})`;
+          bestType = 'similar';
+        }
       }
     }
     
-    // PRIORITY 2: Tag overlap (only if we have tags)
+    // PRIORITY 3: Content keyword similarity (NEW - the main improvement)
+    const { score: contentScore, commonKeywords } = calculateContentSimilarity(currentKeywords, ideaKeywords);
+    
+    if (commonKeywords.length >= 3) {
+      // Strong content connection
+      const adjustedContentScore = Math.min(90, 65 + (commonKeywords.length * 3) + (contentScore * 0.2));
+      
+      if (adjustedContentScore > bestScore) {
+        bestScore = adjustedContentScore;
+        bestReason = `Shared concepts: ${commonKeywords.slice(0, 4).join(', ')}`;
+        bestType = commonKeywords.length >= 5 ? 'similar' : 'related';
+      }
+    } else if (commonKeywords.length >= 2 && contentScore >= 15) {
+      // Moderate content connection
+      const adjustedContentScore = 70 + (commonKeywords.length * 2);
+      
+      if (adjustedContentScore > bestScore) {
+        bestScore = adjustedContentScore;
+        bestReason = `Related topics: ${commonKeywords.join(', ')}`;
+        bestType = 'related';
+      }
+    }
+    
+    // PRIORITY 4: Title keywords appearing in other's content (cross-reference)
+    const titleInContentMatches = currentTitleKeywords.filter(k => ideaKeywords.includes(k));
+    const contentInTitleMatches = ideaTitleKeywords.filter(k => currentKeywords.includes(k));
+    const crossRefMatches = [...new Set([...titleInContentMatches, ...contentInTitleMatches])];
+    
+    if (crossRefMatches.length >= 2) {
+      const crossRefScore = 72 + (crossRefMatches.length * 3);
+      if (crossRefScore > bestScore) {
+        bestScore = crossRefScore;
+        bestReason = `Topic crossover: ${crossRefMatches.slice(0, 3).join(', ')}`;
+        bestType = 'complementary';
+      }
+    }
+    
+    // PRIORITY 5: Tag overlap
     if (currentTags.size > 0 && ideaTags.size > 0) {
       const commonTags = Array.from(currentTags).filter(t => ideaTags.has(t));
       
-      // Require at least 2 shared tags or 50%+ tag overlap
-      const tagOverlapRatio = commonTags.length / Math.max(currentTags.size, ideaTags.size);
-      
-      if (commonTags.length >= 2 || (tagOverlapRatio >= 0.5 && commonTags.length >= 1)) {
-        connections.push({
-          ideaId: idea.id,
-          ideaTitle: idea.title,
-          connectionType: 'related',
-          strength: Math.min(85, 70 + (commonTags.length * 5)),
-          reason: `Shared tags: ${commonTags.join(', ')}`,
-        });
-        return;
+      if (commonTags.length >= 2) {
+        const tagScore = 70 + (commonTags.length * 5);
+        if (tagScore > bestScore) {
+          bestScore = tagScore;
+          bestReason = `Shared tags: ${commonTags.join(', ')}`;
+          bestType = 'related';
+        }
+      } else if (commonTags.length === 1) {
+        // Single tag match can boost existing score slightly
+        if (bestScore > 0 && bestScore < 85) {
+          bestScore = Math.min(85, bestScore + 5);
+          bestReason += ` (+${commonTags[0]} tag)`;
+        }
       }
     }
     
-    // PRIORITY 3: Substring match in titles (only for substantial matches)
-    if (normalizedCurrentTitle.length >= 8 && normalizedIdeaTitle.length >= 8) {
-      const longerTitle = normalizedCurrentTitle.length > normalizedIdeaTitle.length 
-        ? normalizedCurrentTitle 
-        : normalizedIdeaTitle;
-      const shorterTitle = normalizedCurrentTitle.length > normalizedIdeaTitle.length 
-        ? normalizedIdeaTitle 
-        : normalizedCurrentTitle;
-      
-      // Require at least 8 characters overlap
-      if (shorterTitle.length >= 8 && longerTitle.includes(shorterTitle)) {
-        connections.push({
-          ideaId: idea.id,
-          ideaTitle: idea.title,
-          connectionType: 'similar',
-          strength: 72,
-          reason: 'Title contains substantial matching text',
-        });
-        return;
-      }
+    // Add connection if score meets threshold
+    if (bestScore >= 70) {
+      connections.push({
+        ideaId: idea.id,
+        ideaTitle: idea.title,
+        connectionType: bestType,
+        strength: Math.round(bestScore),
+        reason: bestReason,
+      });
     }
   });
   
-  // Sort by strength (descending) and limit to top 5 (stricter)
+  // Sort by strength and limit to top 8 connections
   const sortedConnections = connections
     .sort((a, b) => b.strength - a.strength)
-    .slice(0, 5);
+    .slice(0, 8);
   
-  console.log(`[findSimilarIdeasFallback] Found ${sortedConnections.length} close connections via strict fallback`);
+  console.log(`[findSimilarIdeasFallback] Found ${sortedConnections.length} connections via content-aware fallback`);
   return sortedConnections;
 }
 
