@@ -72,7 +72,7 @@ export interface ObjectivesState {
   getObjectiveDescendantCounts: (id: string) => Promise<{ tasks: number }>;
   toggleObjectiveStatus: (objective: Objective) => Promise<void>;
   
-  createTask: (title: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => Promise<Task | null>;
+  createTask: (title: string, description: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => Promise<Task | null>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<boolean>;
   deleteTask: (id: string) => Promise<boolean>;
   toggleTaskStatus: (task: Task) => Promise<void>;
@@ -809,7 +809,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     return true;
   }, [userId, objectives, tasks, selectionPath.objectiveId]);
 
-  const createTask = useCallback(async (title: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean): Promise<Task | null> => {
+  const createTask = useCallback(async (title: string, description: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean): Promise<Task | null> => {
     if (!userId) return null;
     const { data, error } = await supabase
       .from('tasks')
@@ -817,6 +817,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
         objective_id: objectiveId,
         user_id: userId,
         title,
+        description: description || '',
         priority: priority as 'high' | 'medium' | 'low',
         due_date: isRecurring ? null : (dueDate || null),
         is_recurring: isRecurring,

@@ -125,7 +125,7 @@ export function TaskColumn({
         setEditingTaskId(null);
       }}
       onDelete={() => handleDelete(task.id)}
-      onTitleClick={(e) => onTitleClick('task', task.title, task.notes || '', e)}
+      onTitleClick={(e) => onTitleClick('task', task.title, task.description || '', e)}
       onToggleStatus={() => onToggleTaskStatus(task)}
       onMarkRecurringCompletedToday={() => onMarkRecurringCompletedToday(task.id)}
       isRecurringCompletedToday={recurringCompletedToday[task.id] || false}
@@ -160,6 +160,24 @@ export function TaskColumn({
 
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         <div className="w-full space-y-6">
+          {/* Orphaned tasks section - now at the top */}
+          {visibleOrphanedTasks.length > 0 && (
+            <div>
+              <button
+                onClick={() => setShowOrphaned(!showOrphaned)}
+                className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-3 px-1 hover:text-text-secondary transition-colors"
+              >
+                {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                {t('objectives.orphanedTasks')} ({visibleOrphanedTasks.length})
+              </button>
+              {showOrphaned && (
+                <div className="space-y-3">
+                  {visibleOrphanedTasks.map(renderTaskCard)}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Objective-attached tasks section */}
           {selectedObjective ? (
             <div className="space-y-3">
@@ -180,35 +198,13 @@ export function TaskColumn({
             <div className="space-y-3">
               {displayObjectiveTasks.length > 0 ? (
                 displayObjectiveTasks.map(renderTaskCard)
-              ) : !showOrphaned ? (
+              ) : visibleOrphanedTasks.length === 0 ? (
                 <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
                   {t('objectives.selectObjectiveToSeeTasks')}
                 </div>
               ) : null}
             </div>
           )}
-
-          {/* Orphaned tasks section */}
-          <div>
-            <button
-              onClick={() => setShowOrphaned(!showOrphaned)}
-              className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-3 px-1 hover:text-text-secondary transition-colors"
-            >
-              {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              {t('objectives.orphanedTasks')} ({visibleOrphanedTasks.length})
-            </button>
-            {showOrphaned && (
-              <div className="space-y-3">
-                {visibleOrphanedTasks.length > 0 ? (
-                  visibleOrphanedTasks.map(renderTaskCard)
-                ) : (
-                  <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
-                    {t('objectives.noOrphanedTasks')}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

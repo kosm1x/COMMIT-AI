@@ -56,79 +56,187 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
   useEffect(() => {
     if (!user) return;
 
-    const startTime = Date.now();
-    const sessionKey = `session_start_${user.id}`;
     const lastUpdateKey = `last_update_${user.id}`;
+    const lastActivityKey = `last_activity_${user.id}`;
+    const isActiveKey = `is_active_${user.id}`;
     
-    // Reset lastUpdate when component mounts to prevent huge jumps from old sessions
-    const lastUpdateValue = localStorage.getItem(lastUpdateKey);
+    let isActive = true; // Track if user is actively using the site
+    let lastActivityTime = Date.now();
+    let lastUpdateTime = Date.now();
+    let accumulatedSeconds = 0; // Track seconds accumulated in current minute
+    
+    // Initialize
     const now = Date.now();
+    const storedLastUpdate = localStorage.getItem(lastUpdateKey);
+    const storedLastActivity = localStorage.getItem(lastActivityKey);
     
-    // If lastUpdate exists and is more than 5 minutes old, reset it (likely from a previous session)
-    if (lastUpdateValue) {
-      const lastUpdateTime = parseInt(lastUpdateValue);
-      const timeSinceLastUpdate = (now - lastUpdateTime) / 60000; // in minutes
-      
-      // If more than 5 minutes have passed, assume the app was closed and reset
-      // This prevents huge time jumps when reopening the app
-      if (timeSinceLastUpdate > 5) {
-        localStorage.setItem(lastUpdateKey, now.toString());
+    // If last activity was more than 2 minutes ago, reset (user was away)
+    if (storedLastActivity) {
+      const timeSinceActivity = (now - parseInt(storedLastActivity)) / 1000; // in seconds
+      if (timeSinceActivity > 120) { // 2 minutes
+        // User was away, don't count that time
+        lastUpdateTime = now;
+        lastActivityTime = now;
+      } else {
+        lastUpdateTime = storedLastUpdate ? parseInt(storedLastUpdate) : now;
+        lastActivityTime = parseInt(storedLastActivity);
       }
     } else {
-      localStorage.setItem(lastUpdateKey, now.toString());
+      lastUpdateTime = now;
+      lastActivityTime = now;
     }
     
-    if (!localStorage.getItem(sessionKey)) {
-      localStorage.setItem(sessionKey, startTime.toString());
-    }
+    localStorage.setItem(lastUpdateKey, lastUpdateTime.toString());
+    localStorage.setItem(lastActivityKey, lastActivityTime.toString());
+    localStorage.setItem(isActiveKey, 'true');
+
+    // Track user activity (mouse, keyboard, scroll, touch)
+    const updateActivity = () => {
+      if (!document.hidden && isActive) {
+        lastActivityTime = Date.now();
+        localStorage.setItem(lastActivityKey, lastActivityTime.toString());
+      }
+    };
+
+    // Activity event listeners
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach(event => {
+      document.addEventListener(event, updateActivity, { passive: true });
+    });
 
     const updateTimeSpent = () => {
-      const lastUpdate = localStorage.getItem(lastUpdateKey);
-      if (lastUpdate) {
-        const currentTime = Date.now();
-        const elapsedMs = currentTime - parseInt(lastUpdate);
-        const elapsedMinutes = Math.floor(elapsedMs / 60000);
+      if (document.hidden) {
+        // Tab is hidden - save accumulated time and stop tracking
+        if (accumulatedSeconds > 0) {
+          saveAccumulatedTime();
+        }
+        isActive = false;
+        localStorage.setItem(isActiveKey, 'false');
+        return;
+      }
+
+      const now = Date.now();
+      const timeSinceLastActivity = (now - lastActivityTime) / 1000; // in seconds
+      
+      // If user hasn't been active for 30 seconds, consider them inactive
+      if (timeSinceLastActivity > 30) {
+        if (isActive) {
+          // Just became inactive - save accumulated time
+          if (accumulatedSeconds > 0) {
+            saveAccumulatedTime();
+          }
+          isActive = false;
+          localStorage.setItem(isActiveKey, 'false');
+        }
+        lastUpdateTime = now;
+        return;
+      }
+
+      // User is active
+      if (!isActive) {
+        // Just became active - reset update time
+        isActive = true;
+        lastUpdateTime = now;
+        localStorage.setItem(isActiveKey, 'true');
+      }
+
+      // Calculate elapsed time since last update
+      const elapsedSeconds = (now - lastUpdateTime) / 1000;
+      
+      // Cap at 30 seconds to prevent huge jumps
+      const cappedElapsed = Math.min(elapsedSeconds, 30);
+      
+      if (cappedElapsed > 0) {
+        accumulatedSeconds += cappedElapsed;
+        lastUpdateTime = now;
+        localStorage.setItem(lastUpdateKey, now.toString());
         
-        // Cap elapsed time at 5 minutes to prevent huge jumps
-        // If more than 5 minutes passed, the app was likely closed
-        const cappedElapsed = Math.min(elapsedMinutes, 5);
-        
-        if (cappedElapsed > 0) {
-          const today = new Date().toISOString().split('T')[0];
-          const timeKey = `time_spent_${user.id}_${today}`;
-          const existing = parseInt(localStorage.getItem(timeKey) || '0');
-          localStorage.setItem(timeKey, (existing + cappedElapsed).toString());
-          localStorage.setItem(lastUpdateKey, currentTime.toString());
+        // Save every 15 seconds of accumulated time
+        if (accumulatedSeconds >= 15) {
+          saveAccumulatedTime();
         }
       }
     };
 
-    // Update every 60 seconds (1 minute)
-    const interval = setInterval(updateTimeSpent, 60000);
+    const saveAccumulatedTime = () => {
+      if (accumulatedSeconds > 0) {
+        const minutesToAdd = Math.floor(accumulatedSeconds / 60);
+        if (minutesToAdd > 0) {
+          const today = new Date().toISOString().split('T')[0];
+          const timeKey = `time_spent_${user.id}_${today}`;
+          const existing = parseInt(localStorage.getItem(timeKey) || '0');
+          localStorage.setItem(timeKey, (existing + minutesToAdd).toString());
+          
+          // Stats will reload on next component render/refresh
+        }
+        accumulatedSeconds = accumulatedSeconds % 60; // Keep remaining seconds
+      }
+    };
+
+    // Update every 10 seconds for more accurate tracking
+    const interval = setInterval(updateTimeSpent, 10000);
     
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // Tab is hidden - save current time
-        updateTimeSpent();
+        // Tab is hidden - save accumulated time
+        if (accumulatedSeconds > 0) {
+          saveAccumulatedTime();
+        }
+        isActive = false;
+        localStorage.setItem(isActiveKey, 'false');
       } else {
-        // Tab is visible again - reset lastUpdate to now to prevent counting time while hidden
-        localStorage.setItem(lastUpdateKey, Date.now().toString());
+        // Tab is visible again - reset activity tracking
+        lastActivityTime = Date.now();
+        lastUpdateTime = Date.now();
+        localStorage.setItem(lastActivityKey, lastActivityTime.toString());
+        localStorage.setItem(lastUpdateKey, lastUpdateTime.toString());
+        isActive = true;
+        localStorage.setItem(isActiveKey, 'true');
       }
     };
 
     // Track when window is about to close
     const handleBeforeUnload = () => {
-      updateTimeSpent();
+      if (accumulatedSeconds > 0) {
+        saveAccumulatedTime();
+      }
+    };
+
+    // Track page focus/blur
+    const handleFocus = () => {
+      lastActivityTime = Date.now();
+      lastUpdateTime = Date.now();
+      localStorage.setItem(lastActivityKey, lastActivityTime.toString());
+      localStorage.setItem(lastUpdateKey, lastUpdateTime.toString());
+      isActive = true;
+      localStorage.setItem(isActiveKey, 'true');
+    };
+
+    const handleBlur = () => {
+      if (accumulatedSeconds > 0) {
+        saveAccumulatedTime();
+      }
+      isActive = false;
+      localStorage.setItem(isActiveKey, 'false');
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
     
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      updateTimeSpent();
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, updateActivity);
+      });
+      if (accumulatedSeconds > 0) {
+        saveAccumulatedTime();
+      }
     };
   }, [user]);
 

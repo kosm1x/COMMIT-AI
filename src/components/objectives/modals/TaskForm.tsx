@@ -4,7 +4,7 @@ import { Objective } from '../types';
 
 interface TaskFormProps {
   onClose: () => void;
-  onCreate: (title: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => void;
+  onCreate: (title: string, description: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => void;
   objectives: Objective[];
   selectedObjective: Objective | null;
 }
@@ -12,6 +12,7 @@ interface TaskFormProps {
 export default function TaskForm({ onClose, onCreate, objectives, selectedObjective }: TaskFormProps) {
   const { t } = useLanguage();
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
   const [objectiveId, setObjectiveId] = useState<string | null>(selectedObjective?.id || null);
@@ -19,7 +20,7 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreate(title, priority, dueDate, objectiveId, isRecurring);
+    onCreate(title, description, priority, dueDate, objectiveId, isRecurring);
   };
 
   return (
@@ -36,6 +37,16 @@ export default function TaskForm({ onClose, onCreate, objectives, selectedObject
               className="input-modern"
               required
               autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">{t('objectives.description')}</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="input-modern resize-none"
+              rows={2}
+              placeholder={t('objectives.descriptionPlaceholder')}
             />
           </div>
           <div>

@@ -224,8 +224,8 @@ export default function Objectives() {
     }
   };
 
-  const handleCreateTask = async (title: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => {
-    const newTask = await state.createTask(title, priority, dueDate, objectiveId, isRecurring);
+  const handleCreateTask = async (title: string, description: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => {
+    const newTask = await state.createTask(title, description, priority, dueDate, objectiveId, isRecurring);
     if (newTask) {
       setShowTaskForm(false);
     }

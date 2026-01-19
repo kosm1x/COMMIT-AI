@@ -545,21 +545,29 @@ export default function IdeaDetail() {
   const handleCreateTask = async (title: string, description: string, priority: 'high' | 'medium' | 'low') => {
     if (!user) return;
 
+    console.log('Creating task with:', { title, description, priority });
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tasks')
         .insert({
           user_id: user.id,
           title,
-          notes: description,
+          description: description || '',
           priority,
           status: 'not_started',
           objective_id: null, // Orphan task
           is_recurring: false,
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
+      console.log('Task created successfully:', data);
       alert(t('ideaDetail.taskCreatedSuccess').replace('{{title}}', title));
     } catch (error) {
       console.error('Error creating task:', error);

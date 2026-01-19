@@ -146,6 +146,7 @@ export const zh = {
     noObjectiveOrphaned: '无目标（孤立）',
     title: '标题',
     description: '描述',
+    descriptionPlaceholder: '添加描述...',
     status: '状态',
     priority: '优先级',
     high: '高',
@@ -291,6 +292,7 @@ export const zh = {
     // RecurringTasksGrid widget
     dailyHabits: '每日习惯',
     completedLabel: '已完成',
+    clickToToggle: '点击切换',
     // UpcomingDeadlines widget
     upcomingDeadlinesTitle: '即将到期的截止日期',
     whatNeedsAttention: '需要你关注的事项',

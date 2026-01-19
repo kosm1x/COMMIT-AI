@@ -189,6 +189,24 @@ export function ObjectiveColumn({
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+        {/* Orphaned objectives section - now at the top */}
+        {visibleOrphanedObjectives.length > 0 && (
+          <div>
+            <button
+              onClick={() => setShowOrphaned(!showOrphaned)}
+              className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
+            >
+              {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {t('objectives.orphanedObjectives')} ({visibleOrphanedObjectives.length})
+            </button>
+            {showOrphaned && (
+              <div className="space-y-2">
+                {visibleOrphanedObjectives.map(renderObjectiveCard)}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Goal-attached objectives section */}
         {selectedGoal ? (
           <div>
@@ -209,35 +227,13 @@ export function ObjectiveColumn({
           <div className="space-y-2">
             {displayGoalObjectives.length > 0 ? (
               displayGoalObjectives.map(renderObjectiveCard)
-            ) : (
+            ) : visibleOrphanedObjectives.length === 0 ? (
               <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
                 No objectives yet
               </div>
-            )}
+            ) : null}
           </div>
         )}
-
-        {/* Orphaned objectives section */}
-        <div>
-          <button
-            onClick={() => setShowOrphaned(!showOrphaned)}
-            className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
-          >
-            {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            {t('objectives.orphanedObjectives')} ({visibleOrphanedObjectives.length})
-          </button>
-          {showOrphaned && (
-            <div className="space-y-2">
-              {visibleOrphanedObjectives.length > 0 ? (
-                visibleOrphanedObjectives.map(renderObjectiveCard)
-              ) : (
-                <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  {t('objectives.noOrphanedObjectives')}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

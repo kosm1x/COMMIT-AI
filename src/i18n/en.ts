@@ -146,6 +146,7 @@ export const en = {
     noObjectiveOrphaned: 'No Objective (Orphaned)',
     title: 'Title',
     description: 'Description',
+    descriptionPlaceholder: 'Add a description...',
     status: 'Status',
     priority: 'Priority',
     high: 'High',
@@ -291,6 +292,7 @@ export const en = {
     // RecurringTasksGrid widget
     dailyHabits: 'Daily Habits',
     completedLabel: 'Completed',
+    clickToToggle: 'Click to toggle',
     // UpcomingDeadlines widget
     upcomingDeadlinesTitle: 'Upcoming Deadlines',
     whatNeedsAttention: 'What needs your attention soon',

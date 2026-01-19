@@ -195,6 +195,24 @@ export function GoalColumn({
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+        {/* Orphaned goals section - now at the top */}
+        {visibleOrphanedGoals.length > 0 && (
+          <div>
+            <button
+              onClick={() => setShowOrphaned(!showOrphaned)}
+              className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
+            >
+              {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {t('objectives.orphanedGoals')} ({visibleOrphanedGoals.length})
+            </button>
+            {showOrphaned && (
+              <div className="space-y-2">
+                {visibleOrphanedGoals.map(renderGoalCard)}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Vision-attached goals section */}
         {selectedVision && (
           <div>
@@ -219,28 +237,6 @@ export function GoalColumn({
             {displayVisionGoals.map(renderGoalCard)}
           </div>
         )}
-
-        {/* Orphaned goals section - always available */}
-        <div>
-          <button
-            onClick={() => setShowOrphaned(!showOrphaned)}
-            className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
-          >
-            {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            {t('objectives.orphanedGoals')} ({visibleOrphanedGoals.length})
-          </button>
-          {showOrphaned && (
-            <div className="space-y-2">
-              {visibleOrphanedGoals.length > 0 ? (
-                visibleOrphanedGoals.map(renderGoalCard)
-              ) : (
-                <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  {t('objectives.noOrphanedGoals')}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
