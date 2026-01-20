@@ -330,6 +330,7 @@ export const es = {
   },
   // Map/Kanban
   map: {
+    boards: 'Mapas',
     kanban: 'Kanban',
     mindMap: 'Mapa Mental',
     createNew: 'Crear Nuevo',

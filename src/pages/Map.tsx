@@ -36,7 +36,7 @@ export default function Map() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       <Header 
-        title={t('nav.boards')}
+        title={t('map.boards')}
         rightAction={
           <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
             <button
