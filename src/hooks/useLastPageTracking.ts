@@ -16,15 +16,36 @@ export function useLastPageTracking() {
   
   // Track whether restore has been attempted (gates save operations)
   const hasRestoredRef = useRef(false);
-  // Track if this is a fresh login (preferences not yet loaded)
-  const isNewLoginRef = useRef(true);
+  // Track the previous user ID to detect login/logout transitions
+  const prevUserIdRef = useRef<string | null>(null);
 
-  // Reset flags when user logs out
+  // Detect user transitions and reset flags appropriately
   useEffect(() => {
-    if (!user) {
-      console.log('[LastPageTracking] User logged out, resetting flags');
-      hasRestoredRef.current = false;
-      isNewLoginRef.current = true;
+    const currentUserId = user?.id ?? null;
+    const previousUserId = prevUserIdRef.current;
+    
+    // Detect login (null -> user) or user switch (userA -> userB)
+    if (currentUserId !== previousUserId) {
+      console.log('[LastPageTracking] User transition detected', { 
+        from: previousUserId, 
+        to: currentUserId 
+      });
+      
+      if (currentUserId === null) {
+        // User logged out - reset for next login
+        console.log('[LastPageTracking] User logged out, resetting flags');
+        hasRestoredRef.current = false;
+      } else if (previousUserId === null) {
+        // User just logged in - ensure flags are reset for restore
+        console.log('[LastPageTracking] Fresh login, resetting flags for restore');
+        hasRestoredRef.current = false;
+      } else {
+        // User switched accounts
+        console.log('[LastPageTracking] User switched, resetting flags');
+        hasRestoredRef.current = false;
+      }
+      
+      prevUserIdRef.current = currentUserId;
     }
   }, [user]);
 
@@ -36,8 +57,7 @@ export function useLastPageTracking() {
     const handlePreferencesLoaded = () => {
       console.log('[LastPageTracking] preferencesLoaded event received', {
         hasRestored: hasRestoredRef.current,
-        pathname: location.pathname,
-        isNewLogin: isNewLoginRef.current
+        pathname: location.pathname
       });
       
       // Only restore once per login
@@ -66,12 +86,10 @@ export function useLastPageTracking() {
           lastPage !== location.pathname) {
         console.log('[LastPageTracking] NAVIGATING to:', lastPage);
         hasRestoredRef.current = true;
-        isNewLoginRef.current = false;
         navigate(lastPage, { replace: true });
       } else {
         console.log('[LastPageTracking] No navigation needed, marking as restored');
         hasRestoredRef.current = true;
-        isNewLoginRef.current = false;
       }
     };
 
@@ -79,9 +97,8 @@ export function useLastPageTracking() {
     window.addEventListener('preferencesLoaded', handlePreferencesLoaded);
     
     // Also check immediately in case preferences were already loaded
-    // Use a small delay to ensure the event listener is registered first
     const timeoutId = setTimeout(() => {
-      if (!hasRestoredRef.current && isNewLoginRef.current) {
+      if (!hasRestoredRef.current) {
         console.log('[LastPageTracking] Checking if preferences already loaded...');
         handlePreferencesLoaded();
       }
