@@ -11,6 +11,7 @@ export function useLastPageTracking() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const hasRestoredRef = useRef(false);
+  const isFirstLoginRef = useRef(true);
 
   // Track page changes - save current page when navigating
   useEffect(() => {
@@ -29,43 +30,57 @@ export function useLastPageTracking() {
     }
   }, [location.pathname, user]);
 
-  // Restore last visited page on initial load
+  // Reset restore flag when user changes (logs out/in)
   useEffect(() => {
-    // Only restore once per session
-    if (hasRestoredRef.current) return;
-    
-    // Only attempt restore when we have a user and we're on the default page
+    if (!user) {
+      hasRestoredRef.current = false;
+      isFirstLoginRef.current = true;
+    }
+  }, [user]);
+
+  // Restore last visited page ONLY when preferences are loaded (after DB sync)
+  useEffect(() => {
     if (!user) return;
-    if (location.pathname !== '/journal' && location.pathname !== '/') return;
     
-    const restoreLastPage = () => {
+    const handlePreferencesLoaded = () => {
+      // Only restore once per login session
       if (hasRestoredRef.current) return;
       
-      const prefs = loadPreferencesFromLocalStorage();
-      const lastPage = prefs?.last_page_visited;
-      
-      // Navigate if we have a valid last page that's different from current
-      if (lastPage && 
-          lastPage !== '/journal' && 
-          lastPage !== '/' && 
-          lastPage !== location.pathname) {
+      // Only attempt restore when on the default page
+      if (location.pathname !== '/journal' && location.pathname !== '/') {
         hasRestoredRef.current = true;
-        navigate(lastPage, { replace: true });
-      } else {
-        // Mark as restored even if no navigation needed, to prevent repeated checks
-        hasRestoredRef.current = true;
+        return;
       }
-    };
-
-    // Try to restore immediately (preferences might already be loaded)
-    restoreLastPage();
-    
-    // Also listen for the preferencesLoaded event in case it fires later
-    const handlePreferencesLoaded = () => {
-      setTimeout(restoreLastPage, 50);
+      
+      // Small delay to ensure localStorage is updated from DB sync
+      setTimeout(() => {
+        if (hasRestoredRef.current) return;
+        
+        const prefs = loadPreferencesFromLocalStorage();
+        const lastPage = prefs?.last_page_visited;
+        
+        // Navigate if we have a valid last page that's different from current
+        if (lastPage && 
+            lastPage !== '/journal' && 
+            lastPage !== '/' && 
+            lastPage !== location.pathname) {
+          hasRestoredRef.current = true;
+          navigate(lastPage, { replace: true });
+        } else {
+          hasRestoredRef.current = true;
+        }
+      }, 100);
     };
 
     window.addEventListener('preferencesLoaded', handlePreferencesLoaded);
+    
+    // If this is the first mount and user exists, check if preferences are already loaded
+    if (isFirstLoginRef.current) {
+      isFirstLoginRef.current = false;
+      // Trigger a check after a short delay (preferences might already be loaded)
+      setTimeout(handlePreferencesLoaded, 200);
+    }
+    
     return () => window.removeEventListener('preferencesLoaded', handlePreferencesLoaded);
-  }, [navigate, location.pathname, user]);
+  }, [user, navigate, location.pathname]);
 }

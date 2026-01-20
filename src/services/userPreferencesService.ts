@@ -127,28 +127,33 @@ export function loadPreferencesFromLocalStorage(): UserPreferences | null {
 /**
  * Sync preferences from database to localStorage (called on sign-in)
  * 
- * Priority: localStorage > database > defaults
- * This ensures user's most recent changes (in localStorage) take precedence
+ * Priority for theme/language: localStorage > database > defaults
+ * Priority for last_page_visited: database > localStorage > defaults
+ * 
+ * last_page_visited uses database priority because it's saved on sign-out,
+ * representing the authoritative "last known state" before logout.
  */
 export async function syncPreferencesOnSignIn(userId: string): Promise<UserPreferences> {
   console.log('[Preferences] Syncing preferences for user:', userId);
   
-  // First, check localStorage for any existing preferences (most recent)
+  // First, check localStorage for any existing preferences
   const localPrefs = loadPreferencesFromLocalStorage();
   console.log('[Preferences] Local preferences:', localPrefs);
 
-  // Then, load from database (fallback for new devices)
+  // Then, load from database (authoritative source for last_page_visited)
   const dbPrefs = await loadPreferencesFromDB(userId);
   console.log('[Preferences] Database preferences:', dbPrefs);
 
-  // localStorage preferences take precedence over database (local is more recent)
+  // Merge preferences with different priorities:
+  // - theme/language: localStorage > database (user might have changed them locally)
+  // - last_page_visited: database > localStorage (saved at logout, represents true last state)
   const finalPrefs: UserPreferences = {
     language: localPrefs?.language || dbPrefs?.language || 'en',
     theme: localPrefs?.theme || dbPrefs?.theme || 'dark',
-    last_page_visited: localPrefs?.last_page_visited || dbPrefs?.last_page_visited || '/journal',
+    last_page_visited: dbPrefs?.last_page_visited || localPrefs?.last_page_visited || '/journal',
   };
 
-  console.log('[Preferences] Final merged preferences (local > db > defaults):', finalPrefs);
+  console.log('[Preferences] Final merged preferences:', finalPrefs);
 
   // Save merged result to localStorage
   savePreferencesToLocalStorage(finalPrefs);
