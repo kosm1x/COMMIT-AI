@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { TabBar, BottomSheet, Button } from '../ui';
+import { TabBar, BottomSheet } from '../ui';
 import { Moon, Sun, Globe, LogOut } from 'lucide-react';
 import WelcomeModal from '../WelcomeModal';
 import { useLastPageTracking } from '../../hooks/useLastPageTracking';
@@ -103,15 +103,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-              <Button
-                variant="danger"
-                fullWidth
+            <div className="pt-2">
+              <button
                 onClick={signOut}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-gray-100"
               >
-                <LogOut className="w-4 h-4" />
-                {t('nav.signOut') || 'Sign Out'}
-              </Button>
+                <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <span>
+                  {t('nav.signOut') || 'Sign Out'}
+                </span>
+              </button>
             </div>
           </div>
         </BottomSheet>
