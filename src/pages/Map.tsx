@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { LayoutGrid, Network } from 'lucide-react';
 import KanbanView from '../components/map/KanbanView';
 import MindMapView from '../components/map/MindMapView';
+import { Header } from '../components/ui';
 
 type ViewMode = 'kanban' | 'mindmap';
 
@@ -18,13 +19,11 @@ export default function Map() {
   const location = useLocation();
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   
-  // Extract navigation state for KanbanView
   const navState = location.state as NavigationState | null;
   const scrollTo = navState?.scrollTo;
   const selectItem = navState?.selectItem;
 
   useEffect(() => {
-    // Set view mode from location state or pathname
     if (location.state?.viewMode) {
       setViewMode(location.state.viewMode);
     } else if (location.pathname === '/mindmap') {
@@ -35,47 +34,45 @@ export default function Map() {
   }, [location]);
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col gap-4 lg:gap-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
-        <div>
-          <h1 className="text-xl lg:text-2xl font-heading font-bold text-text-primary">Strategic Map</h1>
-          <p className="text-sm lg:text-base text-text-tertiary hidden sm:block">{t('map.visualizeGoals')}</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+      <Header 
+        title={t('nav.boards')}
+        rightAction={
+          <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'kanban'
+                  ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('map.kanban')}</span>
+            </button>
+            <button
+              onClick={() => setViewMode('mindmap')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'mindmap'
+                  ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              <Network className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('map.mindMap')}</span>
+            </button>
+          </div>
+        }
+      />
 
-        <div className="glass-card p-1 flex items-center gap-1 rounded-xl border border-white/40 dark:border-white/10 bg-white dark:bg-black/40 w-full sm:w-auto">
-          <button
-            onClick={() => setViewMode('kanban')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              viewMode === 'kanban'
-                ? 'bg-white dark:bg-white/10 text-accent-primary shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-white/50 dark:hover:bg-white/5'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span>{t('map.kanban')}</span>
-          </button>
-          <button
-            onClick={() => setViewMode('mindmap')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              viewMode === 'mindmap'
-                ? 'bg-white dark:bg-white/10 text-accent-primary shadow-sm'
-                : 'text-text-secondary hover:text-text-primary hover:bg-white/50 dark:hover:bg-white/5'
-            }`}
-          >
-            <Network className="w-4 h-4" />
-            <span>{t('map.mindMap')}</span>
-          </button>
+      <div className="flex-1 p-4 pb-24">
+        <div className="h-[calc(100vh-10rem)] bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          {viewMode === 'kanban' ? (
+            <KanbanView initialScrollTo={scrollTo} initialSelectItem={selectItem} />
+          ) : (
+            <MindMapView />
+          )}
         </div>
-      </div>
-
-      {/* Content Area */}
-      <div className="flex-1 glass-strong border border-white/40 dark:border-white/10 overflow-hidden relative rounded-xl lg:rounded-2xl">
-        {viewMode === 'kanban' ? (
-          <KanbanView initialScrollTo={scrollTo} initialSelectItem={selectItem} />
-        ) : (
-          <MindMapView />
-        )}
       </div>
     </div>
   );
