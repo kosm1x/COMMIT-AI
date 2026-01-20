@@ -46,6 +46,13 @@ src/
 - `VITE_GROQ_API_KEY` - Groq API key for AI features
 
 ## Recent Changes
+- January 20, 2026: Added one-time session auto-sorting for cards
+  - Goal, Objective, and Task cards automatically sort on first load each session
+  - Sort priority: status (in-progress > not started > on hold > completed), then due date (soonest first), then priority (high > medium > low)
+  - Sorting is transparent to the user and only happens once per session
+  - Implemented in both Goals page and Kanban boards (Map page)
+- January 20, 2026: Made logout transition seamless
+  - Removed page reload on logout, letting React handle state transition smoothly
 - January 20, 2026: Fixed user preference persistence bugs
   - Fixed race condition in last page tracking (save was overwriting DB-synced value before restore)
   - Fixed language reset bug (Login page was resetting language to English on load)

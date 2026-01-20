@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Flag, Link2 } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
+import { hasSessionSorted, markSessionSorted, sortObjectives } from '../../utils/autoSort';
 
 interface Objective {
   id: string;
@@ -72,6 +73,8 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     }
   }, [highlightedItemId, objectives]);
 
+  const hasAppliedSort = useRef(false);
+
   const loadData = async () => {
     setLoading(true);
     const [objectivesResult, goalsResult, tasksResult] = await Promise.all([
@@ -86,7 +89,13 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     ]);
 
     if (objectivesResult.data) {
-      setObjectives(objectivesResult.data);
+      let loadedObjectives = objectivesResult.data;
+      if (!hasAppliedSort.current && !hasSessionSorted()) {
+        hasAppliedSort.current = true;
+        markSessionSorted();
+        loadedObjectives = sortObjectives(loadedObjectives as any) as any;
+      }
+      setObjectives(loadedObjectives);
     }
     if (goalsResult.data) {
       setGoals(goalsResult.data);
