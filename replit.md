@@ -46,6 +46,11 @@ src/
 - `VITE_GROQ_API_KEY` - Groq API key for AI features
 
 ## Recent Changes
+- January 20, 2026: Fixed user preference persistence bugs
+  - Fixed race condition in last page tracking (save was overwriting DB-synced value before restore)
+  - Fixed language reset bug (Login page was resetting language to English on load)
+  - Styled logout button to match other settings options (removed red fill)
+  - User preferences (language, theme, last page) now persist correctly across logout/login
 - January 20, 2026: Complete UI redesign with flat, minimal styling
   - Created comprehensive UI primitives library
   - Built mobile-first AppLayout with 5-tab bottom navigation
