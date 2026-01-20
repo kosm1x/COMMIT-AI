@@ -98,7 +98,7 @@ export const en = {
     ideate: 'Ideate',
     ideateDescription: 'Brainstorm and explore ideas',
     tracking: 'Tracking',
-    progressTracking: 'Progress Tracking',
+    progressTracking: 'Tracking',
     progressTrackingDescription: 'Monitor your growth',
     goToHome: 'Go to Home',
     signOut: 'Sign Out',
