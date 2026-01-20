@@ -90,7 +90,7 @@ export const en = {
     goals: 'Goals',
     goalsDescription: 'Long-term aspirations',
     maps: 'Maps',
-    kanbanBoards: 'Kanban Boards',
+    kanbanBoards: 'Maps',
     kanbanBoardsDescription: 'Visual workflow management',
     mindMap: 'Mind Map',
     mindMapDescription: 'Visual idea connections',
