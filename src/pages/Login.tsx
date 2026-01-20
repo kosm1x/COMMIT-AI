@@ -8,14 +8,10 @@ import { Button, Input, Card } from '../components/ui';
 export default function Login() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
-
-  useEffect(() => {
-    setLanguage('en');
-  }, [setLanguage]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
