@@ -330,6 +330,7 @@ export const zh = {
   },
   // Map/Kanban
   map: {
+    boards: '地图',
     kanban: '看板',
     mindMap: '思维导图',
     createNew: '创建新',
