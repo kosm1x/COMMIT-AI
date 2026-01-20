@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import Login from './pages/Login';
-import Layout from './components/Layout';
+import { AppLayout } from './components/layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { hasSupabaseConfig } from './lib/supabase';
 
@@ -16,11 +16,10 @@ const Ideate = lazy(() => import('./pages/Ideate'));
 const IdeaDetail = lazy(() => import('./pages/IdeaDetail'));
 const Tracking = lazy(() => import('./pages/Tracking'));
 
-// Lightweight loading fallback for route transitions
 function PageLoader() {
   return (
     <div className="flex items-center justify-center h-full min-h-[200px]">
-      <div className="w-8 h-8 border-3 border-accent-primary border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
@@ -29,33 +28,28 @@ function AppContent() {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
 
-  // Show configuration error if Supabase is not configured
   if (!hasSupabaseConfig) {
     return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/50 dark:from-blue-950/20 dark:via-transparent dark:to-purple-950/20" />
-        </div>
-        <div className="max-w-md w-full glass-strong rounded-3xl shadow-2xl p-6 border border-border-primary animate-scale-in">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 border border-gray-200 dark:border-gray-800">
           <div className="text-center">
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-text-primary mb-2">{t('errors.configError')}</h1>
-            <p className="text-text-secondary mb-4">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">{t('errors.configError')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
               {t('errors.supabaseNotConfigured')}
             </p>
-            <div className="bg-bg-tertiary rounded-xl p-4 text-left mb-4">
-              <pre className="text-sm text-text-primary whitespace-pre-wrap">
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 text-left mb-4">
+              <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
 {`VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_GROQ_API_KEY=your_groq_api_key_here`}
               </pre>
             </div>
-            <p className="text-sm text-text-secondary">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               After adding the environment variables, restart the development server.
             </p>
           </div>
@@ -66,10 +60,10 @@ VITE_GROQ_API_KEY=your_groq_api_key_here`}
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-text-secondary">{t('common.loading')}</p>
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -89,7 +83,7 @@ VITE_GROQ_API_KEY=your_groq_api_key_here`}
         } />
         <Route path="/reset-password" element={<Login />} />
         <Route path="*" element={
-          <Layout>
+          <AppLayout>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Navigate to="/journal" replace />} />
@@ -141,7 +135,7 @@ VITE_GROQ_API_KEY=your_groq_api_key_here`}
                 <Route path="*" element={<Navigate to="/journal" replace />} />
               </Routes>
             </Suspense>
-          </Layout>
+          </AppLayout>
         } />
       </Routes>
     </Suspense>

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Loader2, Mail, Lock } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Check } from 'lucide-react';
+import { Button, Input, Card } from '../components/ui';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -12,12 +13,10 @@ export default function Login() {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
 
-  // Set English as default language on login page (only when component mounts)
   useEffect(() => {
     setLanguage('en');
-    // Note: This sets English temporarily for the login page
-    // Once logged in, the user's saved language preference from localStorage will be used
   }, [setLanguage]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -27,7 +26,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, resetPassword, updatePassword } = useAuth();
 
-  // Check if we're coming from a password reset email
   useEffect(() => {
     const accessToken = searchParams.get('access_token');
     const type = searchParams.get('type');
@@ -48,7 +46,6 @@ export default function Login() {
       if (error) {
         setError(error.message);
       } else {
-        // Show success message for email confirmation
         setSuccess(t('login.signUpSuccess'));
       }
     } else {
@@ -73,7 +70,6 @@ export default function Login() {
     }
 
     const { error } = await resetPassword(email);
-
     if (error) {
       setError(error.message);
     } else {
@@ -101,7 +97,6 @@ export default function Login() {
     }
 
     const { error } = await updatePassword(newPassword);
-
     if (error) {
       setError(error.message);
     } else {
@@ -114,62 +109,54 @@ export default function Login() {
     setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen w-full flex bg-bg-secondary relative overflow-hidden">
-      {/* Abstract Background Shapes */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-blue-400/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-indigo-400/20 rounded-full blur-[100px] animate-pulse delay-1000" />
-      </div>
+  const features = [
+    { label: 'AI-Powered Analysis', color: 'bg-green-500' },
+    { label: 'Mind Mapping', color: 'bg-blue-500' },
+    { label: 'Goal Tracking', color: 'bg-purple-500' },
+  ];
 
-      <div className="w-full flex z-10">
-        {/* Left Side - Hero Content */}
-        <div className="hidden lg:flex w-1/2 flex-col justify-center px-16 xl:px-24 relative">
-          <div className="max-w-lg">
-            <div className="mb-6 animate-scale-in">
-              <img 
-                src="/logo-dark.png" 
-                alt="COMMIT - Personal Growth Framework" 
-                className="h-80 w-auto object-contain"
-              />
-            </div>
-            <h1 className="text-5xl font-heading font-bold text-text-primary leading-tight mb-6 animate-slide-up">
-              Design Your Life,<br />
-              <span className="text-accent-primary">Achieve Your Goals</span>
-            </h1>
-            <p className="text-lg text-text-secondary leading-relaxed mb-8 animate-fade-in delay-100">
-              The COMMIT framework helps you gain clarity, track progress, and unlock your potential through structured journaling and AI-powered insights.
-            </p>
-            
-            <div className="flex gap-4 animate-fade-in delay-200">
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm rounded-lg border border-white/20">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                <span className="text-sm font-medium text-text-secondary">AI Analysis</span>
+  return (
+    <div className="min-h-screen w-full flex bg-gray-50 dark:bg-gray-950">
+      <div className="hidden lg:flex w-1/2 bg-gray-900 flex-col justify-center px-16 xl:px-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-600/20" />
+        <div className="relative z-10 max-w-lg">
+          <img 
+            src="/logo-dark.png" 
+            alt="COMMIT" 
+            className="h-20 w-auto mb-8"
+          />
+          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
+            Design Your Life,<br />
+            <span className="text-indigo-400">Achieve Your Goals</span>
+          </h1>
+          <p className="text-gray-300 text-lg mb-8">
+            The COMMIT framework helps you gain clarity, track progress, and unlock your potential through structured journaling and AI-powered insights.
+          </p>
+          
+          <div className="flex flex-wrap gap-3">
+            {features.map((feature) => (
+              <div key={feature.label} className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg">
+                <div className={`w-2 h-2 ${feature.color} rounded-full`} />
+                <span className="text-sm text-gray-200">{feature.label}</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm rounded-lg border border-white/20">
-                <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                <span className="text-sm font-medium text-text-secondary">Mind Mapping</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm rounded-lg border border-white/20">
-                <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                <span className="text-sm font-medium text-text-secondary">Goal Tracking</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Right Side - Auth Form */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-4 sm:px-8">
-          <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/50 shadow-glass rounded-3xl p-8 sm:p-10 animate-scale-in relative">
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-3">
-                <img 
-                  src="/logo-icon.png" 
-                  alt="COMMIT" 
-                  className="h-60 w-60 object-contain"
-                />
-              </div>
-              <h2 className="text-2xl font-bold text-text-primary mb-2">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden mb-8 text-center">
+            <img 
+              src="/logo-icon.png" 
+              alt="COMMIT" 
+              className="h-16 w-auto mx-auto mb-4"
+            />
+          </div>
+
+          <Card variant="default" padding="lg" className="shadow-lg">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
                 {showResetForm 
                   ? t('login.setNewPassword')
                   : showResetPassword 
@@ -178,7 +165,7 @@ export default function Login() {
                       ? t('login.createAccount')
                       : t('login.welcomeBack')}
               </h2>
-              <p className="text-text-tertiary">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {showResetForm
                   ? t('login.setNewPasswordDescription')
                   : showResetPassword
@@ -187,75 +174,42 @@ export default function Login() {
                       ? t('login.startJourney')
                       : t('login.enterDetails')}
               </p>
-          </div>
+            </div>
 
             {showResetForm ? (
-              // Password Reset Form (after clicking email link)
-              <form onSubmit={handlePasswordUpdate} className="space-y-5">
-                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-2">
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                     <Lock className="w-4 h-4" />
-                    <span className="font-medium text-sm">{t('login.setNewPassword')}</span>
+                    <span className="text-sm font-medium">{t('login.setNewPassword')}</span>
                   </div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
-                    {t('login.setNewPasswordDescription')}
-                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.newPassword')}</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="input-modern"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
+                <Input
+                  label={t('login.newPassword')}
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  required
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.confirmPassword')}</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="input-modern"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
+                <Input
+                  label={t('login.confirmPassword')}
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                />
 
-                {error && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                    {error}
-                  </div>
-                )}
+                {error && <ErrorMessage message={error} />}
+                {success && <SuccessMessage message={success} />}
 
-                {success && (
-                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-sm text-green-600 flex items-center gap-2 animate-fade-in">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                    {success}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-primary h-12 text-base group"
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      {t('login.updatePassword')}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
+                <Button type="submit" fullWidth loading={loading}>
+                  {t('login.updatePassword')}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
 
                 <button
                   type="button"
@@ -263,64 +217,36 @@ export default function Login() {
                     setShowResetForm(false);
                     navigate('/');
                   }}
-                  className="w-full text-sm text-text-tertiary hover:text-text-primary transition-colors"
+                  className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
-                  {t('common.back')} {t('login.signIn')}
+                  Back to Sign In
                 </button>
               </form>
             ) : showResetPassword ? (
-              // Password Reset Request Form
-              <form onSubmit={handleResetPasswordRequest} className="space-y-5">
-                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-2">
+              <form onSubmit={handleResetPasswordRequest} className="space-y-4">
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                     <Mail className="w-4 h-4" />
-                    <span className="font-medium text-sm">{t('login.resetPassword')}</span>
+                    <span className="text-sm font-medium">{t('login.resetPassword')}</span>
                   </div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
-                    {t('login.resetPasswordDescription')}
-                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.email')}</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-modern"
-                    placeholder="name@example.com"
-                    required
-                  />
-                </div>
+                <Input
+                  label={t('login.email')}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  required
+                />
 
-                {error && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                    {error}
-                  </div>
-                )}
+                {error && <ErrorMessage message={error} />}
+                {success && <SuccessMessage message={success} />}
 
-                {success && (
-                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-sm text-green-600 flex items-center gap-2 animate-fade-in">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                    {success}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-primary h-12 text-base group"
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      {t('login.sendResetLink')}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
+                <Button type="submit" fullWidth loading={loading}>
+                  {t('login.sendResetLink')}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
 
                 <button
                   type="button"
@@ -329,38 +255,30 @@ export default function Login() {
                     setError('');
                     setSuccess('');
                   }}
-                  className="w-full text-sm text-text-tertiary hover:text-text-primary transition-colors"
+                  className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
-                  {t('common.back')} {t('login.signIn')}
+                  Back to Sign In
                 </button>
               </form>
             ) : (
-              // Regular Sign In / Sign Up Form
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.email')}</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-modern"
-                    placeholder="name@example.com"
-                    required
-                  />
-                </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  label={t('login.email')}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  required
+                />
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">{t('login.password')}</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="input-modern"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
+                <Input
+                  label={t('login.password')}
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                />
 
                 {!isSignUp && (
                   <div className="flex justify-end">
@@ -371,63 +289,57 @@ export default function Login() {
                         setError('');
                         setSuccess('');
                       }}
-                      className="text-sm text-accent-primary hover:text-accent-hover transition-colors"
+                      className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                     >
                       {t('login.forgotPassword')}
                     </button>
                   </div>
                 )}
 
-                {error && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 flex items-center gap-2 animate-fade-in">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                    {error}
-                  </div>
-                )}
+                {error && <ErrorMessage message={error} />}
+                {success && <SuccessMessage message={success} />}
 
-                {success && (
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl animate-fade-in">
-                    <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
-                      <Mail className="w-4 h-4" />
-                      <span className="font-medium text-sm">{t('login.checkYourEmail')}</span>
-                    </div>
-                    <p className="text-xs text-green-600 dark:text-green-400">
-                      {success}
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn-primary h-12 text-base group"
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      {isSignUp ? t('login.signUp') : t('login.signIn')}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
+                <Button type="submit" fullWidth loading={loading}>
+                  {isSignUp ? t('login.signUp') : t('login.signIn')}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               </form>
             )}
 
-            <div className="mt-8 pt-6 border-t border-border-secondary text-center">
-              <p className="text-sm text-text-secondary">
-                {isSignUp ? t('login.alreadyHaveAccount') : t('login.dontHaveAccount')}
-                <button
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="ml-2 font-medium text-accent-primary hover:text-accent-hover transition-colors"
-                >
-                  {isSignUp ? t('login.signIn') : t('login.signUp')}
-                </button>
-              </p>
-            </div>
-          </div>
+            {!showResetPassword && !showResetForm && (
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {isSignUp ? t('login.alreadyHaveAccount') : t('login.dontHaveAccount')}
+                  <button
+                    onClick={() => setIsSignUp(!isSignUp)}
+                    className="ml-1 font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                  >
+                    {isSignUp ? t('login.signIn') : t('login.signUp')}
+                  </button>
+                </p>
+              </div>
+            )}
+          </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ErrorMessage({ message }: { message: string }) {
+  return (
+    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+      <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0" />
+      {message}
+    </div>
+  );
+}
+
+function SuccessMessage({ message }: { message: string }) {
+  return (
+    <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+      <Check className="w-4 h-4 flex-shrink-0" />
+      {message}
     </div>
   );
 }
