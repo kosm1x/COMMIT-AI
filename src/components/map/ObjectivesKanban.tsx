@@ -113,13 +113,6 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     tasks
   );
 
-  const isObjectiveRelated = (objective: Objective): boolean => {
-    // If no selection, show all
-    if (!hasSelection) return true;
-    
-    // Use family filtering logic
-    return isInSelectedFamily('objective', objective.id);
-  };
 
   const handleDragStart = (objectiveId: string, status: string) => {
     setDraggedItem(objectiveId);
@@ -200,7 +193,14 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
   };
 
   const getObjectivesByStatus = (status: string) => {
-    return objectives.filter((obj) => obj.status === status);
+    let filteredObjectives = objectives.filter((obj) => obj.status === status);
+    
+    // If there's a selection, only show family members
+    if (hasSelection) {
+      filteredObjectives = filteredObjectives.filter(obj => isInSelectedFamily('objective', obj.id));
+    }
+    
+    return filteredObjectives;
   };
 
   const getGoalTitle = (goalId: string | null) => {
@@ -255,7 +255,6 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
               .sort((a, b) => a.order - b.order)
               .map((objective) => {
               const isSelected = selectedObjectiveId === objective.id;
-              const isRelated = isObjectiveRelated(objective);
               const isDragged = draggedItem === objective.id;
               const isDraggedOver = draggedOverItem === objective.id && draggedOverStatus === column.id;
               
@@ -283,9 +282,8 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
                   }
                 }}
                 className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-pointer hover:shadow-md transition-all ${
-                  isRelated ? 'opacity-100' : 'opacity-10'
-                } ${isSelected ? 'ring-2 ring-green-500 ring-offset-2' : ''} ${
-                  isDragged ? 'opacity-50' : ''
+                  isSelected ? 'ring-2 ring-green-500 ring-offset-2' : ''
+                } ${isDragged ? 'opacity-50' : ''
                 } ${isDraggedOver ? 'border-t-4 border-t-green-500' : ''} ${
                   isHighlighted ? 'ring-4 ring-green-400 ring-offset-2 dark:ring-offset-gray-900 animate-pulse shadow-lg shadow-green-500/30' : ''
                 }`}

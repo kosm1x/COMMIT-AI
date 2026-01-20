@@ -277,6 +277,38 @@ export type Database = {
           created_at?: string;
         };
       };
+      user_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          dark_mode: boolean;
+          language: string;
+          theme: string;
+          last_page_visited: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          dark_mode?: boolean;
+          language?: string;
+          theme?: string;
+          last_page_visited?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          dark_mode?: boolean;
+          language?: string;
+          theme?: string;
+          last_page_visited?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 };

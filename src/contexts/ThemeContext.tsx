@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { savePreferencesToLocalStorage, savePreferencesToDB } from '../services/userPreferencesService';
+import { supabase } from '../lib/supabase';
 
 type Theme = 'light' | 'dark';
 
@@ -19,6 +21,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return 'dark';
   });
 
+  // Listen for preferences loaded event from AuthContext
+  useEffect(() => {
+    const handlePreferencesLoaded = () => {
+      console.log('[ThemeContext] Preferences loaded event received');
+      const stored = localStorage.getItem('theme') as Theme | null;
+      console.log('[ThemeContext] Stored theme:', stored);
+      if (stored) {
+        console.log('[ThemeContext] Updating theme to:', stored);
+        setTheme(stored);
+      }
+    };
+
+    window.addEventListener('preferencesLoaded', handlePreferencesLoaded);
+    return () => window.removeEventListener('preferencesLoaded', handlePreferencesLoaded);
+  }, []);
+
   useEffect(() => {
     // Apply theme to document
     const root = document.documentElement;
@@ -29,6 +47,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     // Persist to localStorage
     localStorage.setItem('theme', theme);
+    savePreferencesToLocalStorage({ theme });
+
+    // Save to database if user is signed in
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        savePreferencesToDB(user.id, { theme });
+      }
+    });
   }, [theme]);
 
   const toggleTheme = () => {

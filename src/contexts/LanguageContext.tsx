@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
 import { Language, getTranslation, TranslationKeys } from '../i18n/translations';
+import { savePreferencesToLocalStorage, savePreferencesToDB } from '../services/userPreferencesService';
+import { supabase } from '../lib/supabase';
 
 interface LanguageContextType {
   language: Language;
@@ -25,9 +27,33 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Recalculate translations whenever language changes
   const translations = useMemo(() => getTranslation(language), [language]);
 
+  // Listen for preferences loaded event from AuthContext
   useEffect(() => {
-    console.log('Language changed to:', language, 'saving to localStorage');
+    const handlePreferencesLoaded = () => {
+      console.log('[LanguageContext] Preferences loaded event received');
+      const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      console.log('[LanguageContext] Stored language:', stored);
+      if (stored === 'en' || stored === 'es' || stored === 'zh') {
+        console.log('[LanguageContext] Updating language to:', stored);
+        setLanguageState(stored);
+      }
+    };
+
+    window.addEventListener('preferencesLoaded', handlePreferencesLoaded);
+    return () => window.removeEventListener('preferencesLoaded', handlePreferencesLoaded);
+  }, []);
+
+  useEffect(() => {
+    console.log('Language changed to:', language, 'saving to localStorage and DB');
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    savePreferencesToLocalStorage({ language });
+
+    // Save to database if user is signed in
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        savePreferencesToDB(user.id, { language });
+      }
+    });
   }, [language]);
 
   const setLanguage = (lang: Language) => {

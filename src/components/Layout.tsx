@@ -12,6 +12,7 @@ import QuickActions from './navigation/QuickActions';
 import Breadcrumbs from './navigation/Breadcrumbs';
 import WelcomeModal from './WelcomeModal';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useLastPageTracking } from '../hooks/useLastPageTracking';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,6 +30,10 @@ export default function Layout({ children }: LayoutProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Track last visited page
+  useLastPageTracking();
+  useLastPageTracking();
 
   const navigationGroups = useMemo(() => getTranslatedNavigationGroups(t), [t]);
 

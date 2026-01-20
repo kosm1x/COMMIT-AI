@@ -119,13 +119,6 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
     tasks
   );
 
-  const isTaskRelated = (task: Task): boolean => {
-    // If no selection, show all
-    if (!hasSelection) return true;
-    
-    // Use family filtering logic
-    return isInSelectedFamily('task', task.id);
-  };
 
   const handleDragStart = (taskId: string, status: string) => {
     setDraggedItem(taskId);
@@ -226,7 +219,14 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
   };
 
   const getTasksByStatus = (status: string) => {
-    return tasks.filter((task) => task.status === status);
+    let filteredTasks = tasks.filter((task) => task.status === status);
+    
+    // If there's a selection, only show family members
+    if (hasSelection) {
+      filteredTasks = filteredTasks.filter(task => isInSelectedFamily('task', task.id));
+    }
+    
+    return filteredTasks;
   };
 
   const getObjectiveTitle = (objectiveId: string | null) => {
@@ -280,7 +280,6 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
             {getTasksByStatus(column.id)
               .sort((a, b) => a.order - b.order)
               .map((task) => {
-              const isRelated = isTaskRelated(task);
               const isSelected = selectedTaskId === task.id;
               const isDragged = draggedItem === task.id;
               const isDraggedOver = draggedOverItem === task.id && draggedOverStatus === column.id;
@@ -305,8 +304,8 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
                   onSelectTask(isSelected ? null : task.id);
                 }}
                 className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-pointer hover:shadow-md transition-all ${
-                  isRelated ? 'opacity-100' : 'opacity-10'
-                } ${isDragged ? 'opacity-50' : ''} ${isDraggedOver ? 'border-t-4 border-t-teal-500' : ''} ${
+                  isDragged ? 'opacity-50' : ''
+                } ${isDraggedOver ? 'border-t-4 border-t-teal-500' : ''} ${
                   isHighlighted ? 'ring-4 ring-purple-400 ring-offset-2 dark:ring-offset-gray-900 animate-pulse shadow-lg shadow-purple-500/30' : ''
                 } ${isSelected ? 'ring-2 ring-teal-500 border-teal-500' : ''}`}
               >

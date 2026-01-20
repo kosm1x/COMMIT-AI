@@ -233,7 +233,6 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
               .sort((a, b) => a.order - b.order)
               .map((goal) => {
               const isSelected = selectedGoalId === goal.id;
-              const isRelated = !selectedVisionId || goal.vision_id === selectedVisionId;
               const isDragged = draggedItem === goal.id;
               const isDraggedOver = draggedOverItem === goal.id && draggedOverStatus === column.id;
               
@@ -257,9 +256,8 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
                   onSelectGoal(isSelected ? null : goal.id);
                 }}
                 className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-move hover:shadow-md transition-all ${
-                  isRelated ? 'opacity-100' : 'opacity-10'
-                } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''} ${
-                  isDragged ? 'opacity-50' : ''
+                  isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                } ${isDragged ? 'opacity-50' : ''
                 } ${isDraggedOver ? 'border-t-4 border-t-blue-500' : ''} ${
                   isHighlighted ? 'ring-4 ring-blue-400 ring-offset-2 dark:ring-offset-gray-900 animate-pulse shadow-lg shadow-blue-500/30' : ''
                 }`}

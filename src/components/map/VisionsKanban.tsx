@@ -225,7 +225,6 @@ export default function VisionsKanban({ selectedVisionId, selectedGoalId, select
               .sort((a, b) => a.order - b.order)
               .map((vision) => {
               const isSelected = selectedVisionId === vision.id;
-              const isRelated = hasSelection ? isInSelectedFamily('vision', vision.id) : true;
               const isDragged = draggedItem === vision.id;
               const isDraggedOver = draggedOverItem === vision.id && draggedOverStatus === column.id;
               
@@ -249,9 +248,8 @@ export default function VisionsKanban({ selectedVisionId, selectedGoalId, select
                   onSelectVision(isSelected ? null : vision.id);
                 }}
                 className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-move hover:shadow-md transition-all ${
-                  isRelated ? 'opacity-100' : 'opacity-10'
-                } ${isSelected ? 'ring-2 ring-amber-500 ring-offset-2' : ''} ${
-                  isDragged ? 'opacity-50' : ''
+                  isSelected ? 'ring-2 ring-amber-500 ring-offset-2' : ''
+                } ${isDragged ? 'opacity-50' : ''
                 } ${isDraggedOver ? 'border-t-4 border-t-amber-500' : ''} ${
                   isHighlighted ? 'ring-4 ring-amber-400 ring-offset-2 dark:ring-offset-gray-900 animate-pulse shadow-lg shadow-amber-500/30' : ''
                 }`}
