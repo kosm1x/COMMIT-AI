@@ -98,7 +98,7 @@ export const es = {
     ideate: 'Idear',
     ideateDescription: 'Lluvia de ideas y exploración',
     tracking: 'Seguimiento',
-    progressTracking: 'Seguimiento de Progreso',
+    progressTracking: 'Progreso',
     progressTrackingDescription: 'Monitorea tu crecimiento',
     goToHome: 'Ir al Inicio',
     signOut: 'Cerrar Sesión',
