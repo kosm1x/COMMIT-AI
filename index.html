@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        var theme = localStorage.getItem('commit_theme');
+        var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.backgroundColor = '#030712';
+        } else {
+          document.documentElement.style.backgroundColor = '#f9fafb';
+        }
+      })();
+    </script>
+    <style>
+      html.dark, html.dark body { background-color: #030712; }
+      html:not(.dark), html:not(.dark) body { background-color: #f9fafb; }
+    </style>
     <meta name="description" content="COMMIT Journal - A personal growth framework for emotional clarity, goal achievement, and personal development." />
     <meta name="keywords" content="journal, personal growth, goals, productivity, mindfulness" />
     <meta name="author" content="COMMIT Journal" />
