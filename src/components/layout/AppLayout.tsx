@@ -35,7 +35,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
 
-        <TabBar translations={tabTranslations} />
+        <TabBar 
+          translations={tabTranslations} 
+          onSettingsClick={() => setSettingsOpen(true)} 
+        />
 
         <BottomSheet
           isOpen={settingsOpen}

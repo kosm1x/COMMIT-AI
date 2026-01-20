@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { BookOpen, Flag, LayoutGrid, Lightbulb, TrendingUp, type LucideIcon } from 'lucide-react';
+import { BookOpen, Flag, LayoutGrid, Lightbulb, TrendingUp, User, type LucideIcon } from 'lucide-react';
 
 interface TabItem {
   id: string;
@@ -18,9 +18,10 @@ const tabs: TabItem[] = [
 
 interface TabBarProps {
   translations?: Record<string, string>;
+  onSettingsClick?: () => void;
 }
 
-export default function TabBar({ translations }: TabBarProps) {
+export default function TabBar({ translations, onSettingsClick }: TabBarProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 pb-safe">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
@@ -53,6 +54,20 @@ export default function TabBar({ translations }: TabBarProps) {
             </NavLink>
           );
         })}
+        
+        {onSettingsClick && (
+          <button
+            onClick={onSettingsClick}
+            className="flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[64px] rounded-xl transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <div className="p-1.5 rounded-xl">
+              <User className="w-5 h-5" strokeWidth={2} />
+            </div>
+            <span className="text-[10px] font-medium">
+              {translations?.settings || 'Me'}
+            </span>
+          </button>
+        )}
       </div>
     </nav>
   );
