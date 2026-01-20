@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { savePreferencesToLocalStorage, savePreferencesToDB, loadPreferencesFromLocalStorage } from '../services/userPreferencesService';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,10 +10,11 @@ export function useLastPageTracking() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const hasRestoredRef = useRef(false);
 
-  // Track page changes
+  // Track page changes - save current page when navigating
   useEffect(() => {
-    if (user && location.pathname !== '/') {
+    if (user && location.pathname !== '/' && location.pathname !== '/reset-password') {
       const pagePath = location.pathname;
       
       // Save to localStorage immediately
@@ -28,28 +29,43 @@ export function useLastPageTracking() {
     }
   }, [location.pathname, user]);
 
-  // Restore last visited page on sign-in (only once)
+  // Restore last visited page on initial load
   useEffect(() => {
-    let hasNavigated = false;
+    // Only restore once per session
+    if (hasRestoredRef.current) return;
     
-    const handlePreferencesLoaded = () => {
-      // Only navigate once per session
-      if (hasNavigated) return;
+    // Only attempt restore when we have a user and we're on the default page
+    if (!user) return;
+    if (location.pathname !== '/journal' && location.pathname !== '/') return;
+    
+    const restoreLastPage = () => {
+      if (hasRestoredRef.current) return;
       
       const prefs = loadPreferencesFromLocalStorage();
-      // Only navigate if we're on the default page AND last page was different
-      if (prefs?.last_page_visited && 
-          location.pathname === '/journal' && 
-          prefs.last_page_visited !== '/journal' && 
-          prefs.last_page_visited !== '/') {
-        hasNavigated = true;
-        setTimeout(() => {
-          navigate(prefs.last_page_visited, { replace: true });
-        }, 100); // Small delay to ensure contexts are ready
+      const lastPage = prefs?.last_page_visited;
+      
+      // Navigate if we have a valid last page that's different from current
+      if (lastPage && 
+          lastPage !== '/journal' && 
+          lastPage !== '/' && 
+          lastPage !== location.pathname) {
+        hasRestoredRef.current = true;
+        navigate(lastPage, { replace: true });
+      } else {
+        // Mark as restored even if no navigation needed, to prevent repeated checks
+        hasRestoredRef.current = true;
       }
+    };
+
+    // Try to restore immediately (preferences might already be loaded)
+    restoreLastPage();
+    
+    // Also listen for the preferencesLoaded event in case it fires later
+    const handlePreferencesLoaded = () => {
+      setTimeout(restoreLastPage, 50);
     };
 
     window.addEventListener('preferencesLoaded', handlePreferencesLoaded);
     return () => window.removeEventListener('preferencesLoaded', handlePreferencesLoaded);
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, user]);
 }
