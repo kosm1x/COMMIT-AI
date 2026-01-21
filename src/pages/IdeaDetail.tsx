@@ -774,12 +774,12 @@ export default function IdeaDetail() {
               <div className="glass-card border-border-primary p-4 lg:p-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-2">{t('ideaDetail.title')}</label>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">{t('ideaDetail.title')}</label>
                     <input
                       type="text"
                       value={idea.title}
                       onChange={(e) => setIdea({ ...idea, title: e.target.value })}
-                      className="w-full px-3 lg:px-4 py-2 border border-border-primary bg-bg-primary rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-base lg:text-lg font-semibold"
+                      className="w-full px-3 lg:px-4 py-2 border border-border-primary bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-base lg:text-lg font-semibold"
                     />
                   </div>
 
@@ -875,21 +875,21 @@ export default function IdeaDetail() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-2">{t('ideaDetail.category')}</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">{t('ideaDetail.category')}</label>
                       <input
                         type="text"
                         value={idea.category}
                         onChange={(e) => setIdea({ ...idea, category: e.target.value })}
-                        className="w-full px-4 py-2 border border-border-primary bg-bg-primary rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-border-primary bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-2">{t('ideaDetail.status')}</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">{t('ideaDetail.status')}</label>
                       <select
                         value={idea.status}
                         onChange={(e) => setIdea({ ...idea, status: e.target.value as Idea['status'] })}
-                        className="w-full px-4 py-2 border border-border-primary bg-bg-primary rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-border-primary bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                       >
                         <option value="draft">{t('ideaDetail.draft')}</option>
                         <option value="active">{t('ideaDetail.active')}</option>

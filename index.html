@@ -2,24 +2,67 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Preconnect to external services for faster API calls -->
+    <link rel="preconnect" href="https://api.groq.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.groq.com" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logo-icon.png" />
+    
+    <!-- Critical: Apply theme immediately to prevent flash -->
     <script>
       (function() {
-        var theme = localStorage.getItem('commit_theme');
-        var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-          document.documentElement.style.backgroundColor = '#030712';
-        } else {
+        try {
+          var theme = localStorage.getItem('commit_theme');
+          var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.backgroundColor = '#030712';
+          } else {
+            document.documentElement.style.backgroundColor = '#f9fafb';
+          }
+        } catch (e) {
+          // Fallback if localStorage is unavailable
           document.documentElement.style.backgroundColor = '#f9fafb';
         }
       })();
     </script>
+    
+    <!-- Critical CSS for initial load -->
     <style>
-      html.dark, html.dark body { background-color: #030712; }
-      html:not(.dark), html:not(.dark) body { background-color: #f9fafb; }
+      /* Theme backgrounds */
+      html.dark, html.dark body { background-color: #030712; color: #f9fafb; }
+      html:not(.dark), html:not(.dark) body { background-color: #f9fafb; color: #030712; }
+      
+      /* Loading state - shown before React hydrates */
+      #root:empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      #root:empty::after {
+        content: '';
+        width: 40px;
+        height: 40px;
+        border: 3px solid #4F46E5;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Font display optimization */
+      @font-face {
+        font-display: swap;
+      }
     </style>
+    
+    <!-- SEO Meta Tags -->
     <meta name="description" content="COMMIT Journal - A personal growth framework for emotional clarity, goal achievement, and personal development." />
     <meta name="keywords" content="journal, personal growth, goals, productivity, mindfulness" />
     <meta name="author" content="COMMIT Journal" />
@@ -39,7 +82,12 @@
     
     <!-- Theme Color -->
     <meta name="theme-color" content="#4F46E5" />
-</head>
+    
+    <!-- PWA hints -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

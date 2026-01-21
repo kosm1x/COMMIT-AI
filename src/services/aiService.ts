@@ -1,3 +1,5 @@
+import { fetchWithRetry } from '../utils/fetchWithRetry';
+
 interface EmotionResult {
   name: string;
   intensity: number;
@@ -80,14 +82,23 @@ async function callGroqAPI(
       requestBody.reasoning_effort = reasoning_effort;
     }
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetchWithRetry(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
-      body: JSON.stringify(requestBody),
-    });
+        body: JSON.stringify(requestBody),
+      },
+      {
+        maxRetries: 2,
+        baseDelay: 1000,
+        // Retry on server errors and rate limits
+        retryOn: (res) => res.status >= 500 || res.status === 429,
+      }
+    );
 
     if (!response.ok) {
       console.error('Groq API error:', response.statusText);

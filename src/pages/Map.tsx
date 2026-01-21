@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutGrid, Network } from 'lucide-react';
+import { LayoutGrid, Network, Loader2 } from 'lucide-react';
 import KanbanView from '../components/map/KanbanView';
-import MindMapView from '../components/map/MindMapView';
 import { Header } from '../components/ui';
+
+// Lazy load MindMapView - it imports mermaid/cytoscape (1MB+ combined)
+const MindMapView = lazy(() => import('../components/map/MindMapView'));
 
 type ViewMode = 'kanban' | 'mindmap';
 
@@ -70,7 +72,16 @@ export default function Map() {
           {viewMode === 'kanban' ? (
             <KanbanView initialScrollTo={scrollTo} initialSelectItem={selectItem} />
           ) : (
-            <MindMapView />
+            <Suspense fallback={
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+                </div>
+              </div>
+            }>
+              <MindMapView />
+            </Suspense>
           )}
         </div>
       </div>
