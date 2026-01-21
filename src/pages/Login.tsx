@@ -146,7 +146,7 @@ export default function Login() {
             <img 
               src="/logo-icon.png" 
               alt="COMMIT" 
-              className="h-16 w-auto mx-auto mb-4"
+              className="h-32 w-auto mx-auto mb-4"
             />
           </div>
 

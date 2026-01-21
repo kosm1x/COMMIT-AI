@@ -3,26 +3,25 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react({
-      // Enable fast refresh for better dev experience
-      fastRefresh: true,
-    }),
-  ],
+  plugins: [react()],
   server: {
     host: '0.0.0.0',
     port: 5000,
     strictPort: true,
     allowedHosts: true,
   },
+  // Optimize dependency pre-bundling
   optimizeDeps: {
-    // Include frequently used deps for faster dev startup
-    include: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
-    // Exclude large deps that should be bundled differently
-    exclude: ['mermaid'],
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@supabase/supabase-js',
+    ],
+    exclude: ['lucide-react'],
   },
   build: {
-    // Use esbuild for faster builds (default)
+    // Use esbuild for fast minification
     minify: 'esbuild',
     // Target modern browsers for smaller bundles
     target: 'es2020',
@@ -30,16 +29,18 @@ export default defineConfig({
     cssCodeSplit: true,
     // Disable sourcemaps for production (smaller bundle)
     sourcemap: false,
-    // Optimize chunk size
+    // Chunk size warning limit
     chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
-        // Optimize chunking strategy for better caching
+        // Optimize chunking for better caching
         manualChunks: {
           // React ecosystem - frequently used, cache together
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           // Supabase - auth and data layer
           'supabase-vendor': ['@supabase/supabase-js'],
+          // Mermaid - heavy diagram library, load separately
+          'mermaid-vendor': ['mermaid'],
         },
         // Use content hash for better caching
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -59,16 +60,13 @@ export default defineConfig({
   },
   // Enable dependency pre-bundling caching
   cacheDir: 'node_modules/.vite',
-  // CSS optimization
-  css: {
-    devSourcemap: false,
-  },
   // Production optimizations via esbuild
   esbuild: {
-    // Minify identifiers
+    // Drop console.log and debugger in production
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+    // Minification options
     minifyIdentifiers: true,
     minifySyntax: true,
     minifyWhitespace: true,
   },
 });
-

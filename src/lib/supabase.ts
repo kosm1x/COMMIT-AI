@@ -3,6 +3,45 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+/**
+ * Fetch wrapper with automatic retry for transient failures
+ * Handles network errors, rate limits (429), and server errors (5xx)
+ */
+async function fetchWithRetry(
+  url: RequestInfo | URL,
+  options?: RequestInit
+): Promise<Response> {
+  const maxRetries = 2;
+  const baseDelay = 1000;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Retry on server errors (5xx) or rate limits (429)
+      if ((response.status >= 500 || response.status === 429) && attempt < maxRetries) {
+        const delay = Math.min(baseDelay * Math.pow(2, attempt), 5000);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+
+      // Network error - retry if attempts remaining
+      if (attempt < maxRetries) {
+        const delay = Math.min(baseDelay * Math.pow(2, attempt), 5000);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+    }
+  }
+
+  throw lastError || new Error('Request failed after retries');
+}
+
 // Create a client with placeholder values if env vars are missing
 // This allows the app to load and show an error message instead of crashing
 export const supabase: SupabaseClient = createClient(
@@ -16,43 +55,8 @@ export const supabase: SupabaseClient = createClient(
       storage: window.localStorage, // Explicit storage specification
     },
     global: {
-      // Add retry configuration for fetch
-      fetch: async (url, options) => {
-        const maxRetries = 2;
-        let lastError: Error | null = null;
-        
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-          try {
-            const response = await fetch(url, options);
-            
-            // Retry on server errors (5xx) or rate limits (429)
-            if ((response.status >= 500 || response.status === 429) && attempt < maxRetries) {
-              const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              continue;
-            }
-            
-            return response;
-          } catch (error) {
-            lastError = error as Error;
-            
-            // Network error - retry
-            if (attempt < maxRetries) {
-              const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              continue;
-            }
-          }
-        }
-        
-        throw lastError || new Error('Request failed');
-      },
-    },
-    // Realtime configuration for better performance
-    realtime: {
-      params: {
-        eventsPerSecond: 10, // Rate limit realtime events
-      },
+      // Use retry-enabled fetch for all Supabase requests
+      fetch: fetchWithRetry,
     },
   }
 );

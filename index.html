@@ -24,7 +24,6 @@
             document.documentElement.style.backgroundColor = '#f9fafb';
           }
         } catch (e) {
-          // Fallback if localStorage is unavailable
           document.documentElement.style.backgroundColor = '#f9fafb';
         }
       })();
@@ -54,11 +53,6 @@
       }
       @keyframes spin {
         to { transform: rotate(360deg); }
-      }
-      
-      /* Font display optimization */
-      @font-face {
-        font-display: swap;
       }
     </style>
     
