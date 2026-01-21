@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Flag, Link2, CheckCircle2 } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
-import { hasSessionSorted, markSessionSorted, sortTasks } from '../../utils/autoSort';
+import { sortTasks } from '../../utils/autoSort';
 
 interface Task {
   id: string;
@@ -96,9 +96,8 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
 
     if (tasksResult.data) {
       let loadedTasks = tasksResult.data;
-      if (!hasAppliedSort.current && !hasSessionSorted()) {
+      if (!hasAppliedSort.current) {
         hasAppliedSort.current = true;
-        markSessionSorted();
         loadedTasks = sortTasks(loadedTasks as any) as any;
       }
       setTasks(loadedTasks);

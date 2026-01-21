@@ -46,6 +46,11 @@ src/
 - `VITE_GROQ_API_KEY` - Groq API key for AI features
 
 ## Recent Changes
+- January 21, 2026: Fixed session auto-sorting race condition
+  - Fixed bug where Kanban boards would skip sorting if Goals page loaded first
+  - Each view (Goals page, Kanban boards) now sorts independently on first mount
+  - Session flag centralized in useObjectivesState.ts; Kanban components use component-level refs only
+  - Sorting remains transparent to user and happens once per component lifecycle
 - January 20, 2026: Added one-time session auto-sorting for cards
   - Goal, Objective, and Task cards automatically sort on first load each session
   - Sort priority: status (in-progress > not started > on hold > completed), then due date (soonest first), then priority (high > medium > low)

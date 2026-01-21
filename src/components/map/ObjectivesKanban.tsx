@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Flag, Link2 } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
-import { hasSessionSorted, markSessionSorted, sortObjectives } from '../../utils/autoSort';
+import { sortObjectives } from '../../utils/autoSort';
 
 interface Objective {
   id: string;
@@ -90,9 +90,8 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
 
     if (objectivesResult.data) {
       let loadedObjectives = objectivesResult.data;
-      if (!hasAppliedSort.current && !hasSessionSorted()) {
+      if (!hasAppliedSort.current) {
         hasAppliedSort.current = true;
-        markSessionSorted();
         loadedObjectives = sortObjectives(loadedObjectives as any) as any;
       }
       setObjectives(loadedObjectives);

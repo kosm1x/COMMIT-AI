@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Target, Eye } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
-import { hasSessionSorted, markSessionSorted, sortGoals } from '../../utils/autoSort';
+import { sortGoals } from '../../utils/autoSort';
 
 interface Vision {
   id: string;
@@ -90,9 +90,8 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
 
     if (goalsResult.data) {
       let loadedGoals = goalsResult.data;
-      if (!hasAppliedSort.current && !hasSessionSorted()) {
+      if (!hasAppliedSort.current) {
         hasAppliedSort.current = true;
-        markSessionSorted();
         loadedGoals = sortGoals(loadedGoals as any) as any;
       }
       setGoals(loadedGoals);
