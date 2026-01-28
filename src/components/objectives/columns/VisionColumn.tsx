@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { Vision, Goal, Objective, Task } from '../types';
@@ -44,6 +44,7 @@ export function VisionColumn({
   const { t } = useLanguage();
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverId, setDraggedOverId] = useState<string | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Sort visions by order
   const sortedVisions = [...visions].sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -128,6 +129,40 @@ export function VisionColumn({
     await onDeleteVision(id, !deleteAll); // If deleteAll is false, orphan descendants
   };
 
+  // Scroll to editing card when editingVisionId changes - robust scroll mechanism
+  useEffect(() => {
+    if (!editingVisionId) return;
+    
+    let isCancelled = false;
+    const timeoutIds: NodeJS.Timeout[] = [];
+    
+    const scrollToEditingCard = () => {
+      if (isCancelled) return;
+      const cardElement = cardRefs.current[editingVisionId];
+      if (cardElement) {
+        requestAnimationFrame(() => {
+          if (isCancelled) return;
+          cardRefs.current[editingVisionId]?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'center'
+          });
+        });
+      }
+    };
+    
+    // Multiple scroll attempts with increasing delays
+    const delays = [100, 300, 600, 1000];
+    delays.forEach(delay => {
+      timeoutIds.push(setTimeout(scrollToEditingCard, delay));
+    });
+    
+    return () => {
+      isCancelled = true;
+      timeoutIds.forEach(id => clearTimeout(id));
+    };
+  }, [editingVisionId]);
+
   return (
     <div className="flex-1 lg:min-w-[240px] xl:min-w-[260px] 2xl:min-w-[280px] 3xl:min-w-[320px] flex flex-col glass-card border border-white/40 max-w-full w-full shrink">
       <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm relative overflow-visible z-10">
@@ -155,29 +190,30 @@ export function VisionColumn({
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
         {visibleVisions.map((vision) => (
-          <VisionCard
-            key={vision.id}
-            vision={vision}
-            isSelected={selectedVisionId === vision.id}
-            isInFamily={isInSelectedFamily('vision', vision.id)}
-            isEditing={editingVisionId === vision.id}
-            onSelect={() => onSelectVision(vision)}
-            onStartEdit={() => setEditingVisionId(vision.id)}
-            onCancelEdit={() => setEditingVisionId(null)}
-            onSave={async (updates) => {
-              await onUpdateVision(vision.id, updates);
-              setEditingVisionId(null);
-            }}
-            onDelete={() => handleDelete(vision.id)}
-            onTitleClick={(e) => onTitleClick('vision', vision.title, vision.description, e)}
-            onConvertToGoal={onConvertToGoal ? (targetVisionId) => onConvertToGoal(vision, targetVisionId) : undefined}
-            onDragStart={(e) => handleDragStart(e, vision.id)}
-            onDragEnter={(e) => handleDragEnter(e, vision.id)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, vision.id)}
-            isDragged={draggedItem === vision.id}
-            isDraggedOver={draggedOverId === vision.id}
-          />
+          <div key={vision.id} ref={(el) => { cardRefs.current[vision.id] = el; }}>
+            <VisionCard
+              vision={vision}
+              isSelected={selectedVisionId === vision.id}
+              isInFamily={isInSelectedFamily('vision', vision.id)}
+              isEditing={editingVisionId === vision.id}
+              onSelect={() => onSelectVision(vision)}
+              onStartEdit={() => setEditingVisionId(vision.id)}
+              onCancelEdit={() => setEditingVisionId(null)}
+              onSave={async (updates) => {
+                await onUpdateVision(vision.id, updates);
+                setEditingVisionId(null);
+              }}
+              onDelete={() => handleDelete(vision.id)}
+              onTitleClick={(e) => onTitleClick('vision', vision.title, vision.description, e)}
+              onConvertToGoal={onConvertToGoal ? (targetVisionId) => onConvertToGoal(vision, targetVisionId) : undefined}
+              onDragStart={(e) => handleDragStart(e, vision.id)}
+              onDragEnter={(e) => handleDragEnter(e, vision.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, vision.id)}
+              isDragged={draggedItem === vision.id}
+              isDraggedOver={draggedOverId === vision.id}
+            />
+          </div>
         ))}
         {visibleVisions.length === 0 && (
           <div className="text-xs text-text-tertiary text-center py-8 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">

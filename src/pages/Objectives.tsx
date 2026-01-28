@@ -107,12 +107,15 @@ export default function Objectives() {
           setEditingTaskId(data.id);
         }
       }
-      navigate(location.pathname, { replace: true, state: {} });
-      processedNavStateRef.current = null;
+      // Clear navigation state WITHOUT triggering React Router scroll behavior
+      // Using window.history.replaceState instead of navigate() to prevent scroll reset
+      window.history.replaceState({}, '', location.pathname);
+      // NOTE: Do NOT reset processedNavStateRef.current here - keep it set to prevent re-triggering
+      // The ref will be reset when the pathname changes (line 44-45)
     };
 
     selectItem();
-  }, [location.state, user, navigate, location.pathname, state]);
+  }, [location.state, user, location.pathname, state]);
 
   const handleTitleClick = (type: ItemType, title: string, description: string, e: React.MouseEvent) => {
     e.stopPropagation();

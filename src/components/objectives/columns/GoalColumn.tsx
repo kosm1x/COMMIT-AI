@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { Vision, Goal, Objective } from '../types';
 import { GoalCard } from '../cards';
+import { sortGoals } from '../../../utils/autoSort';
 
 interface GoalColumnProps {
   // All goals (we'll filter/display appropriately)
@@ -53,6 +54,8 @@ export function GoalColumn({
   const [showOrphaned, setShowOrphaned] = useState(true);
   const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
   const [goalObjectives, setGoalObjectives] = useState<Record<string, Objective[]>>({});
+  const editingCardRef = useRef<HTMLDivElement>(null);
+  const columnRef = useRef<HTMLDivElement>(null);
 
   // Split goals into vision-attached and orphaned
   // When filtering by family, we need to show all goals (not pre-filtered by selectedVisionId)
@@ -139,35 +142,105 @@ export function GoalColumn({
     setGoalObjectives({});
   }, [selectedVisionId]);
 
+  // Memoized sorting function that moves editing goal to top
+  const sortedOrphanedGoals = useMemo(() => {
+    // First sort by standard sorting (status, target_date, title)
+    const sorted = sortGoals(visibleOrphanedGoals);
+    
+    // Then move editing goal to top if it exists
+    if (!editingGoalId) return sorted;
+    
+    const editingGoal = sorted.find(g => g.id === editingGoalId);
+    if (!editingGoal) return sorted;
+    
+    return [editingGoal, ...sorted.filter(g => g.id !== editingGoalId)];
+  }, [visibleOrphanedGoals, editingGoalId]);
+
+  const sortedVisionGoals = useMemo(() => {
+    // First sort by standard sorting (status, target_date, title)
+    const sorted = sortGoals(displayVisionGoals);
+    
+    // Then move editing goal to top if it exists
+    if (!editingGoalId) return sorted;
+    
+    const editingGoal = sorted.find(g => g.id === editingGoalId);
+    if (!editingGoal) return sorted;
+    
+    return [editingGoal, ...sorted.filter(g => g.id !== editingGoalId)];
+  }, [displayVisionGoals, editingGoalId]);
+
+  // Keep editing card centered in view - robust scroll mechanism with multiple retries
+  useEffect(() => {
+    if (!editingGoalId) return;
+    
+    let isCancelled = false;
+    const timeoutIds: NodeJS.Timeout[] = [];
+    
+    // Function to scroll the editing card into center view
+    const scrollToEditingCard = () => {
+      if (isCancelled) return;
+      if (editingCardRef.current) {
+        // Use requestAnimationFrame to ensure we're in a stable render cycle
+        requestAnimationFrame(() => {
+          if (isCancelled || !editingCardRef.current) return;
+          editingCardRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        });
+      }
+    };
+    
+    // Multiple scroll attempts with increasing delays to handle:
+    // 1. Initial render (100ms)
+    // 2. Data loading and re-renders (300ms)
+    // 3. Layout shifts from async operations (600ms)
+    // 4. Final stabilization (1000ms)
+    const delays = [100, 300, 600, 1000];
+    delays.forEach(delay => {
+      timeoutIds.push(setTimeout(scrollToEditingCard, delay));
+    });
+    
+    return () => {
+      isCancelled = true;
+      timeoutIds.forEach(id => clearTimeout(id));
+    };
+  }, [editingGoalId]);
+
   const totalCount = displayVisionGoals.length + (showOrphaned ? visibleOrphanedGoals.length : 0);
 
-  const renderGoalCard = (goal: Goal) => (
-    <GoalCard
-      key={goal.id}
-      goal={goal}
-      visions={visions}
-      objectives={objectives}
-      isSelected={selectedGoalId === goal.id}
-      isInFamily={isInSelectedFamily('goal', goal.id)}
-      isEditing={editingGoalId === goal.id}
-      onSelect={() => onSelectGoal(goal)}
-      onStartEdit={() => setEditingGoalId(goal.id)}
-      onCancelEdit={() => setEditingGoalId(null)}
-      onSave={async (updates) => {
-        await onUpdateGoal(goal.id, updates);
-        setEditingGoalId(null);
-      }}
-      onDelete={() => handleDelete(goal.id)}
-      onToggleStatus={() => onToggleGoalStatus(goal)}
-      onTitleClick={(e) => onTitleClick('goal', goal.title, goal.description, e)}
-      onConvertToVision={onConvertToVision ? () => onConvertToVision(goal) : undefined}
-      onConvertToObjective={onConvertToObjective ? (targetGoalId) => onConvertToObjective(goal, targetGoalId) : undefined}
-      objectiveCount={objectiveCounts[goal.id]}
-      isExpanded={expandedGoals.has(goal.id)}
-      onToggleExpand={() => toggleGoalExpanded(goal.id)}
-      goalObjectives={goalObjectives[goal.id] || []}
-    />
-  );
+  const renderGoalCard = (goal: Goal) => {
+    const isEditing = editingGoalId === goal.id;
+    return (
+      <div key={goal.id} ref={isEditing ? editingCardRef : null}>
+        <GoalCard
+          goal={goal}
+          visions={visions}
+          objectives={objectives}
+          isSelected={selectedGoalId === goal.id}
+          isInFamily={isInSelectedFamily('goal', goal.id)}
+          isEditing={isEditing}
+          onSelect={() => onSelectGoal(goal)}
+          onStartEdit={() => setEditingGoalId(goal.id)}
+          onCancelEdit={() => setEditingGoalId(null)}
+          onSave={async (updates) => {
+            await onUpdateGoal(goal.id, updates);
+            setEditingGoalId(null);
+          }}
+          onDelete={() => handleDelete(goal.id)}
+          onToggleStatus={() => onToggleGoalStatus(goal)}
+          onTitleClick={(e) => onTitleClick('goal', goal.title, goal.description, e)}
+          onConvertToVision={onConvertToVision ? () => onConvertToVision(goal) : undefined}
+          onConvertToObjective={onConvertToObjective ? (targetGoalId) => onConvertToObjective(goal, targetGoalId) : undefined}
+          objectiveCount={objectiveCounts[goal.id]}
+          isExpanded={expandedGoals.has(goal.id)}
+          onToggleExpand={() => toggleGoalExpanded(goal.id)}
+          goalObjectives={goalObjectives[goal.id] || []}
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="flex-1 lg:min-w-[240px] xl:min-w-[260px] 2xl:min-w-[280px] 3xl:min-w-[320px] flex flex-col glass-card border border-white/40 max-w-full w-full shrink">
@@ -194,7 +267,7 @@ export function GoalColumn({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+      <div ref={columnRef} className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
         {/* Orphaned goals section - now at the top */}
         {visibleOrphanedGoals.length > 0 && (
           <div>
@@ -207,7 +280,7 @@ export function GoalColumn({
             </button>
             {showOrphaned && (
               <div className="space-y-2">
-                {visibleOrphanedGoals.map(renderGoalCard)}
+                {sortedOrphanedGoals.map(renderGoalCard)}
               </div>
             )}
           </div>
@@ -221,7 +294,7 @@ export function GoalColumn({
             </h3>
             <div className="space-y-2">
               {displayVisionGoals.length > 0 ? (
-                displayVisionGoals.map(renderGoalCard)
+                sortedVisionGoals.map(renderGoalCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
                   {t('objectives.noGoalsYet')}
@@ -234,7 +307,7 @@ export function GoalColumn({
         {/* No vision selected - show all non-orphan goals */}
         {!selectedVision && displayVisionGoals.length > 0 && (
           <div className="space-y-2">
-            {displayVisionGoals.map(renderGoalCard)}
+            {sortedVisionGoals.map(renderGoalCard)}
           </div>
         )}
       </div>

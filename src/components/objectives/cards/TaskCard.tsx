@@ -59,6 +59,7 @@ export function TaskCard({
   const { t } = useLanguage();
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description);
+  const [editStatus, setEditStatus] = useState(task.status);
   const [editPriority, setEditPriority] = useState(task.priority);
   const [editDueDate, setEditDueDate] = useState(task.due_date || '');
   const [editObjectiveId, setEditObjectiveId] = useState<string | null>(task.objective_id);
@@ -75,6 +76,7 @@ export function TaskCard({
     if (isEditing) {
       setEditTitle(task.title);
       setEditDescription(task.description);
+      setEditStatus(task.status);
       setEditPriority(task.priority);
       setEditDueDate(task.due_date || '');
       setEditObjectiveId(task.objective_id);
@@ -90,6 +92,7 @@ export function TaskCard({
     await onSave({
       title: editTitle,
       description: editDescription,
+      status: editStatus,
       priority: editPriority,
       due_date: editIsRecurring ? null : (editDueDate || null),
       objective_id: editObjectiveId,
@@ -172,6 +175,16 @@ export function TaskCard({
             ))}
           </select>
           <div className="flex gap-2">
+            <select
+              value={editStatus}
+              onChange={(e) => setEditStatus(e.target.value as Task['status'])}
+              className="flex-1 input-modern py-1.5 px-2 text-sm"
+            >
+              <option value="not_started">Not Started</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="on_hold">On Hold</option>
+            </select>
             <select
               value={editPriority}
               onChange={(e) => setEditPriority(e.target.value as Task['priority'])}
