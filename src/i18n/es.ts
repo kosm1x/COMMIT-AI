@@ -120,6 +120,37 @@ export const es = {
     hideAnalysis: 'Ocultar Análisis',
     recentEntries: 'Entradas Recientes',
     placeholder: 'Escribe sobre tu día, tus pensamientos, tus sentimientos...',
+    emotions: 'Emociones',
+    patterns: 'Patrones',
+    aiInsights: 'Análisis de IA',
+    // View modes
+    journalView: 'Diario',
+    plannerView: 'Planificador',
+    plannerSubtitle: 'Planifica tu día',
+  },
+  // Daily Planner
+  planner: {
+    pendingTasks: 'Tareas Pendientes',
+    searchTasks: 'Buscar tareas...',
+    all: 'Todas',
+    notStarted: 'Por Hacer',
+    inProgress: 'En Progreso',
+    noGoal: 'Sin Meta',
+    planned: 'Planificada',
+    noTasksMatch: 'No hay tareas que coincidan con tus filtros',
+    noTasksAvailable: 'No hay tareas pendientes disponibles',
+    // Time slots
+    morning: 'Mañana',
+    afternoon: 'Tarde',
+    evening: 'Noche',
+    night: 'Madrugada',
+    // Actions
+    dropTasksHere: 'Arrastra tareas aquí',
+    dropHere: 'Soltar aquí',
+    dragTasksToStart: 'Arrastra tareas desde la barra lateral para planificar tu día',
+    tasks: 'Tareas',
+    tasksCompleted: 'completadas',
+    today: 'Hoy',
   },
   // Objectives
   objectives: {

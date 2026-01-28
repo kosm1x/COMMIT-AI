@@ -6,6 +6,7 @@ import { analyzeJournalEntry } from '../services/aiService';
 import { formatShortDate } from '../utils/trackingStats';
 import { Card, Button, IconButton, BottomSheet } from '../components/ui';
 import { Header } from '../components/ui';
+import { DailyPlanner } from '../components/journal';
 import {
   Calendar,
   Plus,
@@ -15,7 +16,11 @@ import {
   Frown,
   Meh,
   ChevronRight,
+  BookOpen,
+  CalendarCheck,
 } from 'lucide-react';
+
+type ViewMode = 'journal' | 'planner';
 
 interface JournalEntry {
   id: string;
@@ -35,6 +40,7 @@ interface AIAnalysis {
 export default function Journal() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const [viewMode, setViewMode] = useState<ViewMode>('journal');
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [content, setContent] = useState('');
@@ -191,37 +197,166 @@ export default function Journal() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       <Header 
         title={t('nav.journal')}
-        subtitle={selectedEntry ? formatShortDate(new Date(selectedEntry.entry_date + 'T00:00:00')) : t('journal.newEntry')}
+        subtitle={viewMode === 'journal' 
+          ? (selectedEntry ? formatShortDate(new Date(selectedEntry.entry_date + 'T00:00:00')) : t('journal.newEntry'))
+          : t('journal.plannerSubtitle')
+        }
         rightAction={
-          <div className="flex items-center gap-1">
-            <IconButton onClick={() => setShowEntryList(true)}>
-              <Calendar className="w-5 h-5" />
-            </IconButton>
-            <IconButton onClick={handleNewEntry}>
-              <Plus className="w-5 h-5" />
-            </IconButton>
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+              <button
+                onClick={() => setViewMode('journal')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'journal'
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('journal.journalView')}</span>
+              </button>
+              <button
+                onClick={() => setViewMode('planner')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'planner'
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <CalendarCheck className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('journal.plannerView')}</span>
+              </button>
+            </div>
+
+            {/* Journal-specific actions */}
+            {viewMode === 'journal' && (
+              <div className="flex items-center gap-1">
+                <IconButton onClick={() => setShowEntryList(true)}>
+                  <Calendar className="w-5 h-5" />
+                </IconButton>
+                <IconButton onClick={handleNewEntry}>
+                  <Plus className="w-5 h-5" />
+                </IconButton>
+              </div>
+            )}
           </div>
         }
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 max-w-6xl mx-auto w-full">
-        <div className="hidden lg:block w-72 shrink-0">
-          <Card padding="none" className="h-full overflow-hidden">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-700 dark:text-gray-300 text-sm">{t('journal.recentEntries')}</h3>
-              <Button size="sm" onClick={handleNewEntry}>
-                <Plus className="w-4 h-4" />
-              </Button>
+      {/* Daily Planner View */}
+      {viewMode === 'planner' && user && (
+        <div className="flex-1 p-4 max-w-7xl mx-auto w-full pb-24">
+          <DailyPlanner userId={user.id} />
+        </div>
+      )}
+
+      {/* Journal View */}
+      {viewMode === 'journal' && (
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 max-w-6xl mx-auto w-full">
+          <div className="hidden lg:block w-72 shrink-0">
+            <Card padding="none" className="h-full overflow-hidden">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-700 dark:text-gray-300 text-sm">{t('journal.recentEntries')}</h3>
+                <Button size="sm" onClick={handleNewEntry}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(100vh-16rem)] p-2 space-y-1">
+                {entries.map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => setSelectedEntry(entry)}
+                    className={`w-full text-left p-3 rounded-xl transition-all ${
+                      selectedEntry?.id === entry.id
+                        ? 'bg-indigo-600 text-white'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs font-medium ${selectedEntry?.id === entry.id ? 'text-indigo-200' : 'text-gray-500'}`}>
+                        {formatShortDate(new Date(entry.entry_date + 'T00:00:00'))}
+                      </span>
+                      {entry.primary_emotion && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          selectedEntry?.id === entry.id ? 'bg-white/20' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                        }`}>
+                          {entry.primary_emotion}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm line-clamp-2 ${selectedEntry?.id === entry.id ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
+                      {entry.content}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="flex-1 flex flex-col gap-4">
+            <Card padding="none" className="flex-1 flex flex-col overflow-hidden">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-transparent border-none text-gray-900 dark:text-gray-100 font-semibold focus:ring-0 p-0 cursor-pointer"
+                  />
+                  <span className={`text-xs px-2 py-1 rounded-lg ${saving ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'} dark:bg-opacity-20`}>
+                    {saving ? t('journal.saving') : t('journal.autoSaved')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {content.trim() && (
+                    <Button size="sm" onClick={handleAnalyze} loading={analyzing}>
+                      <Sparkles className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('journal.analyzeEntry')}</span>
+                    </Button>
+                  )}
+                  {analysis && (
+                    <IconButton onClick={() => setShowAnalysis(true)}>
+                      <ChevronRight className="w-4 h-4" />
+                    </IconButton>
+                  )}
+                  {selectedEntry && (
+                    <IconButton variant="danger" onClick={handleDelete}>
+                      <Trash2 className="w-4 h-4" />
+                    </IconButton>
+                  )}
+                </div>
+              </div>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={t('journal.placeholder')}
+                className="flex-1 p-4 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none text-base leading-relaxed"
+              />
+            </Card>
+          </div>
+
+          {analysis && (
+            <div className="hidden lg:block w-80 shrink-0">
+              <AnalysisPanel analysis={analysis} getEmotionIcon={getEmotionIcon} t={t} />
             </div>
-            <div className="overflow-y-auto max-h-[calc(100vh-16rem)] p-2 space-y-1">
+          )}
+        </div>
+      )}
+
+      {/* Journal Bottom Sheets */}
+      {viewMode === 'journal' && (
+        <>
+          <BottomSheet isOpen={showEntryList} onClose={() => setShowEntryList(false)} title={t('journal.recentEntries')} height="half">
+            <div className="space-y-2">
               {entries.map((entry) => (
                 <button
                   key={entry.id}
-                  onClick={() => setSelectedEntry(entry)}
-                  className={`w-full text-left p-3 rounded-xl transition-all ${
+                  onClick={() => { setSelectedEntry(entry); setShowEntryList(false); }}
+                  className={`w-full text-left p-4 rounded-xl transition-all ${
                     selectedEntry?.id === entry.id
                       ? 'bg-indigo-600 text-white'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -230,7 +365,7 @@ export default function Journal() {
                     </span>
                     {entry.primary_emotion && (
                       <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                        selectedEntry?.id === entry.id ? 'bg-white/20' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                        selectedEntry?.id === entry.id ? 'bg-white/20' : 'bg-indigo-100 text-indigo-600'
                       }`}>
                         {entry.primary_emotion}
                       </span>
@@ -242,93 +377,13 @@ export default function Journal() {
                 </button>
               ))}
             </div>
-          </Card>
-        </div>
+          </BottomSheet>
 
-        <div className="flex-1 flex flex-col gap-4">
-          <Card padding="none" className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent border-none text-gray-900 dark:text-gray-100 font-semibold focus:ring-0 p-0 cursor-pointer"
-                />
-                <span className={`text-xs px-2 py-1 rounded-lg ${saving ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'} dark:bg-opacity-20`}>
-                  {saving ? t('journal.saving') : t('journal.autoSaved')}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                {content.trim() && (
-                  <Button size="sm" onClick={handleAnalyze} loading={analyzing}>
-                    <Sparkles className="w-4 h-4" />
-                    <span className="hidden sm:inline">{t('journal.analyzeEntry')}</span>
-                  </Button>
-                )}
-                {analysis && (
-                  <IconButton onClick={() => setShowAnalysis(true)}>
-                    <ChevronRight className="w-4 h-4" />
-                  </IconButton>
-                )}
-                {selectedEntry && (
-                  <IconButton variant="danger" onClick={handleDelete}>
-                    <Trash2 className="w-4 h-4" />
-                  </IconButton>
-                )}
-              </div>
-            </div>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={t('journal.placeholder')}
-              className="flex-1 p-4 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none text-base leading-relaxed"
-            />
-          </Card>
-        </div>
-
-        {analysis && (
-          <div className="hidden lg:block w-80 shrink-0">
-            <AnalysisPanel analysis={analysis} getEmotionIcon={getEmotionIcon} t={t} />
-          </div>
-        )}
-      </div>
-
-      <BottomSheet isOpen={showEntryList} onClose={() => setShowEntryList(false)} title={t('journal.recentEntries')} height="half">
-        <div className="space-y-2">
-          {entries.map((entry) => (
-            <button
-              key={entry.id}
-              onClick={() => { setSelectedEntry(entry); setShowEntryList(false); }}
-              className={`w-full text-left p-4 rounded-xl transition-all ${
-                selectedEntry?.id === entry.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs font-medium ${selectedEntry?.id === entry.id ? 'text-indigo-200' : 'text-gray-500'}`}>
-                  {formatShortDate(new Date(entry.entry_date + 'T00:00:00'))}
-                </span>
-                {entry.primary_emotion && (
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                    selectedEntry?.id === entry.id ? 'bg-white/20' : 'bg-indigo-100 text-indigo-600'
-                  }`}>
-                    {entry.primary_emotion}
-                  </span>
-                )}
-              </div>
-              <p className={`text-sm line-clamp-2 ${selectedEntry?.id === entry.id ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
-                {entry.content}
-              </p>
-            </button>
-          ))}
-        </div>
-      </BottomSheet>
-
-      <BottomSheet isOpen={showAnalysis} onClose={() => setShowAnalysis(false)} title={t('journal.aiInsights')} height="auto">
-        {analysis && <AnalysisPanel analysis={analysis} getEmotionIcon={getEmotionIcon} t={t} />}
-      </BottomSheet>
+          <BottomSheet isOpen={showAnalysis} onClose={() => setShowAnalysis(false)} title={t('journal.aiInsights')} height="auto">
+            {analysis && <AnalysisPanel analysis={analysis} getEmotionIcon={getEmotionIcon} t={t} />}
+          </BottomSheet>
+        </>
+      )}
     </div>
   );
 }

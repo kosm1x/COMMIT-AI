@@ -120,6 +120,37 @@ export const en = {
     hideAnalysis: 'Hide Analysis',
     recentEntries: 'Recent Entries',
     placeholder: 'Write about your day, your thoughts, your feelings...',
+    emotions: 'Emotions',
+    patterns: 'Patterns',
+    aiInsights: 'AI Insights',
+    // View modes
+    journalView: 'Journal',
+    plannerView: 'Planner',
+    plannerSubtitle: 'Plan your day',
+  },
+  // Daily Planner
+  planner: {
+    pendingTasks: 'Pending Tasks',
+    searchTasks: 'Search tasks...',
+    all: 'All',
+    notStarted: 'To Do',
+    inProgress: 'In Progress',
+    noGoal: 'No Goal',
+    planned: 'Planned',
+    noTasksMatch: 'No tasks match your filters',
+    noTasksAvailable: 'No pending tasks available',
+    // Time slots
+    morning: 'Morning',
+    afternoon: 'Afternoon',
+    evening: 'Evening',
+    night: 'Night',
+    // Actions
+    dropTasksHere: 'Drop tasks here',
+    dropHere: 'Drop here',
+    dragTasksToStart: 'Drag tasks from the sidebar to plan your day',
+    tasks: 'Tasks',
+    tasksCompleted: 'completed',
+    today: 'Today',
   },
   // Objectives
   objectives: {
