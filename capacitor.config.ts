@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
     scheme: 'COMMIT',
     backgroundColor: '#030712',
   },
+  android: {
+    backgroundColor: '#030712',
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
