@@ -90,7 +90,7 @@ export const es = {
     goals: 'Metas',
     goalsDescription: 'Aspiraciones a largo plazo',
     maps: 'Mapas',
-    kanbanBoards: 'Tableros Kanban',
+    kanbanBoards: 'Mapas',
     kanbanBoardsDescription: 'Gestión visual de flujo de trabajo',
     mindMap: 'Mapa Mental',
     mindMapDescription: 'Conexiones visuales de ideas',
@@ -98,7 +98,7 @@ export const es = {
     ideate: 'Idear',
     ideateDescription: 'Lluvia de ideas y exploración',
     tracking: 'Seguimiento',
-    progressTracking: 'Seguimiento de Progreso',
+    progressTracking: 'Progreso',
     progressTrackingDescription: 'Monitorea tu crecimiento',
     goToHome: 'Ir al Inicio',
     signOut: 'Cerrar Sesión',
@@ -120,6 +120,43 @@ export const es = {
     hideAnalysis: 'Ocultar Análisis',
     recentEntries: 'Entradas Recientes',
     placeholder: 'Escribe sobre tu día, tus pensamientos, tus sentimientos...',
+    emotions: 'Emociones',
+    patterns: 'Patrones',
+    aiInsights: 'Análisis de IA',
+    // View modes
+    journalView: 'Diario',
+    plannerView: 'Planificador',
+    plannerSubtitle: 'Planifica tu día',
+  },
+  // Daily Planner
+  planner: {
+    pendingTasks: 'Tareas Pendientes',
+    searchTasks: 'Buscar tareas...',
+    all: 'Todas',
+    notStarted: 'Por Hacer',
+    inProgress: 'En Progreso',
+    noGoal: 'Sin Meta',
+    planned: 'Planificada',
+    noTasksMatch: 'No hay tareas que coincidan con tus filtros',
+    noTasksAvailable: 'No hay tareas pendientes disponibles',
+    // Time slots
+    morning: 'Mañana',
+    afternoon: 'Tarde',
+    evening: 'Noche',
+    night: 'Madrugada',
+    // Actions
+    dropTasksHere: 'Arrastra tareas aquí',
+    dropHere: 'Soltar aquí',
+    dragTasksToStart: 'Arrastra tareas desde la barra lateral para planificar tu día',
+    tasks: 'Tareas',
+    tasksCompleted: 'completadas',
+    today: 'Hoy',
+    // Mobile
+    noTasksScheduled: 'Sin tareas programadas',
+    addTask: 'Agregar tarea',
+    addToSlot: 'Agregar a {slot}',
+    allTasksPlanned: 'Todas las tareas ya están planificadas',
+    tapAddToStart: 'Toca + Agregar para programar tareas',
   },
   // Objectives
   objectives: {
@@ -330,6 +367,7 @@ export const es = {
   },
   // Map/Kanban
   map: {
+    boards: 'Mapas',
     kanban: 'Kanban',
     mindMap: 'Mapa Mental',
     createNew: 'Crear Nuevo',

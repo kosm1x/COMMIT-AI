@@ -71,7 +71,7 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       {
         id: 'boards',
-        label: 'Kanban Boards',
+        label: 'Maps',
         description: 'Visual workflow management',
         icon: LayoutGrid,
         path: '/boards',
@@ -114,7 +114,7 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       {
         id: 'track',
-        label: 'Progress Tracking',
+        label: 'Tracking',
         description: 'Monitor your growth',
         icon: TrendingUp,
         path: '/track',

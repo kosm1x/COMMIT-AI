@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { supabase } from '../../../lib/supabase';
@@ -52,6 +52,7 @@ export function ObjectiveColumn({
   const [showOrphaned, setShowOrphaned] = useState(true);
   const [expandedObjectives, setExpandedObjectives] = useState<Set<string>>(new Set());
   const [objectiveTasks, setObjectiveTasks] = useState<Record<string, Task[]>>({});
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Split objectives into goal-attached and orphaned
   // When filtering by family, we need to show all objectives (not pre-filtered by selectedGoalId)
@@ -136,31 +137,66 @@ export function ObjectiveColumn({
     setObjectiveTasks({});
   }, [selectedGoalId]);
 
+  // Scroll to editing card when editingObjectiveId changes - robust scroll mechanism
+  useEffect(() => {
+    if (!editingObjectiveId) return;
+    
+    let isCancelled = false;
+    const timeoutIds: NodeJS.Timeout[] = [];
+    
+    const scrollToEditingCard = () => {
+      if (isCancelled) return;
+      const cardElement = cardRefs.current[editingObjectiveId];
+      if (cardElement) {
+        requestAnimationFrame(() => {
+          if (isCancelled) return;
+          cardRefs.current[editingObjectiveId]?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'center'
+          });
+        });
+      }
+    };
+    
+    // Multiple scroll attempts with increasing delays
+    const delays = [100, 300, 600, 1000];
+    delays.forEach(delay => {
+      timeoutIds.push(setTimeout(scrollToEditingCard, delay));
+    });
+    
+    return () => {
+      isCancelled = true;
+      timeoutIds.forEach(id => clearTimeout(id));
+    };
+  }, [editingObjectiveId]);
+
   const renderObjectiveCard = (objective: Objective) => (
-    <ObjectiveCard
-      key={objective.id}
-      objective={objective}
-      goals={goals}
-      isSelected={selectedObjectiveId === objective.id}
-      isInFamily={isInSelectedFamily('objective', objective.id)}
-      isEditing={editingObjectiveId === objective.id}
-      onSelect={() => onSelectObjective(objective)}
-      onStartEdit={() => setEditingObjectiveId(objective.id)}
-      onCancelEdit={() => setEditingObjectiveId(null)}
-      onSave={async (updates) => {
-        await onUpdateObjective(objective.id, updates);
-        setEditingObjectiveId(null);
-      }}
-      onDelete={() => handleDelete(objective.id)}
-      onToggleStatus={() => onToggleObjectiveStatus(objective)}
-      onTitleClick={(e) => onTitleClick('objective', objective.title, objective.description, e)}
-      onConvertToGoal={onConvertToGoal ? (targetVisionId) => onConvertToGoal(objective, targetVisionId) : undefined}
-      onConvertToTask={onConvertToTask ? (targetObjectiveId) => onConvertToTask(objective, targetObjectiveId) : undefined}
-      taskCount={taskCounts[objective.id]}
-      isExpanded={expandedObjectives.has(objective.id)}
-      onToggleExpand={() => toggleObjectiveExpanded(objective.id)}
-      tasks={objectiveTasks[objective.id] || []}
-    />
+    <div key={objective.id} ref={(el) => { cardRefs.current[objective.id] = el; }}>
+      <ObjectiveCard
+        objective={objective}
+        goals={goals}
+        isSelected={selectedObjectiveId === objective.id}
+        isInFamily={isInSelectedFamily('objective', objective.id)}
+        isEditing={editingObjectiveId === objective.id}
+        onSelect={() => onSelectObjective(objective)}
+        onStartEdit={() => setEditingObjectiveId(objective.id)}
+        onCancelEdit={() => setEditingObjectiveId(null)}
+        onSave={async (updates) => {
+          await onUpdateObjective(objective.id, updates);
+          setEditingObjectiveId(null);
+        }}
+        onDelete={() => handleDelete(objective.id)}
+        onToggleStatus={() => onToggleObjectiveStatus(objective)}
+        onTitleClick={(e) => onTitleClick('objective', objective.title, objective.description, e)}
+        onConvertToGoal={onConvertToGoal ? (targetVisionId) => onConvertToGoal(objective, targetVisionId) : undefined}
+        onConvertToTask={onConvertToTask ? (targetObjectiveId) => onConvertToTask(objective, targetObjectiveId) : undefined}
+        taskCount={taskCounts[objective.id]}
+        isExpanded={expandedObjectives.has(objective.id)}
+        onToggleExpand={() => toggleObjectiveExpanded(objective.id)}
+        tasks={objectiveTasks[objective.id] || []}
+      />
+    </div>
   );
 
   return (

@@ -90,7 +90,7 @@ export const en = {
     goals: 'Goals',
     goalsDescription: 'Long-term aspirations',
     maps: 'Maps',
-    kanbanBoards: 'Kanban Boards',
+    kanbanBoards: 'Maps',
     kanbanBoardsDescription: 'Visual workflow management',
     mindMap: 'Mind Map',
     mindMapDescription: 'Visual idea connections',
@@ -98,7 +98,7 @@ export const en = {
     ideate: 'Ideate',
     ideateDescription: 'Brainstorm and explore ideas',
     tracking: 'Tracking',
-    progressTracking: 'Progress Tracking',
+    progressTracking: 'Tracking',
     progressTrackingDescription: 'Monitor your growth',
     goToHome: 'Go to Home',
     signOut: 'Sign Out',
@@ -120,6 +120,43 @@ export const en = {
     hideAnalysis: 'Hide Analysis',
     recentEntries: 'Recent Entries',
     placeholder: 'Write about your day, your thoughts, your feelings...',
+    emotions: 'Emotions',
+    patterns: 'Patterns',
+    aiInsights: 'AI Insights',
+    // View modes
+    journalView: 'Journal',
+    plannerView: 'Planner',
+    plannerSubtitle: 'Plan your day',
+  },
+  // Daily Planner
+  planner: {
+    pendingTasks: 'Pending Tasks',
+    searchTasks: 'Search tasks...',
+    all: 'All',
+    notStarted: 'To Do',
+    inProgress: 'In Progress',
+    noGoal: 'No Goal',
+    planned: 'Planned',
+    noTasksMatch: 'No tasks match your filters',
+    noTasksAvailable: 'No pending tasks available',
+    // Time slots
+    morning: 'Morning',
+    afternoon: 'Afternoon',
+    evening: 'Evening',
+    night: 'Night',
+    // Actions
+    dropTasksHere: 'Drop tasks here',
+    dropHere: 'Drop here',
+    dragTasksToStart: 'Drag tasks from the sidebar to plan your day',
+    tasks: 'Tasks',
+    tasksCompleted: 'completed',
+    today: 'Today',
+    // Mobile
+    noTasksScheduled: 'No tasks scheduled',
+    addTask: 'Add task',
+    addToSlot: 'Add to {slot}',
+    allTasksPlanned: 'All tasks are already planned',
+    tapAddToStart: 'Tap + Add to schedule tasks for your day',
   },
   // Objectives
   objectives: {
@@ -330,6 +367,7 @@ export const en = {
   },
   // Map/Kanban
   map: {
+    boards: 'Maps',
     kanban: 'Kanban',
     mindMap: 'Mind Map',
     createNew: 'Create New',

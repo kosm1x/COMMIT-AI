@@ -343,7 +343,7 @@ export default function AIAssistantPanel({
   return (
     <div 
       ref={panelRef}
-      className="fixed right-0 top-0 h-screen w-96 bg-bg-primary border-l border-border-primary shadow-xl flex flex-col z-50"
+      className="fixed right-0 top-0 h-screen w-96 bg-bg-primary/95 backdrop-blur-md border-l border-border-primary shadow-xl flex flex-col z-50"
       onMouseUp={handleTextSelection}
     >
       <div className="flex items-center justify-between p-4 border-b border-border-primary bg-gradient-to-r from-blue-50 to-bg-primary dark:from-blue-950/30 dark:to-bg-primary">

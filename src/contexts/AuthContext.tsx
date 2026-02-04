@@ -138,26 +138,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await syncPreferencesOnSignOut(user.id);
       }
       
-      // Clear local state first
-      setUser(null);
-      setSession(null);
-      
       // Sign out from Supabase (this clears auth tokens from storage)
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
       }
       
-      // Don't clear ALL localStorage - let Supabase handle auth storage
-      // This preserves language preferences, theme, etc.
-      
-      // Force reload to login page
-      window.location.href = '/';
+      // React will automatically show login page when user becomes null
+      // No page reload needed - Supabase's onAuthStateChange handles state update
     } catch (error) {
       console.error('Failed to sign out:', error);
-      setUser(null);
-      setSession(null);
-      window.location.href = '/';
     }
   };
 

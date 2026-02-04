@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Flag, Link2, CheckCircle2 } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
+import { sortTasks } from '../../utils/autoSort';
 
 interface Task {
   id: string;
@@ -78,6 +79,8 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
     }
   }, [highlightedItemId, tasks]);
 
+  const hasAppliedSort = useRef(false);
+
   const loadData = async () => {
     setLoading(true);
     const [tasksResult, objectivesResult, goalsResult] = await Promise.all([
@@ -92,7 +95,12 @@ export default function TasksKanban({ selectedVisionId, selectedGoalId, selected
     ]);
 
     if (tasksResult.data) {
-      setTasks(tasksResult.data);
+      let loadedTasks = tasksResult.data;
+      if (!hasAppliedSort.current) {
+        hasAppliedSort.current = true;
+        loadedTasks = sortTasks(loadedTasks as any) as any;
+      }
+      setTasks(loadedTasks);
     }
     if (objectivesResult.data) {
       setObjectives(objectivesResult.data);

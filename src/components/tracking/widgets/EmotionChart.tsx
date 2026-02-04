@@ -1,7 +1,7 @@
 import { Heart } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useCreativeData } from '../../../hooks/useCreativeData';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 
 interface EmotionChartProps {
   selectedDate: Date;
@@ -12,6 +12,23 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
   const { t, language } = useLanguage();
   const { emotionData, periodEmotionData, dailyActivity, loading } = useCreativeData(selectedDate, viewMode);
   const [hoveredPoint, setHoveredPoint] = useState<{ emotion: string; value: number; date: string; x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(600);
+
+  // Track container width for responsive chart
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        setContainerWidth(Math.max(width - 32, 300)); // Subtract padding, min 300px
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Filter emotion data to the last 3 months and compute chart data
   const chartData = useMemo(() => {
@@ -69,18 +86,38 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
       return { emotion, points };
     });
 
-    // Calculate max intensity for scaling
-    const maxIntensity = Math.max(
-      ...emotionLines.flatMap(line => 
-        line.points.filter(p => p.value !== null).map(p => p.value as number)
-      ),
-      100
+    // Calculate min and max intensity for dynamic Y-axis scaling
+    const allValues = emotionLines.flatMap(line => 
+      line.points.filter(p => p.value !== null).map(p => p.value as number)
     );
+
+    let minIntensity = 0;
+    let maxIntensity = 100;
+
+    if (allValues.length > 0) {
+      const dataMin = Math.min(...allValues);
+      const dataMax = Math.max(...allValues);
+      
+      // Add 10% padding to min/max for better visualization
+      const range = dataMax - dataMin;
+      const padding = Math.max(range * 0.1, 5); // At least 5 units padding
+      
+      minIntensity = Math.max(0, Math.floor(dataMin - padding));
+      maxIntensity = Math.min(100, Math.ceil(dataMax + padding));
+      
+      // Ensure minimum range of 20 for better visualization
+      if (maxIntensity - minIntensity < 20) {
+        const midPoint = (maxIntensity + minIntensity) / 2;
+        minIntensity = Math.max(0, Math.floor(midPoint - 10));
+        maxIntensity = Math.min(100, Math.ceil(midPoint + 10));
+      }
+    }
 
     return {
       filteredEmotions,
       datesWithData,
       emotionLines,
+      minIntensity,
       maxIntensity,
       emotionCounts
     };
@@ -90,7 +127,7 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
     return <div className="glass-card p-4 border border-white/40 dark:border-white/10 h-48 animate-pulse bg-white/20 dark:bg-white/5" />;
   }
 
-  const { filteredEmotions, datesWithData, emotionLines, maxIntensity, emotionCounts } = chartData;
+  const { filteredEmotions, datesWithData, emotionLines, minIntensity, maxIntensity, emotionCounts } = chartData;
   
   const emotionColors: { [key: string]: string } = {
     happy: '#fbbf24',
@@ -112,11 +149,35 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
 
   const chartHeight = 180;
   const padding = { top: 15, right: 20, bottom: 40, left: 40 };
-  // Dynamic chart width based on number of dates (min 300, max 600)
-  const baseChartWidth = Math.min(Math.max(datesWithData.length * 25, 300), 600);
+  const chartWidth = containerWidth;
+  const intensityRange = maxIntensity - minIntensity;
+
+  // Generate Y-axis labels with nice round numbers
+  const generateYAxisLabels = () => {
+    const labels: number[] = [];
+    const step = Math.ceil(intensityRange / 4); // Aim for ~5 labels
+    const roundedStep = step >= 10 ? Math.round(step / 5) * 5 : step >= 5 ? 5 : step;
+    
+    let current = Math.floor(minIntensity / roundedStep) * roundedStep;
+    while (current <= maxIntensity) {
+      if (current >= minIntensity) {
+        labels.push(current);
+      }
+      current += roundedStep;
+    }
+    
+    // Always include max if not already there
+    if (labels[labels.length - 1] < maxIntensity) {
+      labels.push(maxIntensity);
+    }
+    
+    return labels;
+  };
+
+  const yAxisLabels = generateYAxisLabels();
 
   return (
-    <div className="glass-card p-4 border border-white/40 dark:border-white/10">
+    <div ref={containerRef} className="glass-card p-4 border border-white/40 dark:border-white/10">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-accent-primary" />
@@ -135,43 +196,43 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
         <div className="space-y-3">
           {/* Line Chart */}
           <div>
-            <div className="relative w-full overflow-x-auto custom-scrollbar">
-              <div className="relative" style={{ minWidth: `${baseChartWidth}px` }}>
-                <svg 
-                  width="100%" 
-                  height={chartHeight} 
-                  viewBox={`0 0 ${baseChartWidth} ${chartHeight}`} 
-                  preserveAspectRatio="xMidYMid meet"
-                  className="overflow-visible"
-                >
-                  {/* Y-axis labels */}
-                  {[0, 25, 50, 75, 100].map(value => {
-                    const y = chartHeight - padding.bottom - ((value / 100) * (chartHeight - padding.top - padding.bottom));
-                    return (
-                      <g key={value}>
-                        <text
-                          x={padding.left - 8}
-                          y={y}
-                          textAnchor="end"
-                          dominantBaseline="middle"
-                          className="text-[10px] fill-current text-text-tertiary"
-                        >
-                          {value}
-                        </text>
-                        <line
-                          x1={padding.left}
-                          y1={y}
-                          x2={baseChartWidth - padding.right}
-                          y2={y}
-                          stroke="currentColor"
-                          strokeWidth="1"
-                          className="text-gray-200 dark:text-gray-700"
-                          strokeDasharray={value === 0 ? "0" : "4 4"}
-                          strokeOpacity={value === 0 ? 0.5 : 0.3}
-                        />
-                      </g>
-                    );
-                  })}
+            <div className="relative w-full">
+              <svg 
+                width="100%" 
+                height={chartHeight} 
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
+                preserveAspectRatio="xMidYMid meet"
+                className="overflow-visible"
+              >
+                {/* Y-axis labels */}
+                {yAxisLabels.map(value => {
+                  const normalizedValue = (value - minIntensity) / intensityRange;
+                  const y = chartHeight - padding.bottom - (normalizedValue * (chartHeight - padding.top - padding.bottom));
+                  return (
+                    <g key={value}>
+                      <text
+                        x={padding.left - 8}
+                        y={y}
+                        textAnchor="end"
+                        dominantBaseline="middle"
+                        className="text-[10px] fill-current text-text-tertiary"
+                      >
+                        {Math.round(value)}
+                      </text>
+                      <line
+                        x1={padding.left}
+                        y1={y}
+                        x2={chartWidth - padding.right}
+                        y2={y}
+                        stroke="currentColor"
+                        strokeWidth="1"
+                        className="text-gray-200 dark:text-gray-700"
+                        strokeDasharray="4 4"
+                        strokeOpacity="0.3"
+                      />
+                    </g>
+                  );
+                })}
 
                   {/* Emotion lines - area fills and paths */}
                   {emotionLines.map((line, lineIndex) => {
@@ -186,13 +247,15 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
 
                     if (validPoints.length === 0) return null;
 
-                    const chartAreaWidth = baseChartWidth - padding.left - padding.right;
+                    const chartAreaWidth = chartWidth - padding.left - padding.right;
                     const chartAreaHeight = chartHeight - padding.top - padding.bottom;
                     const xScale = datesWithData.length > 1 ? chartAreaWidth / (datesWithData.length - 1) : chartAreaWidth;
 
                     const pathData = validPoints.map((point, idx) => {
                       const x = padding.left + point.x * xScale;
-                      const y = chartHeight - padding.bottom - ((point.y! / maxIntensity) * chartAreaHeight);
+                      // Scale based on min/max range instead of 0-100
+                      const normalizedValue = (point.y! - minIntensity) / intensityRange;
+                      const y = chartHeight - padding.bottom - (normalizedValue * chartAreaHeight);
                       return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
                     }).join(' ');
 
@@ -233,7 +296,7 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
 
                     if (validPoints.length === 0) return null;
 
-                    const chartAreaWidth = baseChartWidth - padding.left - padding.right;
+                    const chartAreaWidth = chartWidth - padding.left - padding.right;
                     const chartAreaHeight = chartHeight - padding.top - padding.bottom;
                     const xScale = datesWithData.length > 1 ? chartAreaWidth / (datesWithData.length - 1) : chartAreaWidth;
 
@@ -241,7 +304,9 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
                       <g key={`${line.emotion}-points`}>
                         {validPoints.map((point, idx) => {
                           const x = padding.left + point.x * xScale;
-                          const y = chartHeight - padding.bottom - ((point.y! / maxIntensity) * chartAreaHeight);
+                          // Scale based on min/max range instead of 0-100
+                          const normalizedValue = (point.y! - minIntensity) / intensityRange;
+                          const y = chartHeight - padding.bottom - (normalizedValue * chartAreaHeight);
                           const dateObj = new Date(point.date);
                           const isHovered = hoveredPoint?.emotion === line.emotion && hoveredPoint?.date === point.date;
                           return (
@@ -334,13 +399,13 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
                   {datesWithData.map((date, index) => {
                     // Show labels dynamically: always show first, last, and some in between
                     const totalDates = datesWithData.length;
-                    const maxLabels = 12;
+                    const maxLabels = Math.max(8, Math.floor(chartWidth / 80)); // Dynamic based on width
                     const step = Math.max(1, Math.ceil(totalDates / maxLabels));
                     const showLabel = index === 0 || index === totalDates - 1 || index % step === 0;
                     
                     if (!showLabel) return null;
                     
-                    const chartAreaWidth = baseChartWidth - padding.left - padding.right;
+                    const chartAreaWidth = chartWidth - padding.left - padding.right;
                     const xScale = totalDates > 1 ? chartAreaWidth / (totalDates - 1) : chartAreaWidth;
                     const x = padding.left + index * xScale;
                     const dateObj = new Date(date);
@@ -359,8 +424,7 @@ export default function EmotionChart({ selectedDate, viewMode }: EmotionChartPro
                     );
                   })}
                 </svg>
-              </div>
-
+              
               {/* Legend */}
               <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[10px] justify-center">
                 {emotionLines.map((line, index) => {

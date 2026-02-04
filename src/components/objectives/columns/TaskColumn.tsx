@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -49,6 +49,7 @@ export function TaskColumn({
   const { t } = useLanguage();
   const [showOrphaned, setShowOrphaned] = useState(true);
   const [recurringCompletedToday, setRecurringCompletedToday] = useState<Record<string, boolean>>({});
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Split tasks into objective-attached and orphaned
   // When filtering by family, we need to show all tasks (not pre-filtered by selectedObjectiveId)
@@ -109,28 +110,63 @@ export function TaskColumn({
     checkRecurringCompletions();
   }, [tasks, user, allObjectiveTasks, orphanedTasks]);
 
+  // Scroll to editing card when editingTaskId changes - robust scroll mechanism
+  useEffect(() => {
+    if (!editingTaskId) return;
+    
+    let isCancelled = false;
+    const timeoutIds: NodeJS.Timeout[] = [];
+    
+    const scrollToEditingCard = () => {
+      if (isCancelled) return;
+      const cardElement = cardRefs.current[editingTaskId];
+      if (cardElement) {
+        requestAnimationFrame(() => {
+          if (isCancelled) return;
+          cardRefs.current[editingTaskId]?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'center'
+          });
+        });
+      }
+    };
+    
+    // Multiple scroll attempts with increasing delays
+    const delays = [100, 300, 600, 1000];
+    delays.forEach(delay => {
+      timeoutIds.push(setTimeout(scrollToEditingCard, delay));
+    });
+    
+    return () => {
+      isCancelled = true;
+      timeoutIds.forEach(id => clearTimeout(id));
+    };
+  }, [editingTaskId]);
+
   const renderTaskCard = (task: Task) => (
-    <TaskCard
-      key={task.id}
-      task={task}
-      objectives={objectives}
-      isSelected={selectedTaskId === task.id}
-      isInFamily={isInSelectedFamily('task', task.id)}
-      isEditing={editingTaskId === task.id}
-      onSelect={() => onSelectTask(task)}
-      onStartEdit={() => setEditingTaskId(task.id)}
-      onCancelEdit={() => setEditingTaskId(null)}
-      onSave={async (updates) => {
-        await onUpdateTask(task.id, updates);
-        setEditingTaskId(null);
-      }}
-      onDelete={() => handleDelete(task.id)}
-      onTitleClick={(e) => onTitleClick('task', task.title, task.description || '', e)}
-      onToggleStatus={() => onToggleTaskStatus(task)}
-      onMarkRecurringCompletedToday={() => onMarkRecurringCompletedToday(task.id)}
-      isRecurringCompletedToday={recurringCompletedToday[task.id] || false}
-      onConvertToObjective={onConvertToObjective ? (targetGoalId) => onConvertToObjective(task, targetGoalId) : undefined}
-    />
+    <div key={task.id} ref={(el) => { cardRefs.current[task.id] = el; }}>
+      <TaskCard
+        task={task}
+        objectives={objectives}
+        isSelected={selectedTaskId === task.id}
+        isInFamily={isInSelectedFamily('task', task.id)}
+        isEditing={editingTaskId === task.id}
+        onSelect={() => onSelectTask(task)}
+        onStartEdit={() => setEditingTaskId(task.id)}
+        onCancelEdit={() => setEditingTaskId(null)}
+        onSave={async (updates) => {
+          await onUpdateTask(task.id, updates);
+          setEditingTaskId(null);
+        }}
+        onDelete={() => handleDelete(task.id)}
+        onTitleClick={(e) => onTitleClick('task', task.title, task.description || '', e)}
+        onToggleStatus={() => onToggleTaskStatus(task)}
+        onMarkRecurringCompletedToday={() => onMarkRecurringCompletedToday(task.id)}
+        isRecurringCompletedToday={recurringCompletedToday[task.id] || false}
+        onConvertToObjective={onConvertToObjective ? (targetGoalId) => onConvertToObjective(task, targetGoalId) : undefined}
+      />
+    </div>
   );
 
   return (

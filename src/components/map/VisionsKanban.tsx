@@ -260,7 +260,12 @@ export default function VisionsKanban({ selectedVisionId, selectedGoalId, select
                     className="font-medium text-gray-900 dark:text-white flex-1 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate('/vision', { state: { selectVision: vision.id } });
+                      navigate('/vision', { 
+                        state: { 
+                          selectVision: vision.id,
+                          timestamp: Date.now() // Ensure each navigation is unique
+                        } 
+                      });
                     }}
                   >
                     {vision.title}

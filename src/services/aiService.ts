@@ -1,3 +1,5 @@
+import { fetchWithRetry } from '../utils/fetchWithRetry';
+
 interface EmotionResult {
   name: string;
   intensity: number;
@@ -28,6 +30,7 @@ const emotionColors: { [key: string]: string } = {
 
 /**
  * Helper function to call Groq API (OpenAI-compatible)
+ * Uses fetchWithRetry for automatic retry on transient failures
  * @param prompt - The prompt text to send to the API
  * @param temperature - Temperature parameter (0-2)
  * @param max_tokens - Maximum tokens to generate
@@ -80,14 +83,23 @@ async function callGroqAPI(
       requestBody.reasoning_effort = reasoning_effort;
     }
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // Use fetchWithRetry for automatic retry on rate limits (429) and server errors (5xx)
+    const response = await fetchWithRetry(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
-      body: JSON.stringify(requestBody),
-    });
+        body: JSON.stringify(requestBody),
+      },
+      {
+        maxRetries: 2,
+        baseDelay: 1000,
+        retryOn: (res) => res.status >= 500 || res.status === 429,
+      }
+    );
 
     if (!response.ok) {
       console.error('Groq API error:', response.statusText);

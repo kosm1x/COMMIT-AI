@@ -120,6 +120,43 @@ export const zh = {
     hideAnalysis: '隐藏分析',
     recentEntries: '最近的条目',
     placeholder: '写下你的一天、你的想法、你的感受...',
+    emotions: '情感',
+    patterns: '模式',
+    aiInsights: 'AI 分析',
+    // View modes
+    journalView: '日记',
+    plannerView: '计划',
+    plannerSubtitle: '规划你的一天',
+  },
+  // Daily Planner
+  planner: {
+    pendingTasks: '待处理任务',
+    searchTasks: '搜索任务...',
+    all: '全部',
+    notStarted: '待办',
+    inProgress: '进行中',
+    noGoal: '无目标',
+    planned: '已计划',
+    noTasksMatch: '没有匹配的任务',
+    noTasksAvailable: '没有待处理的任务',
+    // Time slots
+    morning: '上午',
+    afternoon: '下午',
+    evening: '傍晚',
+    night: '夜间',
+    // Actions
+    dropTasksHere: '拖放任务到这里',
+    dropHere: '放在这里',
+    dragTasksToStart: '从侧边栏拖动任务来规划你的一天',
+    tasks: '任务',
+    tasksCompleted: '已完成',
+    today: '今天',
+    // Mobile
+    noTasksScheduled: '没有安排的任务',
+    addTask: '添加任务',
+    addToSlot: '添加到{slot}',
+    allTasksPlanned: '所有任务已安排',
+    tapAddToStart: '点击 + 添加来安排今天的任务',
   },
   // Objectives
   objectives: {
@@ -330,6 +367,7 @@ export const zh = {
   },
   // Map/Kanban
   map: {
+    boards: '地图',
     kanban: '看板',
     mindMap: '思维导图',
     createNew: '创建新',

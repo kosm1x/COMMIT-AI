@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Vision, Goal, Objective, Task } from '../components/objectives/types';
+import { hasSessionSorted, markSessionSorted, sortGoals, sortObjectives, sortTasks } from '../utils/autoSort';
 
 // Selection path represents the currently active selection at each level
 export interface SelectionPath {
@@ -182,15 +183,27 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     setLoading(false);
   }, [loadVisions, loadGoals, loadObjectives, loadTasks]);
 
+  const hasAppliedSessionSort = useRef(false);
+
   // Initial load
   useEffect(() => {
     if (userId) {
       reloadAll();
     } else {
-      // If no userId, set loading to false so the page doesn't stay in loading state
       setLoading(false);
     }
   }, [userId, reloadAll]);
+
+  // One-time per session auto-sort after initial load
+  useEffect(() => {
+    if (!loading && goals.length > 0 && !hasAppliedSessionSort.current && !hasSessionSorted()) {
+      hasAppliedSessionSort.current = true;
+      markSessionSorted();
+      setGoals(prev => sortGoals(prev));
+      setObjectives(prev => sortObjectives(prev));
+      setTasks(prev => sortTasks(prev));
+    }
+  }, [loading, goals.length]);
 
   // Sync task counts when computed counts change
   useEffect(() => {

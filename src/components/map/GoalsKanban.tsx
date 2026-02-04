@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, Target, Eye } from 'lucide-react';
 import { createIsInSelectedFamily } from '../../utils/familyTree';
+import { sortGoals } from '../../utils/autoSort';
 
 interface Vision {
   id: string;
@@ -72,6 +73,8 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
     }
   }, [highlightedItemId, goals]);
 
+  const hasAppliedSort = useRef(false);
+
   const loadGoals = async () => {
     setLoading(true);
     const [goalsResult, objectivesResult, tasksResult] = await Promise.all([
@@ -86,7 +89,12 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
     ]);
 
     if (goalsResult.data) {
-      setGoals(goalsResult.data);
+      let loadedGoals = goalsResult.data;
+      if (!hasAppliedSort.current) {
+        hasAppliedSort.current = true;
+        loadedGoals = sortGoals(loadedGoals as any) as any;
+      }
+      setGoals(loadedGoals);
     }
     if (objectivesResult.data) {
       setObjectives(objectivesResult.data);
@@ -268,7 +276,12 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
                     className="font-medium text-gray-900 dark:text-white flex-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate('/goals', { state: { selectGoal: goal.id } });
+                      navigate('/goals', { 
+                        state: { 
+                          selectGoal: goal.id,
+                          timestamp: Date.now() // Ensure each navigation is unique
+                        } 
+                      });
                     }}
                   >
                     {goal.title}

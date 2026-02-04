@@ -26,6 +26,22 @@ const BRIGHT_COLORS = [
   { bg: 'bg-amber-500', shadow: 'shadow-[0_0_4px_rgba(245,158,11,0.6)]' },
 ];
 
+// Day labels for the header (Monday first)
+const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+// Format date as YYYY-MM-DD using LOCAL timezone (not UTC)
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Get today's date in local timezone
+const getTodayLocal = (): string => {
+  return formatLocalDate(new Date());
+};
+
 // Generate a consistent color for a task based on its ID
 const getTaskColor = (taskId: string): { bg: string; shadow: string } => {
   // Simple hash function to convert task ID to a number
@@ -46,16 +62,17 @@ export default function RecurringTasksGrid() {
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null); // task_id-date format
 
-  // Calculate grid dates (4 weeks aligned to Monday-Sunday)
+  // Calculate grid dates (4 weeks aligned to Monday-Sunday, using LOCAL timezone)
   const getGridDates = () => {
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0 (Sun) - 6 (Sat)
     
     // Calculate days to subtract to get to this week's Monday
     // If Sun (0), subtract 6. If Mon (1), subtract 0. If Tue (2), subtract 1...
-    const diffToMonday = (dayOfWeek + 6) % 7;
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     
     const currentWeekMonday = new Date(today);
+    currentWeekMonday.setHours(0, 0, 0, 0); // Normalize to start of day
     currentWeekMonday.setDate(today.getDate() - diffToMonday);
     
     // We want 4 rows (4 weeks), so start date is 3 weeks before current week's Monday
@@ -65,8 +82,8 @@ export default function RecurringTasksGrid() {
     const days: string[] = [];
     for (let i = 0; i < 28; i++) {
       const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      days.push(d.toISOString().split('T')[0]);
+      d.setDate(startDate.getDate() + i);
+      days.push(formatLocalDate(d)); // Use local date formatting
     }
     return days;
   };
@@ -183,6 +200,9 @@ export default function RecurringTasksGrid() {
   if (loading) return null;
   if (tasks.length === 0) return null;
 
+  // Get today's date once for consistent comparisons
+  const todayStr = getTodayLocal();
+
   return (
     <div className="glass-card p-5 border border-white/40 dark:border-white/10">
       <h3 className="font-heading font-bold text-lg text-text-primary mb-4 flex items-center gap-2">
@@ -205,12 +225,24 @@ export default function RecurringTasksGrid() {
                 </span>
               </div>
               
+              {/* Day of week header row */}
+              <div className="grid grid-cols-7 gap-1 mb-1">
+                {WEEKDAY_LABELS.map((label, idx) => (
+                  <div 
+                    key={idx} 
+                    className="w-6 h-4 flex items-center justify-center text-[10px] font-medium text-text-tertiary"
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+              
+              {/* 4 weeks x 7 days grid */}
               <div className="grid grid-cols-7 gap-1">
                 {gridDates.map((date) => {
                   const isCompleted = task.completions.includes(date);
-                  const isToday = date === new Date().toISOString().split('T')[0];
-                  const dateObj = new Date(date);
-                  const isFuture = dateObj > new Date();
+                  const isToday = date === todayStr;
+                  const isFuture = date > todayStr; // String comparison works for YYYY-MM-DD format
                   const toggleKey = `${task.id}-${date}`;
                   const isToggling = toggling === toggleKey;
 

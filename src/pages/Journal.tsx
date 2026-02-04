@@ -4,21 +4,23 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { analyzeJournalEntry } from '../services/aiService';
 import { formatShortDate } from '../utils/trackingStats';
+import { Card, Button, IconButton, BottomSheet } from '../components/ui';
+import { Header } from '../components/ui';
+import { DailyPlanner } from '../components/journal';
 import {
   Calendar,
   Plus,
   Sparkles,
   Trash2,
-  Heart,
-  Frown,
   Smile,
+  Frown,
   Meh,
-  Loader2,
-  ChevronLeft,
   ChevronRight,
-  Menu,
-  X,
+  BookOpen,
+  CalendarCheck,
 } from 'lucide-react';
+
+type ViewMode = 'journal' | 'planner';
 
 interface JournalEntry {
   id: string;
@@ -38,17 +40,16 @@ interface AIAnalysis {
 export default function Journal() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const [viewMode, setViewMode] = useState<ViewMode>('journal');
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [content, setContent] = useState('');
+  const [showEntryList, setShowEntryList] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
   
-  // Get local date string without UTC conversion
   const getLocalDateString = () => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   };
   
   const [selectedDate, setSelectedDate] = useState(getLocalDateString());
@@ -58,9 +59,7 @@ export default function Journal() {
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (user) {
-      loadEntries();
-    }
+    if (user) loadEntries();
   }, [user]);
 
   useEffect(() => {
@@ -72,24 +71,11 @@ export default function Journal() {
   }, [selectedEntry]);
 
   useEffect(() => {
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-      autoSaveTimerRef.current = null;
-    }
-
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     if (content && content !== selectedEntry?.content) {
-      autoSaveTimerRef.current = setTimeout(() => {
-        handleSave();
-        autoSaveTimerRef.current = null;
-      }, 3000);
+      autoSaveTimerRef.current = setTimeout(() => handleSave(), 3000);
     }
-
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-        autoSaveTimerRef.current = null;
-      }
-    };
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
   }, [content, selectedEntry?.content]);
 
   const loadEntries = async () => {
@@ -102,9 +88,7 @@ export default function Journal() {
 
     if (!error && data) {
       setEntries(data);
-      if (data.length > 0 && !selectedEntry) {
-        setSelectedEntry(data[0]);
-      }
+      if (data.length > 0 && !selectedEntry) setSelectedEntry(data[0]);
     }
   };
 
@@ -114,17 +98,11 @@ export default function Journal() {
       .select('*')
       .eq('entry_id', entryId)
       .maybeSingle();
-
-    if (data) {
-      setAnalysis(data as AIAnalysis);
-    } else {
-      setAnalysis(null);
-    }
+    setAnalysis(data as AIAnalysis | null);
   };
 
   const handleSave = async () => {
     if (!content.trim() || !user) return;
-
     setSaving(true);
     try {
       if (selectedEntry) {
@@ -133,24 +111,16 @@ export default function Journal() {
           .from('journal_entries')
           .update({ content, entry_date: selectedDate })
           .eq('id', selectedEntry.id);
-
         if (!error) {
           setSelectedEntry({ ...selectedEntry, content, entry_date: selectedDate });
-          if (contentChanged && analysis) {
-            setAnalysis(null);
-          }
+          if (contentChanged && analysis) setAnalysis(null);
         }
       } else {
         const { data, error } = await supabase
           .from('journal_entries')
-          .insert({
-            user_id: user.id,
-            content,
-            entry_date: selectedDate,
-          })
+          .insert({ user_id: user.id, content, entry_date: selectedDate })
           .select()
           .single();
-
         if (!error && data) {
           setSelectedEntry(data);
           setAnalysis(null);
@@ -164,20 +134,12 @@ export default function Journal() {
 
   const handleAnalyze = async () => {
     if (!content.trim()) return;
-
-    if (!selectedEntry) {
-      await handleSave();
-      return;
-    }
-
-    if (content !== selectedEntry.content) {
-      await handleSave();
-    }
+    if (!selectedEntry) { await handleSave(); return; }
+    if (content !== selectedEntry.content) await handleSave();
 
     setAnalyzing(true);
     try {
       const result = await analyzeJournalEntry(content, language);
-
       const analysisData: AIAnalysis = {
         id: 'temp',
         emotions: result.emotions,
@@ -185,29 +147,23 @@ export default function Journal() {
         coping_strategies: result.coping_strategies,
       };
 
-      const { error } = await supabase.from('ai_analysis').upsert(
-        {
-          entry_id: selectedEntry.id,
-          user_id: user!.id,
-          emotions: analysisData.emotions,
-          patterns: analysisData.patterns,
-          coping_strategies: analysisData.coping_strategies,
-        },
-        {
-          onConflict: 'entry_id',
-        }
-      );
+      const { error } = await supabase.from('ai_analysis').upsert({
+        entry_id: selectedEntry.id,
+        user_id: user!.id,
+        emotions: analysisData.emotions,
+        patterns: analysisData.patterns,
+        coping_strategies: analysisData.coping_strategies,
+      }, { onConflict: 'entry_id' });
 
       if (!error) {
         setAnalysis(analysisData);
-
         await supabase
           .from('journal_entries')
           .update({ primary_emotion: result.primary_emotion })
           .eq('id', selectedEntry.id);
-
         setSelectedEntry({ ...selectedEntry, primary_emotion: result.primary_emotion });
         loadEntries();
+        setShowAnalysis(true);
       }
     } finally {
       setAnalyzing(false);
@@ -223,9 +179,7 @@ export default function Journal() {
 
   const handleDelete = async () => {
     if (!selectedEntry || !confirm(t('journal.confirmDelete'))) return;
-
     await supabase.from('journal_entries').delete().eq('id', selectedEntry.id);
-
     setSelectedEntry(null);
     setContent('');
     setAnalysis(null);
@@ -233,251 +187,259 @@ export default function Journal() {
   };
 
   const getEmotionIcon = (name: string) => {
-    if (name.toLowerCase().includes('happy') || name.toLowerCase().includes('hopeful'))
-      return <Smile className="w-4 h-4 text-green-500" />;
-    if (name.toLowerCase().includes('sad') || name.toLowerCase().includes('anxious'))
-      return <Frown className="w-4 h-4 text-amber-500" />;
+    const lower = name.toLowerCase();
+    if (lower.includes('happy') || lower.includes('hopeful')) return <Smile className="w-4 h-4 text-green-500" />;
+    if (lower.includes('sad') || lower.includes('anxious')) return <Frown className="w-4 h-4 text-amber-500" />;
     return <Meh className="w-4 h-4 text-blue-500" />;
   };
 
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [showAnalysis, setShowAnalysis] = useState(true);
-
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 relative pb-20 lg:pb-0">
-      {/* Mobile Header */}
-      <div className="lg:hidden flex items-center justify-between p-2 glass-card border border-white/40">
-        <button
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
-        >
-          <Menu className="w-5 h-5 text-text-primary" />
-        </button>
-        <span className="text-sm font-medium text-text-secondary">
-          {selectedEntry
-            ? formatShortDate(new Date(selectedEntry.entry_date + 'T00:00:00'))
-            : t('journal.newEntry')}
-        </span>
-        <button
-          onClick={handleNewEntry}
-          className="p-2 rounded-lg bg-accent-primary text-white hover:bg-accent-primary/90 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Mobile Overlay */}
-      {showSidebar && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-          onClick={() => setShowSidebar(false)}
-        />
-      )}
-
-      {/* Sidebar - Entry List */}
-      <div className={`
-        fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
-        w-80 lg:w-72 xl:w-80 flex flex-col gap-4
-        bg-bg-primary lg:bg-transparent
-        transform transition-transform duration-300 ease-in-out
-        ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        lg:flex p-4 lg:p-0
-      `}>
-        {/* Close button on mobile */}
-        <button
-          onClick={() => setShowSidebar(false)}
-          className="lg:hidden absolute top-4 right-4 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
-        >
-          <X className="w-5 h-5 text-text-primary" />
-        </button>
-
-        <button
-          onClick={() => {
-            handleNewEntry();
-            setShowSidebar(false);
-          }}
-          className="btn-primary w-full shadow-lg shadow-accent-primary/20 hidden lg:flex"
-        >
-          <Plus className="w-5 h-5" />
-          {t('journal.newEntry')}
-        </button>
-
-        <div className="glass-card flex-1 overflow-hidden flex flex-col border border-white/40 dark:border-white/10 mt-8 lg:mt-0">
-          <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm">
-            <h3 className="font-semibold text-text-secondary text-sm uppercase tracking-wider">{t('journal.recentEntries')}</h3>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
-            {entries.map((entry) => (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+      <Header 
+        title={t('nav.journal')}
+        subtitle={viewMode === 'journal' 
+          ? (selectedEntry ? formatShortDate(new Date(selectedEntry.entry_date + 'T00:00:00')) : t('journal.newEntry'))
+          : t('journal.plannerSubtitle')
+        }
+        rightAction={
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
               <button
-                key={entry.id}
-                onClick={() => {
-                  setSelectedEntry(entry);
-                  setShowSidebar(false);
-                }}
-                className={`w-full text-left p-4 rounded-xl transition-all duration-200 group ${
-                  selectedEntry?.id === entry.id
-                    ? 'bg-accent-primary text-white shadow-md'
-                    : 'hover:bg-white/50 dark:bg-white/5 dark:hover:bg-white/10 text-text-primary'
+                onClick={() => setViewMode('journal')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'journal'
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <Calendar className={`w-3.5 h-3.5 ${selectedEntry?.id === entry.id ? 'text-white/80' : 'text-text-tertiary'}`} />
-                    <span className={`text-xs font-medium ${selectedEntry?.id === entry.id ? 'text-white/90' : 'text-text-secondary'}`}>
-                      {formatShortDate(new Date(entry.entry_date + 'T00:00:00'))}
-                    </span>
-                  </div>
-                  {entry.primary_emotion && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('journal.journalView')}</span>
+              </button>
+              <button
+                onClick={() => setViewMode('planner')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'planner'
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <CalendarCheck className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('journal.plannerView')}</span>
+              </button>
+            </div>
+
+            {/* Journal-specific actions */}
+            {viewMode === 'journal' && (
+              <div className="flex items-center gap-1">
+                <IconButton onClick={() => setShowEntryList(true)}>
+                  <Calendar className="w-5 h-5" />
+                </IconButton>
+                <IconButton onClick={handleNewEntry}>
+                  <Plus className="w-5 h-5" />
+                </IconButton>
+              </div>
+            )}
+          </div>
+        }
+      />
+
+      {/* Daily Planner View */}
+      {viewMode === 'planner' && user && (
+        <div className="flex-1 p-4 max-w-7xl mx-auto w-full pb-24">
+          <DailyPlanner userId={user.id} />
+        </div>
+      )}
+
+      {/* Journal View */}
+      {viewMode === 'journal' && (
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 max-w-6xl mx-auto w-full">
+          <div className="hidden lg:block w-72 shrink-0">
+            <Card padding="none" className="h-full overflow-hidden">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-700 dark:text-gray-300 text-sm">{t('journal.recentEntries')}</h3>
+                <Button size="sm" onClick={handleNewEntry}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(100vh-16rem)] p-2 space-y-1">
+                {entries.map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => setSelectedEntry(entry)}
+                    className={`w-full text-left p-3 rounded-xl transition-all ${
                       selectedEntry?.id === entry.id
-                        ? 'bg-white/20 text-white'
-                        : 'bg-accent-subtle text-accent-primary'
-                    }`}>
-                      {entry.primary_emotion}
-                    </span>
+                        ? 'bg-indigo-600 text-white'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs font-medium ${selectedEntry?.id === entry.id ? 'text-indigo-200' : 'text-gray-500'}`}>
+                        {formatShortDate(new Date(entry.entry_date + 'T00:00:00'))}
+                      </span>
+                      {entry.primary_emotion && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          selectedEntry?.id === entry.id ? 'bg-white/20' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                        }`}>
+                          {entry.primary_emotion}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm line-clamp-2 ${selectedEntry?.id === entry.id ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
+                      {entry.content}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="flex-1 flex flex-col gap-4">
+            <Card padding="none" className="flex-1 flex flex-col overflow-hidden">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-transparent border-none text-gray-900 dark:text-gray-100 font-semibold focus:ring-0 p-0 cursor-pointer"
+                  />
+                  <span className={`text-xs px-2 py-1 rounded-lg ${saving ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'} dark:bg-opacity-20`}>
+                    {saving ? t('journal.saving') : t('journal.autoSaved')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {content.trim() && (
+                    <Button size="sm" onClick={handleAnalyze} loading={analyzing}>
+                      <Sparkles className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t('journal.analyzeEntry')}</span>
+                    </Button>
+                  )}
+                  {analysis && (
+                    <IconButton onClick={() => setShowAnalysis(true)}>
+                      <ChevronRight className="w-4 h-4" />
+                    </IconButton>
+                  )}
+                  {selectedEntry && (
+                    <IconButton variant="danger" onClick={handleDelete}>
+                      <Trash2 className="w-4 h-4" />
+                    </IconButton>
                   )}
                 </div>
-                <p className={`text-sm line-clamp-2 ${selectedEntry?.id === entry.id ? 'text-white/80' : 'text-text-secondary group-hover:text-text-primary'}`}>
-                  {entry.content}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col gap-4 lg:gap-6 min-w-0">
-        <div className="glass-card flex-1 flex flex-col overflow-hidden relative border border-white/40 dark:border-white/10">
-          {/* Editor Header */}
-          <div className="p-3 lg:p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2 lg:gap-4 w-full sm:w-auto">
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-transparent border-none text-text-primary font-heading font-bold text-base lg:text-lg focus:ring-0 p-0 cursor-pointer flex-1 sm:flex-none"
-              />
-              <span className="text-xs font-medium px-2 py-1 rounded-md bg-white/50 dark:bg-white/5 text-text-tertiary border border-white/20 whitespace-nowrap">
-                {saving ? t('journal.saving') : t('journal.autoSaved')}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              {content.trim() && (
-                <button
-                  onClick={handleAnalyze}
-                  disabled={analyzing}
-                  className="btn-secondary py-1.5 px-3 text-sm border-accent-primary/20 text-accent-primary hover:bg-accent-subtle"
-                >
-                  {analyzing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  <span className="hidden sm:inline">{analyzing ? t('journal.analyzing') : t('journal.analyzeEntry')}</span>
-                </button>
-              )}
-              {analysis && (
-                <button
-                  onClick={() => setShowAnalysis(!showAnalysis)}
-                  className="lg:hidden p-2 text-text-tertiary hover:text-accent-primary hover:bg-accent-subtle rounded-lg transition-colors"
-                  title={showAnalysis ? t('journal.hideAnalysis') : t('journal.showAnalysis')}
-                >
-                  {showAnalysis ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                </button>
-              )}
-              {selectedEntry && (
-                <button
-                  onClick={handleDelete}
-                  className="p-2 text-text-tertiary hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Editor Area */}
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
-            <div className={`flex-1 flex flex-col transition-all duration-500 min-w-0 ${analysis && showAnalysis ? 'lg:w-2/3' : 'w-full'} ${analysis && showAnalysis ? 'min-h-0 flex-[2]' : 'flex-1'}`}>
+              </div>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={t('journal.placeholder')}
-                className="flex-1 w-full p-4 sm:p-6 lg:p-8 bg-transparent border-none resize-none focus:ring-0 text-base lg:text-lg leading-relaxed text-text-primary placeholder:text-text-tertiary custom-scrollbar min-h-[300px] lg:min-h-[200px]"
+                className="flex-1 p-4 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none text-base leading-relaxed"
               />
-            </div>
-
-            {/* Analysis Panel */}
-            {analysis && showAnalysis && (
-              <div className={`
-                lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-border-secondary/50 
-                bg-white/40 dark:bg-black/40 backdrop-blur-md overflow-y-auto custom-scrollbar animate-slide-up
-                flex-shrink-0 lg:flex-shrink
-                h-auto lg:h-auto
-                max-h-[35vh] lg:max-h-none
-                flex-[1] lg:flex-none
-              `}>
-                <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
-                  <div className="glass-card p-3 lg:p-5 bg-white/60 dark:bg-black/60 border border-white/40 dark:border-white/10">
-                    <h3 className="text-xs lg:text-sm font-bold text-text-primary mb-2 lg:mb-4 flex items-center gap-2">
-                      <Heart className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-pink-500" />
-                      <span className="hidden sm:inline">{t('journal.emotionalInsights')}</span>
-                      <span className="sm:hidden">{t('journal.emotionalInsights')}</span>
-                    </h3>
-                    <div className="space-y-2 lg:space-y-4">
-                      {analysis.emotions.map((emotion, idx) => (
-                        <div key={idx}>
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-1.5">
-                              {getEmotionIcon(emotion.name)}
-                              <span className="text-xs lg:text-sm font-medium text-text-secondary capitalize truncate">{emotion.name}</span>
-                            </div>
-                            <span className="text-xs font-bold text-text-primary flex-shrink-0 ml-2">{emotion.intensity}%</span>
-                          </div>
-                          <div className="h-1 lg:h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-1000 ease-out ${emotion.color.replace('bg-', 'bg-opacity-80 bg-')}`}
-                              style={{ width: `${emotion.intensity}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="glass-card p-3 lg:p-5 bg-white/60 dark:bg-black/60 border border-white/40 dark:border-white/10">
-                    <h3 className="text-xs lg:text-sm font-bold text-text-primary mb-2 lg:mb-3">{t('journal.patternsDetected')}</h3>
-                    <ul className="space-y-1.5 lg:space-y-3">
-                      {analysis.patterns.slice(0, 3).map((pattern, idx) => (
-                        <li key={idx} className="flex items-start gap-2 lg:gap-3 text-xs lg:text-sm text-text-secondary">
-                          <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full bg-accent-primary mt-1.5 flex-shrink-0" />
-                          <span className="leading-relaxed line-clamp-2">{pattern}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="glass-card p-3 lg:p-5 bg-gradient-to-br from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800">
-                    <h3 className="text-xs lg:text-sm font-bold text-green-900 dark:text-green-300 mb-2 lg:mb-3">{t('journal.copingStrategies')}</h3>
-                    <ul className="space-y-1.5 lg:space-y-3">
-                      {analysis.coping_strategies.slice(0, 2).map((strategy, idx) => (
-                        <li key={idx} className="flex gap-2 lg:gap-3 text-xs lg:text-sm text-green-800 dark:text-green-300">
-                          <span className="flex-shrink-0 w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full text-xs font-bold">
-                            {idx + 1}
-                          </span>
-                          <span className="leading-relaxed line-clamp-2">{strategy}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
+            </Card>
           </div>
+
+          {analysis && (
+            <div className="hidden lg:block w-80 shrink-0">
+              <AnalysisPanel analysis={analysis} getEmotionIcon={getEmotionIcon} t={t} />
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Journal Bottom Sheets */}
+      {viewMode === 'journal' && (
+        <>
+          <BottomSheet isOpen={showEntryList} onClose={() => setShowEntryList(false)} title={t('journal.recentEntries')} height="half">
+            <div className="space-y-2">
+              {entries.map((entry) => (
+                <button
+                  key={entry.id}
+                  onClick={() => { setSelectedEntry(entry); setShowEntryList(false); }}
+                  className={`w-full text-left p-4 rounded-xl transition-all ${
+                    selectedEntry?.id === entry.id
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-medium ${selectedEntry?.id === entry.id ? 'text-indigo-200' : 'text-gray-500'}`}>
+                      {formatShortDate(new Date(entry.entry_date + 'T00:00:00'))}
+                    </span>
+                    {entry.primary_emotion && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                        selectedEntry?.id === entry.id ? 'bg-white/20' : 'bg-indigo-100 text-indigo-600'
+                      }`}>
+                        {entry.primary_emotion}
+                      </span>
+                    )}
+                  </div>
+                  <p className={`text-sm line-clamp-2 ${selectedEntry?.id === entry.id ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
+                    {entry.content}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </BottomSheet>
+
+          <BottomSheet isOpen={showAnalysis} onClose={() => setShowAnalysis(false)} title={t('journal.aiInsights')} height="auto">
+            {analysis && <AnalysisPanel analysis={analysis} getEmotionIcon={getEmotionIcon} t={t} />}
+          </BottomSheet>
+        </>
+      )}
+    </div>
+  );
+}
+
+function AnalysisPanel({ 
+  analysis, 
+  getEmotionIcon, 
+  t 
+}: { 
+  analysis: AIAnalysis; 
+  getEmotionIcon: (name: string) => JSX.Element;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="space-y-4">
+      <Card padding="md">
+        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">{t('journal.emotions')}</h4>
+        <div className="space-y-2">
+          {analysis.emotions.map((emotion, i) => (
+            <div key={i} className="flex items-center gap-3">
+              {getEmotionIcon(emotion.name)}
+              <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{emotion.name}</span>
+              <div className="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full" 
+                  style={{ width: `${emotion.intensity * 100}%`, backgroundColor: emotion.color }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card padding="md">
+        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">{t('journal.patterns')}</h4>
+        <ul className="space-y-2">
+          {analysis.patterns.map((pattern, i) => (
+            <li key={i} className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+              {pattern}
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <Card padding="md">
+        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">{t('journal.copingStrategies')}</h4>
+        <ul className="space-y-2">
+          {analysis.coping_strategies.map((strategy, i) => (
+            <li key={i} className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />
+              {strategy}
+            </li>
+          ))}
+        </ul>
+      </Card>
     </div>
   );
 }
