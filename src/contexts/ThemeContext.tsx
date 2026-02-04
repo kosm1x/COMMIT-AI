@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { savePreferencesToLocalStorage, savePreferencesToDB } from '../services/userPreferencesService';
 import { supabase } from '../lib/supabase';
+import { updateStatusBarStyle } from '../services/nativePlatformService';
 
 type Theme = 'light' | 'dark';
 
@@ -38,18 +39,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Apply theme to document
     const root = document.documentElement;
     if (theme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-    // Persist to localStorage
     localStorage.setItem('theme', theme);
     savePreferencesToLocalStorage({ theme });
+    updateStatusBarStyle(theme === 'dark');
 
-    // Save to database if user is signed in
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         savePreferencesToDB(user.id, { theme });
