@@ -151,6 +151,12 @@ export const en = {
     tasks: 'Tasks',
     tasksCompleted: 'completed',
     today: 'Today',
+    // Mobile
+    noTasksScheduled: 'No tasks scheduled',
+    addTask: 'Add task',
+    addToSlot: 'Add to {slot}',
+    allTasksPlanned: 'All tasks are already planned',
+    tapAddToStart: 'Tap + Add to schedule tasks for your day',
   },
   // Objectives
   objectives: {

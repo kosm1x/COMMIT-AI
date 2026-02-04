@@ -151,6 +151,12 @@ export const es = {
     tasks: 'Tareas',
     tasksCompleted: 'completadas',
     today: 'Hoy',
+    // Mobile
+    noTasksScheduled: 'Sin tareas programadas',
+    addTask: 'Agregar tarea',
+    addToSlot: 'Agregar a {slot}',
+    allTasksPlanned: 'Todas las tareas ya están planificadas',
+    tapAddToStart: 'Toca + Agregar para programar tareas',
   },
   // Objectives
   objectives: {

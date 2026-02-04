@@ -151,6 +151,12 @@ export const zh = {
     tasks: '任务',
     tasksCompleted: '已完成',
     today: '今天',
+    // Mobile
+    noTasksScheduled: '没有安排的任务',
+    addTask: '添加任务',
+    addToSlot: '添加到{slot}',
+    allTasksPlanned: '所有任务已安排',
+    tapAddToStart: '点击 + 添加来安排今天的任务',
   },
   // Objectives
   objectives: {

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, ListTodo, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useDailyPlanner, TimeSlot } from '../../hooks/useDailyPlanner';
 import { TaskSidebar } from './TaskSidebar';
 import { TimeSlotColumn } from './TimeSlotColumn';
-import { BottomSheet } from '../ui';
+import { MobileTimeSlotSection } from './MobileTimeSlotSection';
+import { MobileTaskPicker } from './MobileTaskPicker';
 import { Task } from '../objectives/types';
 
 interface DailyPlannerProps {
@@ -15,7 +16,7 @@ const TIME_SLOTS: TimeSlot[] = ['morning', 'afternoon', 'evening', 'night'];
 
 export function DailyPlanner({ userId }: DailyPlannerProps) {
   const { t } = useLanguage();
-  const [showTaskSidebar, setShowTaskSidebar] = useState(false);
+  const [mobilePickerSlot, setMobilePickerSlot] = useState<TimeSlot | null>(null);
   
   const planner = useDailyPlanner(userId);
 
@@ -74,9 +75,18 @@ export function DailyPlanner({ userId }: DailyPlannerProps) {
   const totalPlanned = planner.plannedTasks.length;
   const totalCompleted = planner.plannedTasks.filter(pt => pt.task.status === 'completed').length;
 
+  // Handler for mobile task picker
+  const handleMobileAddTask = (slot: TimeSlot) => {
+    setMobilePickerSlot(slot);
+  };
+
+  const handleMobileAssignTask = async (taskId: string, slot: TimeSlot): Promise<boolean> => {
+    return await planner.addTaskToPlan(taskId, slot);
+  };
+
   return (
     <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
-      {/* Task Sidebar - Desktop */}
+      {/* Task Sidebar - Desktop Only */}
       <div className="hidden lg:block w-80 flex-shrink-0">
         <div className="h-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
           <TaskSidebar
@@ -91,62 +101,69 @@ export function DailyPlanner({ userId }: DailyPlannerProps) {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Date Navigation */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 mb-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Mobile task sidebar toggle */}
+          <div className="flex items-center justify-center gap-2">
             <button
-              onClick={() => setShowTaskSidebar(true)}
-              className="lg:hidden flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+              onClick={() => navigateDate('prev')}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
-              <ListTodo className="w-4 h-4" />
-              <span>{t('planner.tasks')}</span>
-              <span className="px-1.5 py-0.5 text-xs bg-indigo-600 text-white rounded">
-                {planner.availableTasks.length}
-              </span>
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
-
-            {/* Date navigation */}
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <button
-                onClick={() => navigateDate('prev')}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              </button>
-              
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                <div className="text-center">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {formatDisplayDate(planner.selectedDate)}
-                  </h2>
-                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span>{totalCompleted}/{totalPlanned} {t('planner.tasksCompleted')}</span>
-                  </div>
+            
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400 hidden sm:block" />
+              <div className="text-center">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                  {formatDisplayDate(planner.selectedDate)}
+                </h2>
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span>{totalCompleted}/{totalPlanned} {t('planner.tasksCompleted')}</span>
+                  {!isToday() && (
+                    <button
+                      onClick={goToToday}
+                      className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+                    >
+                      {t('planner.today')}
+                    </button>
+                  )}
                 </div>
               </div>
-
-              <button
-                onClick={() => navigateDate('next')}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              </button>
             </div>
 
-            {/* Today button */}
-            {!isToday() && (
-              <button
-                onClick={goToToday}
-                className="px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
-              >
-                {t('planner.today')}
-              </button>
-            )}
+            <button
+              onClick={() => navigateDate('next')}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
           </div>
         </div>
 
-        {/* Time Slots Grid */}
-        <div className="flex-1 flex gap-3 overflow-x-auto pb-4">
+        {/* Mobile Layout - Vertical Accordion */}
+        <div className="lg:hidden flex-1 overflow-y-auto space-y-3 pb-4">
+          {TIME_SLOTS.map((slot, index) => (
+            <MobileTimeSlotSection
+              key={slot}
+              slot={slot}
+              tasks={planner.getTasksBySlot(slot)}
+              onAddTask={handleMobileAddTask}
+              onRemoveTask={planner.removeTaskFromPlan}
+              onToggleCompletion={planner.toggleTaskCompletion}
+              defaultExpanded={index === 0}
+            />
+          ))}
+
+          {/* Empty state for mobile */}
+          {planner.plannedTasks.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                {t('planner.tapAddToStart')}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Layout - 4 Column Grid */}
+        <div className="hidden lg:flex flex-1 gap-3 overflow-x-auto pb-4">
           {TIME_SLOTS.map(slot => (
             <TimeSlotColumn
               key={slot}
@@ -160,30 +177,27 @@ export function DailyPlanner({ userId }: DailyPlannerProps) {
           ))}
         </div>
 
-        {/* Empty state */}
-        {planner.plannedTasks.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              {t('planner.dragTasksToStart')}
-            </p>
-          </div>
-        )}
+        {/* Empty state for desktop */}
+        <div className="hidden lg:block">
+          {planner.plannedTasks.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                {t('planner.dragTasksToStart')}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Mobile Task Sidebar Bottom Sheet */}
-      <BottomSheet
-        isOpen={showTaskSidebar}
-        onClose={() => setShowTaskSidebar(false)}
-        title={t('planner.pendingTasks')}
-      >
-        <div className="h-[60vh]">
-          <TaskSidebar
-            tasks={planner.availableTasks}
-            isTaskPlanned={planner.isTaskPlanned}
-            onDragStart={handleDragStart}
-          />
-        </div>
-      </BottomSheet>
+      {/* Mobile Task Picker Bottom Sheet */}
+      <MobileTaskPicker
+        isOpen={mobilePickerSlot !== null}
+        onClose={() => setMobilePickerSlot(null)}
+        targetSlot={mobilePickerSlot}
+        availableTasks={planner.availableTasks}
+        isTaskPlanned={planner.isTaskPlanned}
+        onAssignTask={handleMobileAssignTask}
+      />
     </div>
   );
 }

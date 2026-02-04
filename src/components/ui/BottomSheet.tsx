@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
+  title?: ReactNode;
   children: ReactNode;
   height?: 'auto' | 'half' | 'full';
 }
