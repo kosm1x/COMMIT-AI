@@ -25,6 +25,7 @@ interface GoalColumnProps {
   getGoalDescendantCounts: (id: string) => Promise<{ objectives: number; tasks: number }>;
   onConvertToVision?: (goal: Goal) => Promise<void>;
   onConvertToObjective?: (goal: Goal, targetGoalId: string | null) => Promise<void>;
+  onCreateObjectiveForGoal?: (goalId: string, title: string, description: string, priority: string) => Promise<void>;
   // Selected vision for context header
   selectedVision: Vision | null;
 }
@@ -48,6 +49,7 @@ export function GoalColumn({
   getGoalDescendantCounts,
   onConvertToVision,
   onConvertToObjective,
+  onCreateObjectiveForGoal,
   selectedVision,
 }: GoalColumnProps) {
   const { t } = useLanguage();
@@ -237,6 +239,11 @@ export function GoalColumn({
           isExpanded={expandedGoals.has(goal.id)}
           onToggleExpand={() => toggleGoalExpanded(goal.id)}
           goalObjectives={goalObjectives[goal.id] || []}
+          onCreateObjective={
+            onCreateObjectiveForGoal
+              ? (title, description, priority) => onCreateObjectiveForGoal(goal.id, title, description, priority)
+              : undefined
+          }
         />
       </div>
     );

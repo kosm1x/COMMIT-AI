@@ -26,6 +26,50 @@ interface Task {
   [key: string]: any;
 }
 
+// Resolve full ancestor chain from selection path (mirrors useObjectivesState effectivePath)
+function getEffectivePath(
+  selectionPath: SelectionPath,
+  goals: Goal[],
+  objectives: Objective[],
+  tasks: Task[]
+): SelectionPath {
+  const { visionId, goalId, objectiveId, taskId } = selectionPath;
+  let effVision: string | null = visionId ?? null;
+  let effGoal: string | null = goalId ?? null;
+  let effObjective: string | null = objectiveId ?? null;
+
+  if (taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (task?.objective_id) {
+      const obj = objectives.find(o => o.id === task.objective_id);
+      if (obj) {
+        if (effObjective === null) effObjective = obj.id;
+        if (effGoal === null && obj.goal_id) effGoal = obj.goal_id;
+        if (effVision === null && obj.goal_id) {
+          const g = goals.find(gr => gr.id === obj.goal_id);
+          if (g?.vision_id) effVision = g.vision_id;
+        }
+      }
+    }
+  }
+  if (objectiveId && (effGoal === null || effVision === null)) {
+    const obj = objectives.find(o => o.id === objectiveId);
+    if (obj?.goal_id) {
+      if (effGoal === null) effGoal = obj.goal_id;
+      if (effVision === null) {
+        const g = goals.find(gr => gr.id === obj.goal_id);
+        if (g?.vision_id) effVision = g.vision_id;
+      }
+    }
+  }
+  if (goalId && effVision === null) {
+    const g = goals.find(gr => gr.id === goalId);
+    if (g?.vision_id) effVision = g.vision_id;
+  }
+
+  return { visionId: effVision, goalId: effGoal, objectiveId: effObjective, taskId: taskId ?? null };
+}
+
 export function createIsInSelectedFamily(
   selectionPath: SelectionPath,
   goals: Goal[],
@@ -33,117 +77,49 @@ export function createIsInSelectedFamily(
   tasks: Task[]
 ) {
   return (type: 'vision' | 'goal' | 'objective' | 'task', id: string): boolean => {
-    // If nothing is selected, nothing is in a family
-    if (!selectionPath.visionId && !selectionPath.goalId && !selectionPath.objectiveId && !selectionPath.taskId) {
-      return false;
-    }
+    const { visionId, goalId, objectiveId, taskId } = getEffectivePath(selectionPath, goals, objectives, tasks);
+    if (!visionId && !goalId && !objectiveId && !taskId) return false;
 
     switch (type) {
       case 'vision': {
-        // Vision is in family if:
-        // 1. It's directly selected
-        if (selectionPath.visionId === id) return true;
-        // 2. Selected goal belongs to it
-        if (selectionPath.goalId) {
-          const goal = goals.find(g => g.id === selectionPath.goalId);
-          if (goal?.vision_id === id) return true;
-        }
-        // 3. Selected objective's goal belongs to it
-        if (selectionPath.objectiveId) {
-          const obj = objectives.find(o => o.id === selectionPath.objectiveId);
-          if (obj?.goal_id) {
-            const goal = goals.find(g => g.id === obj.goal_id);
-            if (goal?.vision_id === id) return true;
-          }
-        }
-        // 4. Selected task's objective's goal belongs to it
-        if (selectionPath.taskId) {
-          const task = tasks.find(t => t.id === selectionPath.taskId);
-          if (task?.objective_id) {
-            const obj = objectives.find(o => o.id === task.objective_id);
-            if (obj?.goal_id) {
-              const goal = goals.find(g => g.id === obj.goal_id);
-              if (goal?.vision_id === id) return true;
-            }
-          }
-        }
-        return false;
+        return id === visionId;
       }
       case 'goal': {
-        if (selectionPath.goalId === id) return true;
-        // Goal is in family if selected vision contains it
-        if (selectionPath.visionId) {
-          const goal = goals.find(g => g.id === id);
-          if (goal?.vision_id === selectionPath.visionId) return true;
-        }
-        // Or if selected objective belongs to it
-        if (selectionPath.objectiveId) {
-          const obj = objectives.find(o => o.id === selectionPath.objectiveId);
-          if (obj?.goal_id === id) return true;
-        }
-        // Or if selected task's objective belongs to it
-        if (selectionPath.taskId) {
-          const task = tasks.find(t => t.id === selectionPath.taskId);
-          if (task?.objective_id) {
-            const obj = objectives.find(o => o.id === task.objective_id);
-            if (obj?.goal_id === id) return true;
-          }
-        }
-        return false;
+        if (id === goalId) return true;
+        const goal = goals.find(g => g.id === id);
+        if (!goal) return false;
+        return visionId !== null && goal.vision_id === visionId;
       }
       case 'objective': {
-        if (selectionPath.objectiveId === id) return true;
-        
-        // Find this objective and trace its ancestry
+        if (id === objectiveId) return true;
         const obj = objectives.find(o => o.id === id);
         if (!obj) return false;
-        
-        // Check if selected vision is this objective's ancestor
-        if (selectionPath.visionId && obj.goal_id) {
-          const parentGoal = goals.find(g => g.id === obj.goal_id);
-          if (parentGoal?.vision_id === selectionPath.visionId) return true;
+        if (goalId !== null && obj.goal_id === goalId) return true;
+        // Vision only selected (no goal selected): all objectives under any goal of that vision
+        if (visionId !== null && goalId === null && obj.goal_id) {
+          const g = goals.find(gr => gr.id === obj.goal_id);
+          if (g?.vision_id === visionId) return true;
         }
-        
-        // Check if selected goal is this objective's direct parent
-        if (selectionPath.goalId && obj.goal_id === selectionPath.goalId) {
-          return true;
-        }
-        
-        // Check if selected task is this objective's descendant
-        if (selectionPath.taskId) {
-          const task = tasks.find(t => t.id === selectionPath.taskId);
-          if (task?.objective_id === id) return true;
-        }
-        
         return false;
       }
       case 'task': {
-        if (selectionPath.taskId === id) return true;
-        
-        // Find this task and trace its ancestry
+        if (id === taskId) return true;
         const task = tasks.find(t => t.id === id);
-        if (!task) return false;
-        
-        // Check if selected objective is this task's direct parent
-        if (selectionPath.objectiveId && task.objective_id === selectionPath.objectiveId) {
-          return true;
+        if (!task?.objective_id) return false;
+        if (objectiveId !== null && task.objective_id === objectiveId) return true;
+        // Goal selected: all tasks under that goal (more specific - takes precedence)
+        if (goalId !== null) {
+          const obj = objectives.find(o => o.id === task.objective_id);
+          if (obj?.goal_id === goalId) return true;
         }
-        
-        // Check if selected goal is this task's ancestor (objective → goal)
-        if (selectionPath.goalId && task.objective_id) {
-          const parentObjective = objectives.find(o => o.id === task.objective_id);
-          if (parentObjective?.goal_id === selectionPath.goalId) return true;
-        }
-        
-        // Check if selected vision is this task's ancestor (objective → goal → vision)
-        if (selectionPath.visionId && task.objective_id) {
-          const parentObjective = objectives.find(o => o.id === task.objective_id);
-          if (parentObjective?.goal_id) {
-            const parentGoal = goals.find(g => g.id === parentObjective.goal_id);
-            if (parentGoal?.vision_id === selectionPath.visionId) return true;
+        // Vision selected (but no goal selected): all tasks under that vision
+        if (visionId !== null && goalId === null) {
+          const obj = objectives.find(o => o.id === task.objective_id);
+          if (obj?.goal_id) {
+            const g = goals.find(gr => gr.id === obj.goal_id);
+            if (g?.vision_id === visionId) return true;
           }
         }
-        
         return false;
       }
       default:

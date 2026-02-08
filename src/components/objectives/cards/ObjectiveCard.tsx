@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, CheckCircle2, Circle, RefreshCw } from 'lucide-react';
+import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, CheckCircle2, Circle, RefreshCw, Sparkles } from 'lucide-react';
 import { Objective, Goal, Task } from '../types';
 import { formatLastEdited, getPriorityColor } from '../utils';
 import { formatShortDate } from '../../../utils/trackingStats';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { suggestTasksForObjective } from '../../../services/aiService';
+import TaskSuggestionsModal from '../modals/TaskSuggestionsModal';
 
 interface ObjectiveCardProps {
   objective: Objective;
@@ -27,6 +29,7 @@ interface ObjectiveCardProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   tasks?: Task[];
+  onCreateTask?: (title: string, description: string, priority: string) => Promise<void>;
 }
 
 export function ObjectiveCard({
@@ -49,8 +52,9 @@ export function ObjectiveCard({
   isExpanded = false,
   onToggleExpand,
   tasks = [],
+  onCreateTask,
 }: ObjectiveCardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [editTitle, setEditTitle] = useState(objective.title);
   const [editDescription, setEditDescription] = useState(objective.description);
   const [editStatus, setEditStatus] = useState(objective.status);
@@ -58,6 +62,33 @@ export function ObjectiveCard({
   const [editTargetDate, setEditTargetDate] = useState(objective.target_date || '');
   const [editGoalId, setEditGoalId] = useState<string | null>(objective.goal_id);
   const [showConvertMenu, setShowConvertMenu] = useState(false);
+  const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
+  const [suggestions, setSuggestions] = useState<Awaited<ReturnType<typeof suggestTasksForObjective>>>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
+
+  const handleGenerateSuggestions = async () => {
+    setSuggestionsLoading(true);
+    setSuggestionsError(null);
+    setShowSuggestionsModal(true);
+
+    try {
+      const generated = await suggestTasksForObjective(objective.title, objective.description || '', language);
+      setSuggestions(generated);
+    } catch {
+      setSuggestionsError('Failed to generate suggestions. Please try again.');
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
+  const handleCreateTasks = async (selectedTasks: Awaited<ReturnType<typeof suggestTasksForObjective>>) => {
+    for (const task of selectedTasks) {
+      await onCreateTask?.(task.title, task.description, task.priority);
+    }
+    setShowSuggestionsModal(false);
+    setSuggestions([]);
+  };
 
   useEffect(() => {
     if (isEditing) {
@@ -135,6 +166,17 @@ export function ObjectiveCard({
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGenerateSuggestions();
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            Suggest Tasks with AI
+          </button>
           <div className="flex gap-2">
             <select
               value={editStatus}
@@ -311,6 +353,16 @@ export function ObjectiveCard({
                     <div className="flex items-center gap-2">
                       {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                       <span className="text-text-secondary font-medium">Tasks</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateSuggestions();
+                        }}
+                        className="text-purple-600 hover:text-purple-700 dark:text-purple-400 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                        title="AI Suggest Tasks"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                     <span className="text-text-tertiary">
                       {taskCount.completed} / {taskCount.total}
@@ -364,6 +416,21 @@ export function ObjectiveCard({
             </div>
           </div>
         </>
+      )}
+      {showSuggestionsModal && (
+        <TaskSuggestionsModal
+          objectiveTitle={objective.title}
+          suggestions={suggestions}
+          loading={suggestionsLoading}
+          error={suggestionsError}
+          onClose={() => {
+            setShowSuggestionsModal(false);
+            setSuggestions([]);
+            setSuggestionsError(null);
+          }}
+          onCreateTasks={handleCreateTasks}
+          onRegenerate={handleGenerateSuggestions}
+        />
       )}
     </div>
   );

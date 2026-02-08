@@ -246,6 +246,10 @@ export default function Objectives() {
               getGoalDescendantCounts={state.getGoalDescendantCounts}
               onConvertToVision={handleConvertGoalToVision}
               onConvertToObjective={handleConvertGoalToObjective}
+              onCreateObjectiveForGoal={async (goalId, title, description, priority) => {
+                await state.createObjective(title, description, priority, goalId, '');
+                await state.reloadObjectives();
+              }}
               selectedVision={state.selectedVision}
             />
           </div>
@@ -269,6 +273,10 @@ export default function Objectives() {
               getObjectiveDescendantCounts={state.getObjectiveDescendantCounts}
               onConvertToGoal={handleConvertObjectiveToGoal}
               onConvertToTask={handleConvertObjectiveToTask}
+              onCreateTaskForObjective={async (objectiveId, title, description, priority) => {
+                await state.createTask(title, description, priority, '', objectiveId, false);
+                await state.reloadTasks();
+              }}
               selectedGoal={state.selectedGoal}
               taskCounts={state.taskCounts}
             />
