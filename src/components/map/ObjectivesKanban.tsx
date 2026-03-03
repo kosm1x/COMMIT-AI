@@ -80,7 +80,7 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     const [objectivesResult, goalsResult, tasksResult] = await Promise.all([
       supabase
         .from('objectives')
-        .select('*')
+        .select('id, goal_id, title, description, status, priority, target_date, "order", last_edited_at')
         .eq('user_id', user!.id)
         .order('order', { ascending: true })
         .order('created_at', { ascending: true }),

@@ -48,7 +48,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
       const [tasksResult, completedResult, overdueResult, recurringCompletionsResult, recurringTasksResult] = await Promise.all([
         supabase
           .from('tasks')
-          .select('*, objectives(title)')
+          .select('id, title, status, priority, due_date, completed_at, objective_id, is_recurring, objectives(title)')
           .eq('user_id', user!.id)
           .eq('is_recurring', false)
           .lte('due_date', endOfDay.toISOString().split('T')[0])
@@ -57,7 +57,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
           .order('due_date', { ascending: true }),
         supabase
           .from('tasks')
-          .select('*, objectives(title)')
+          .select('id, title, status, priority, due_date, completed_at, objective_id, is_recurring, objectives(title)')
           .eq('user_id', user!.id)
           .eq('is_recurring', false)
           .gte('completed_at', startOfDay.toISOString())
@@ -77,22 +77,22 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
           .eq('completion_date', today),
         supabase
           .from('tasks')
-          .select('*, objectives(title)')
+          .select('id, title, status, priority, due_date, completed_at, objective_id, is_recurring, objectives(title)')
           .eq('user_id', user!.id)
           .eq('is_recurring', true),
       ]);
 
-      setTasks(tasksResult.data || []);
-      
+      setTasks((tasksResult.data || []) as unknown as Task[]);
+
       // Get recurring tasks that were completed today
       const completedRecurringTaskIds = new Set((recurringCompletionsResult.data || []).map((tc: any) => tc.task_id));
       setRecurringCompletedToday(completedRecurringTaskIds);
-      const recurringCompleted = (recurringTasksResult.data || []).filter((task: any) => 
+      const recurringCompleted = ((recurringTasksResult.data || []) as unknown as Task[]).filter((task: any) =>
         completedRecurringTaskIds.has(task.id)
       );
-      
-      setRecurringTasks(recurringTasksResult.data || []);
-      setCompletedToday([...(completedResult.data || []), ...recurringCompleted]);
+
+      setRecurringTasks((recurringTasksResult.data || []) as unknown as Task[]);
+      setCompletedToday([...((completedResult.data || []) as unknown as Task[]), ...recurringCompleted]);
       
       setOverdueCount(overdueResult.data?.length || 0);
     } catch (error) {

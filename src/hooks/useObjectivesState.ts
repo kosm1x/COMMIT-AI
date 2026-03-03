@@ -117,7 +117,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('visions')
-      .select('*')
+      .select('id, title, description, status, target_date, "order", last_edited_at')
       .eq('user_id', userId)
       .order('order', { ascending: true })
       .order('created_at', { ascending: true });
@@ -128,7 +128,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('goals')
-      .select('*')
+      .select('id, vision_id, title, description, status, target_date, last_edited_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
     if (data) setGoals(data);
@@ -138,7 +138,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('objectives')
-      .select('*')
+      .select('id, goal_id, title, description, status, priority, target_date, last_edited_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
     if (data) setObjectives(data);
@@ -148,7 +148,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('tasks')
-      .select('*')
+      .select('id, objective_id, title, description, status, priority, due_date, completed_at, notes, document_links, last_edited_at, is_recurring')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
     if (data) setTasks(data);

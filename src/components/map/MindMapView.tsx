@@ -121,12 +121,12 @@ export default function MindMapView() {
   const loadSavedMindMaps = async () => {
     const { data } = await supabase
       .from('mind_maps')
-      .select('*')
+      .select('id, title, problem_statement, created_at')
       .eq('user_id', user!.id)
       .order('created_at', { ascending: false });
 
     if (data) {
-      setSavedMindMaps(data);
+      setSavedMindMaps(data as MindMap[]);
     }
   };
 
@@ -325,17 +325,26 @@ export default function MindMapView() {
     }
   };
 
-  const loadMindMap = (mindMap: MindMap) => {
+  const loadMindMap = async (mindMap: MindMap) => {
+    // Fetch full mind map data (including mermaid_syntax) on demand
+    const { data: fullMindMap } = await supabase
+      .from('mind_maps')
+      .select('*')
+      .eq('id', mindMap.id)
+      .single();
+
+    if (!fullMindMap) return;
+
     // Reset navigation when loading from history
     const rootState: NavigationState = {
-      mindMap: mindMap,
+      mindMap: fullMindMap,
       context: '',
     };
     setNavigationHistory([rootState]);
     setHistoryIndex(0);
     setContextChain('');
-    setCurrentMindMap(mindMap);
-    setProblemStatement(mindMap.problem_statement);
+    setCurrentMindMap(fullMindMap);
+    setProblemStatement(fullMindMap.problem_statement);
     setIsFullscreen(true); // Expand mind map by default after retrieval
     setSelectedNodes([]);
   };

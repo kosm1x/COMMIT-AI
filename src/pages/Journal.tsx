@@ -81,7 +81,7 @@ export default function Journal() {
   const loadEntries = async () => {
     const { data, error } = await supabase
       .from('journal_entries')
-      .select('*')
+      .select('id, content, entry_date, primary_emotion, created_at, updated_at')
       .eq('user_id', user!.id)
       .order('entry_date', { ascending: false })
       .limit(30);
@@ -95,7 +95,7 @@ export default function Journal() {
   const loadAnalysis = async (entryId: string) => {
     const { data } = await supabase
       .from('ai_analysis')
-      .select('*')
+      .select('id, emotions, patterns, coping_strategies')
       .eq('entry_id', entryId)
       .maybeSingle();
     setAnalysis(data as AIAnalysis | null);
