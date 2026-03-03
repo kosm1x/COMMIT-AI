@@ -362,17 +362,50 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
 
   const loadJournalData = async () => {
     try {
-      // Load journal entries from the last 3 months for emotion tracking
+      // Compute period dates first (needed for both emotion filtering and word frequency)
+      const startDate = viewMode === 'daily'
+        ? new Date(selectedDate)
+        : viewMode === 'weekly'
+        ? new Date(selectedDate)
+        : getStartOfMonth(selectedDate);
+
+      const endDate = viewMode === 'daily'
+        ? new Date(selectedDate)
+        : viewMode === 'weekly'
+        ? new Date(selectedDate)
+        : getEndOfMonth(selectedDate);
+
+      if (viewMode === 'weekly') {
+        startDate.setDate(selectedDate.getDate() - selectedDate.getDay());
+        endDate.setDate(startDate.getDate() + 6);
+      }
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+
+      // Load journal entries from the last 3 months for emotion tracking (no content needed)
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       threeMonthsAgo.setHours(0, 0, 0, 0);
 
-      const { data: allEntries } = await supabase
-        .from('journal_entries')
-        .select('id, content, entry_date, created_at')
-        .eq('user_id', user!.id)
-        .gte('entry_date', threeMonthsAgo.toISOString().split('T')[0])
-        .order('entry_date', { ascending: false });
+      const [entriesResult, periodEntriesResult] = await Promise.all([
+        // Emotion tracking: 3 months, no content (only id/date needed to join with ai_analysis)
+        supabase
+          .from('journal_entries')
+          .select('id, entry_date, created_at')
+          .eq('user_id', user!.id)
+          .gte('entry_date', threeMonthsAgo.toISOString().split('T')[0])
+          .order('entry_date', { ascending: false }),
+        // Word frequency: current period only, with content
+        supabase
+          .from('journal_entries')
+          .select('id, content')
+          .eq('user_id', user!.id)
+          .gte('entry_date', startDate.toISOString().split('T')[0])
+          .lte('entry_date', endDate.toISOString().split('T')[0]),
+      ]);
+
+      const allEntries = entriesResult.data;
+      const periodEntries = periodEntriesResult.data;
 
       if (!allEntries || allEntries.length === 0) {
         setEmotionData([]);
@@ -387,26 +420,6 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
         .select('entry_id, emotions, analyzed_at')
         .eq('user_id', user!.id)
         .in('entry_id', allEntryIds);
-
-      // Filter for period
-      const startDate = viewMode === 'daily'
-        ? new Date(selectedDate)
-        : viewMode === 'weekly'
-        ? new Date(selectedDate)
-        : getStartOfMonth(selectedDate);
-      
-      const endDate = viewMode === 'daily'
-        ? new Date(selectedDate)
-        : viewMode === 'weekly'
-        ? new Date(selectedDate)
-        : getEndOfMonth(selectedDate);
-
-      if (viewMode === 'weekly') {
-        startDate.setDate(selectedDate.getDate() - selectedDate.getDay());
-        endDate.setDate(startDate.getDate() + 6);
-      }
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
 
       const allEmotions: EmotionData[] = [];
       if (allAnalyses) {
@@ -458,7 +471,7 @@ export function useCreativeData(selectedDate: Date, viewMode: 'daily' | 'weekly'
         'hacer', 'poder', 'deber', 'querer', 'saber', 'decir', 'ir', 'venir', 'ver', 'dar',
       ]);
 
-      allEntries.forEach(entry => {
+      (periodEntries || []).forEach(entry => {
         if (entry.content) {
           // Use Unicode-aware regex to preserve accented characters
           // \p{L} matches any Unicode letter, \p{N} matches any Unicode number

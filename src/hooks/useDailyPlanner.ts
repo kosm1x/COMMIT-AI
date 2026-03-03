@@ -77,7 +77,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     // Load tasks with their objectives and goals
     const { data: tasks } = await supabase
       .from('tasks')
-      .select('*')
+      .select('id, title, status, priority, due_date, objective_id, is_recurring, description')
       .eq('user_id', userId)
       .in('status', ['not_started', 'in_progress'])
       .order('created_at', { ascending: false });
@@ -90,13 +90,13 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     // Load objectives for context
     const objectiveIds = [...new Set(tasks.filter(t => t.objective_id).map(t => t.objective_id))];
     const { data: objectives } = objectiveIds.length > 0
-      ? await supabase.from('objectives').select('*').in('id', objectiveIds)
+      ? await supabase.from('objectives').select('id, title, goal_id').in('id', objectiveIds)
       : { data: [] };
 
     // Load goals for context
     const goalIds = [...new Set((objectives || []).filter(o => o.goal_id).map(o => o.goal_id))];
     const { data: goals } = goalIds.length > 0
-      ? await supabase.from('goals').select('*').in('id', goalIds)
+      ? await supabase.from('goals').select('id, title').in('id', goalIds)
       : { data: [] };
 
     // Map objectives and goals to tasks
@@ -109,7 +109,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
       return { ...task, objective, goal };
     });
 
-    setAvailableTasks(enrichedTasks);
+    setAvailableTasks(enrichedTasks as (Task & { objective?: Objective | null; goal?: Goal | null })[]);
   }, [userId]);
 
   // Load daily plan for selected date
@@ -121,7 +121,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     // Get or create daily plan for the date
     let { data: plan } = await supabase
       .from('daily_plans')
-      .select('*')
+      .select('id, user_id, plan_date, notes, created_at, updated_at')
       .eq('user_id', userId)
       .eq('plan_date', selectedDate)
       .single();
@@ -137,7 +137,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     // Load planned tasks with joined task data
     const { data: planTasks } = await supabase
       .from('daily_plan_tasks')
-      .select('*')
+      .select('id, daily_plan_id, task_id, time_slot, order_index, created_at')
       .eq('daily_plan_id', plan.id)
       .order('order_index', { ascending: true });
 
@@ -151,26 +151,26 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     const taskIds = planTasks.map(pt => pt.task_id);
     const { data: tasks } = await supabase
       .from('tasks')
-      .select('*')
+      .select('id, title, status, priority, due_date, objective_id, is_recurring, description')
       .in('id', taskIds);
 
     // Load objectives for context
     const objectiveIds = [...new Set((tasks || []).filter(t => t.objective_id).map(t => t.objective_id))];
     const { data: objectives } = objectiveIds.length > 0
-      ? await supabase.from('objectives').select('*').in('id', objectiveIds)
+      ? await supabase.from('objectives').select('id, title, goal_id').in('id', objectiveIds)
       : { data: [] };
 
     // Load goals for context
     const goalIds = [...new Set((objectives || []).filter(o => o.goal_id).map(o => o.goal_id))];
     const { data: goals } = goalIds.length > 0
-      ? await supabase.from('goals').select('*').in('id', goalIds)
+      ? await supabase.from('goals').select('id, title').in('id', goalIds)
       : { data: [] };
 
     const tasksMap = new Map((tasks || []).map(t => [t.id, t]));
     const objectivesMap = new Map((objectives || []).map(o => [o.id, o]));
     const goalsMap = new Map((goals || []).map(g => [g.id, g]));
 
-    const enrichedPlannedTasks: PlannedTask[] = planTasks
+    const enrichedPlannedTasks = planTasks
       .map(pt => {
         const task = tasksMap.get(pt.task_id);
         if (!task) return null;
@@ -181,7 +181,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
           task: { ...task, objective, goal }
         };
       })
-      .filter((pt): pt is PlannedTask => pt !== null);
+      .filter((pt): pt is NonNullable<typeof pt> => pt !== null) as PlannedTask[];
 
     setPlannedTasks(enrichedPlannedTasks);
     setLoading(false);
