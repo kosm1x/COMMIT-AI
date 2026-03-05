@@ -2,6 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { initializeNativePlatform } from './services/nativePlatformService';
+
+initializeNativePlatform();
 
 // Global error handler for uncaught errors
 window.onerror = (message, source, lineno, colno, error) => {

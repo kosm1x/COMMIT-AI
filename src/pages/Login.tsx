@@ -2,8 +2,15 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Mail, Lock, Check } from 'lucide-react';
+import { ArrowRight, Mail, Lock, Check, Fingerprint, ScanFace } from 'lucide-react';
 import { Button, Input, Card } from '../components/ui';
+import {
+  checkBiometricAvailability,
+  authenticateWithBiometric,
+  getBiometricCredentials,
+  saveBiometricCredentials,
+  BiometricStatus,
+} from '../services/biometricService';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -20,6 +27,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [biometricStatus, setBiometricStatus] = useState<BiometricStatus | null>(null);
+  const [showBiometricSetup, setShowBiometricSetup] = useState(false);
+  const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
   const { signIn, signUp, resetPassword, updatePassword } = useAuth();
 
   useEffect(() => {
@@ -30,6 +40,48 @@ export default function Login() {
       setShowResetPassword(false);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    checkBiometricAvailability().then(setBiometricStatus);
+  }, []);
+
+  const handleBiometricLogin = async () => {
+    setError('');
+    setLoading(true);
+
+    const authenticated = await authenticateWithBiometric();
+    if (!authenticated) {
+      setError('Biometric authentication failed');
+      setLoading(false);
+      return;
+    }
+
+    const credentials = await getBiometricCredentials();
+    if (!credentials) {
+      setError('No saved credentials found');
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await signIn(credentials.email, credentials.password);
+    if (error) {
+      setError(error.message);
+    }
+    setLoading(false);
+  };
+
+  const handleSaveBiometricCredentials = async () => {
+    if (!pendingCredentials) return;
+
+    await saveBiometricCredentials(pendingCredentials.email, pendingCredentials.password);
+    setPendingCredentials(null);
+    setShowBiometricSetup(false);
+  };
+
+  const handleSkipBiometricSetup = () => {
+    setPendingCredentials(null);
+    setShowBiometricSetup(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +100,9 @@ export default function Login() {
       const { error } = await signIn(email, password);
       if (error) {
         setError(error.message);
+      } else if (biometricStatus?.isAvailable && !biometricStatus.isEnabled) {
+        setPendingCredentials({ email, password });
+        setShowBiometricSetup(true);
       }
     }
     setLoading(false);
@@ -299,7 +354,67 @@ export default function Login() {
                   {isSignUp ? t('login.signUp') : t('login.signIn')}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
+
+                {!isSignUp && biometricStatus?.isAvailable && biometricStatus.isEnabled && (
+                  <>
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">or</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      fullWidth
+                      onClick={handleBiometricLogin}
+                      disabled={loading}
+                    >
+                      {biometricStatus.biometryType === 'faceId' ? (
+                        <ScanFace className="w-5 h-5" />
+                      ) : (
+                        <Fingerprint className="w-5 h-5" />
+                      )}
+                      {biometricStatus.biometryType === 'faceId'
+                        ? 'Sign in with Face ID'
+                        : biometricStatus.biometryType === 'touchId'
+                          ? 'Sign in with Touch ID'
+                          : 'Sign in with Biometrics'}
+                    </Button>
+                  </>
+                )}
               </form>
+            )}
+
+            {showBiometricSetup && biometricStatus && (
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  {biometricStatus.biometryType === 'faceId' ? (
+                    <ScanFace className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  ) : (
+                    <Fingerprint className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  )}
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                      Enable {biometricStatus.biometryType === 'faceId' ? 'Face ID' : 'Touch ID'}?
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Sign in faster next time
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSaveBiometricCredentials}>
+                    Enable
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={handleSkipBiometricSetup}>
+                    Not now
+                  </Button>
+                </div>
+              </div>
             )}
 
             {!showResetPassword && !showResetForm && (
