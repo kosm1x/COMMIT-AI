@@ -63,7 +63,7 @@ export default function Ideate() {
   const loadIdeas = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('ideas').select('*').eq('user_id', user?.id).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('ideas').select('id, user_id, title, content, initial_input, category, tags, status, created_at, updated_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
       setIdeas(data || []);
     } catch (error) {

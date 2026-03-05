@@ -55,27 +55,32 @@ export default function Objectives() {
     processedNavStateRef.current = stateKey;
 
     const selectItem = async () => {
+      const visionCols = 'id, title, description, status, target_date, "order", last_edited_at';
+      const goalCols = 'id, vision_id, title, description, status, target_date, last_edited_at';
+      const objectiveCols = 'id, goal_id, title, description, status, priority, target_date, last_edited_at';
+      const taskCols = 'id, objective_id, title, description, status, priority, due_date, completed_at, notes, document_links, last_edited_at, is_recurring';
+
       if (navState.selectVision) {
-        const { data } = await supabase.from('visions').select('*').eq('id', navState.selectVision).eq('user_id', user.id).single();
+        const { data } = await supabase.from('visions').select(visionCols).eq('id', navState.selectVision).eq('user_id', user.id).single();
         if (data) { state.selectVision(data); setEditingVisionId(data.id); }
       } else if (navState.selectGoal) {
-        const { data } = await supabase.from('goals').select('*').eq('id', navState.selectGoal).eq('user_id', user.id).single();
+        const { data } = await supabase.from('goals').select(goalCols).eq('id', navState.selectGoal).eq('user_id', user.id).single();
         if (data) {
           if (data.vision_id) {
-            const { data: visionData } = await supabase.from('visions').select('*').eq('id', data.vision_id).single();
+            const { data: visionData } = await supabase.from('visions').select(visionCols).eq('id', data.vision_id).single();
             if (visionData) state.selectVision(visionData);
           }
           state.selectGoal(data);
           setEditingGoalId(data.id);
         }
       } else if (navState.selectObjective) {
-        const { data } = await supabase.from('objectives').select('*').eq('id', navState.selectObjective).eq('user_id', user.id).single();
+        const { data } = await supabase.from('objectives').select(objectiveCols).eq('id', navState.selectObjective).eq('user_id', user.id).single();
         if (data) {
           if (data.goal_id) {
-            const { data: goalData } = await supabase.from('goals').select('*').eq('id', data.goal_id).single();
+            const { data: goalData } = await supabase.from('goals').select(goalCols).eq('id', data.goal_id).single();
             if (goalData) {
               if (goalData.vision_id) {
-                const { data: visionData } = await supabase.from('visions').select('*').eq('id', goalData.vision_id).single();
+                const { data: visionData } = await supabase.from('visions').select(visionCols).eq('id', goalData.vision_id).single();
                 if (visionData) state.selectVision(visionData);
               }
               state.selectGoal(goalData);
@@ -85,16 +90,16 @@ export default function Objectives() {
           setEditingObjectiveId(data.id);
         }
       } else if (navState.selectTask) {
-        const { data } = await supabase.from('tasks').select('*').eq('id', navState.selectTask).eq('user_id', user.id).single();
+        const { data } = await supabase.from('tasks').select(taskCols).eq('id', navState.selectTask).eq('user_id', user.id).single();
         if (data) {
           if (data.objective_id) {
-            const { data: objectiveData } = await supabase.from('objectives').select('*').eq('id', data.objective_id).single();
+            const { data: objectiveData } = await supabase.from('objectives').select(objectiveCols).eq('id', data.objective_id).single();
             if (objectiveData) {
               if (objectiveData.goal_id) {
-                const { data: goalData } = await supabase.from('goals').select('*').eq('id', objectiveData.goal_id).single();
+                const { data: goalData } = await supabase.from('goals').select(goalCols).eq('id', objectiveData.goal_id).single();
                 if (goalData) {
                   if (goalData.vision_id) {
-                    const { data: visionData } = await supabase.from('visions').select('*').eq('id', goalData.vision_id).single();
+                    const { data: visionData } = await supabase.from('visions').select(visionCols).eq('id', goalData.vision_id).single();
                     if (visionData) state.selectVision(visionData);
                   }
                   state.selectGoal(goalData);
@@ -246,6 +251,10 @@ export default function Objectives() {
               getGoalDescendantCounts={state.getGoalDescendantCounts}
               onConvertToVision={handleConvertGoalToVision}
               onConvertToObjective={handleConvertGoalToObjective}
+              onCreateObjectiveForGoal={async (goalId, title, description, priority) => {
+                await state.createObjective(title, description, priority, goalId, '');
+                await state.reloadObjectives();
+              }}
               selectedVision={state.selectedVision}
             />
           </div>
@@ -269,6 +278,10 @@ export default function Objectives() {
               getObjectiveDescendantCounts={state.getObjectiveDescendantCounts}
               onConvertToGoal={handleConvertObjectiveToGoal}
               onConvertToTask={handleConvertObjectiveToTask}
+              onCreateTaskForObjective={async (objectiveId, title, description, priority) => {
+                await state.createTask(title, description, priority, '', objectiveId, false);
+                await state.reloadTasks();
+              }}
               selectedGoal={state.selectedGoal}
               taskCounts={state.taskCounts}
             />

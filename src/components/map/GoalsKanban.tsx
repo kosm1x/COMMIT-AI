@@ -80,7 +80,7 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
     const [goalsResult, objectivesResult, tasksResult] = await Promise.all([
       supabase
         .from('goals')
-        .select('*, visions(id, title)')
+        .select('id, vision_id, title, description, status, target_date, "order", last_edited_at, visions(id, title)')
         .eq('user_id', user!.id)
         .order('order', { ascending: true })
         .order('created_at', { ascending: true }),
@@ -89,7 +89,7 @@ export default function GoalsKanban({ selectedVisionId, selectedGoalId, selected
     ]);
 
     if (goalsResult.data) {
-      let loadedGoals = goalsResult.data;
+      let loadedGoals = goalsResult.data as unknown as Goal[];
       if (!hasAppliedSort.current) {
         hasAppliedSort.current = true;
         loadedGoals = sortGoals(loadedGoals as any) as any;

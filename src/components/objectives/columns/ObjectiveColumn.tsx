@@ -23,6 +23,7 @@ interface ObjectiveColumnProps {
   getObjectiveDescendantCounts: (id: string) => Promise<{ tasks: number }>;
   onConvertToGoal?: (objective: Objective, targetVisionId: string | null) => Promise<void>;
   onConvertToTask?: (objective: Objective, targetObjectiveId: string | null) => Promise<void>;
+  onCreateTaskForObjective?: (objectiveId: string, title: string, description: string, priority: string) => Promise<void>;
   selectedGoal: Goal | null;
   taskCounts: Record<string, { total: number; completed: number }>;
 }
@@ -45,6 +46,7 @@ export function ObjectiveColumn({
   getObjectiveDescendantCounts,
   onConvertToGoal,
   onConvertToTask,
+  onCreateTaskForObjective,
   selectedGoal,
   taskCounts,
 }: ObjectiveColumnProps) {
@@ -195,6 +197,11 @@ export function ObjectiveColumn({
         isExpanded={expandedObjectives.has(objective.id)}
         onToggleExpand={() => toggleObjectiveExpanded(objective.id)}
         tasks={objectiveTasks[objective.id] || []}
+        onCreateTask={
+          onCreateTaskForObjective
+            ? (title, description, priority) => onCreateTaskForObjective(objective.id, title, description, priority)
+            : undefined
+        }
       />
     </div>
   );

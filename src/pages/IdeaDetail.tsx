@@ -172,7 +172,9 @@ export default function IdeaDetail() {
         .from('ideas')
         .select('id, title, content, tags')
         .eq('user_id', user?.id)
-        .neq('id', currentIdea.id);
+        .neq('id', currentIdea.id)
+        .order('updated_at', { ascending: false })
+        .limit(50);
 
       if (error) {
         console.error('[IdeaDetail] Error fetching ideas:', error);

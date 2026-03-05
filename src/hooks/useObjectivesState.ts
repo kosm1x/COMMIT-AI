@@ -117,7 +117,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('visions')
-      .select('*')
+      .select('id, title, description, status, target_date, "order", last_edited_at')
       .eq('user_id', userId)
       .order('order', { ascending: true })
       .order('created_at', { ascending: true });
@@ -128,7 +128,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('goals')
-      .select('*')
+      .select('id, vision_id, title, description, status, target_date, last_edited_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
     if (data) setGoals(data);
@@ -138,7 +138,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('objectives')
-      .select('*')
+      .select('id, goal_id, title, description, status, priority, target_date, last_edited_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
     if (data) setObjectives(data);
@@ -148,7 +148,7 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (!userId) return;
     const { data } = await supabase
       .from('tasks')
-      .select('*')
+      .select('id, objective_id, title, description, status, priority, due_date, completed_at, notes, document_links, last_edited_at, is_recurring')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
     if (data) setTasks(data);
@@ -293,125 +293,102 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
   }, [tasks, selectionPath.objectiveId]);
 
   // ===== FAMILY TREE HELPERS =====
-  // Uses O(1) lookup maps instead of O(n) .find() calls for better performance
-  const isInSelectedFamily = useCallback((type: 'vision' | 'goal' | 'objective' | 'task', id: string): boolean => {
-    // If nothing is selected, nothing is in a family
-    if (!selectionPath.visionId && !selectionPath.goalId && !selectionPath.objectiveId && !selectionPath.taskId) {
-      return false;
+  // Effective selection path: resolve full ancestor chain from leaf selection so filtering is consistent
+  // when user selects a goal/objective/task without having selected the vision first.
+  const effectivePath = useMemo(() => {
+    const { visionId, goalId, objectiveId, taskId } = selectionPath;
+    let effVision: string | null = visionId ?? null;
+    let effGoal: string | null = goalId ?? null;
+    let effObjective: string | null = objectiveId ?? null;
+    const effTask: string | null = taskId ?? null;
+
+    if (taskId) {
+      const task = tasksById.get(taskId);
+      if (task?.objective_id) {
+        const obj = objectivesById.get(task.objective_id);
+        if (obj) {
+          if (effObjective === null) effObjective = obj.id;
+          if (effGoal === null && obj.goal_id) effGoal = obj.goal_id;
+          if (effVision === null && obj.goal_id) {
+            const g = goalsById.get(obj.goal_id);
+            if (g?.vision_id) effVision = g.vision_id;
+          }
+        }
+      }
     }
+    if (objectiveId && (effGoal === null || effVision === null)) {
+      const obj = objectivesById.get(objectiveId);
+      if (obj?.goal_id) {
+        if (effGoal === null) effGoal = obj.goal_id;
+        if (effVision === null) {
+          const g = goalsById.get(obj.goal_id);
+          if (g?.vision_id) effVision = g.vision_id;
+        }
+      }
+    }
+    if (goalId && effVision === null) {
+      const g = goalsById.get(goalId);
+      if (g?.vision_id) effVision = g.vision_id;
+    }
+
+    return { visionId: effVision, goalId: effGoal, objectiveId: effObjective, taskId: effTask };
+  }, [selectionPath, goalsById, objectivesById, tasksById]);
+
+  // Uses O(1) lookup maps. Rules: show selected item, its ancestors, its siblings, and its descendants only.
+  const isInSelectedFamily = useCallback((type: 'vision' | 'goal' | 'objective' | 'task', id: string): boolean => {
+    const { visionId, goalId, objectiveId, taskId } = effectivePath;
+    if (!visionId && !goalId && !objectiveId && !taskId) return false;
 
     switch (type) {
       case 'vision': {
-        // Vision is in family if:
-        // 1. It's directly selected
-        if (selectionPath.visionId === id) return true;
-        // 2. Selected goal belongs to it
-        if (selectionPath.goalId) {
-          const goal = goalsById.get(selectionPath.goalId);
-          if (goal?.vision_id === id) return true;
-        }
-        // 3. Selected objective's goal belongs to it
-        if (selectionPath.objectiveId) {
-          const obj = objectivesById.get(selectionPath.objectiveId);
-          if (obj?.goal_id) {
-            const goal = goalsById.get(obj.goal_id);
-            if (goal?.vision_id === id) return true;
-          }
-        }
-        // 4. Selected task's objective's goal belongs to it
-        if (selectionPath.taskId) {
-          const task = tasksById.get(selectionPath.taskId);
-          if (task?.objective_id) {
-            const obj = objectivesById.get(task.objective_id);
-            if (obj?.goal_id) {
-              const goal = goalsById.get(obj.goal_id);
-              if (goal?.vision_id === id) return true;
-            }
-          }
-        }
-        return false;
+        // Only the effective vision (selected or ancestor of selected)
+        return id === visionId;
       }
       case 'goal': {
-        if (selectionPath.goalId === id) return true;
-        // Goal is in family if selected vision contains it
-        if (selectionPath.visionId) {
-          const goal = goalsById.get(id);
-          if (goal?.vision_id === selectionPath.visionId) return true;
-        }
-        // Or if selected objective belongs to it
-        if (selectionPath.objectiveId) {
-          const obj = objectivesById.get(selectionPath.objectiveId);
-          if (obj?.goal_id === id) return true;
-        }
-        // Or if selected task's objective belongs to it
-        if (selectionPath.taskId) {
-          const task = tasksById.get(selectionPath.taskId);
-          if (task?.objective_id) {
-            const obj = objectivesById.get(task.objective_id);
-            if (obj?.goal_id === id) return true;
-          }
-        }
-        return false;
+        if (id === goalId) return true;
+        const goal = goalsById.get(id);
+        if (!goal) return false;
+        // Vision selected: all goals under that vision. Goal/Objective/Task selected: that goal + siblings (same vision)
+        return visionId !== null && goal.vision_id === visionId;
       }
       case 'objective': {
-        if (selectionPath.objectiveId === id) return true;
-        
-        // Find this objective and trace its ancestry
+        if (id === objectiveId) return true;
         const obj = objectivesById.get(id);
         if (!obj) return false;
-        
-        // Check if selected vision is this objective's ancestor
-        if (selectionPath.visionId && obj.goal_id) {
-          const parentGoal = goalsById.get(obj.goal_id);
-          if (parentGoal?.vision_id === selectionPath.visionId) return true;
+        // Task selected: only parent objective. Goal or Objective selected: all objectives under that goal
+        if (goalId !== null && obj.goal_id === goalId) return true;
+        // Vision only selected (no goal selected): all objectives under any goal of that vision
+        if (visionId !== null && goalId === null && obj.goal_id) {
+          const g = goalsById.get(obj.goal_id);
+          if (g?.vision_id === visionId) return true;
         }
-        
-        // Check if selected goal is this objective's direct parent
-        if (selectionPath.goalId && obj.goal_id === selectionPath.goalId) {
-          return true;
-        }
-        
-        // Check if selected task is this objective's descendant
-        if (selectionPath.taskId) {
-          const task = tasksById.get(selectionPath.taskId);
-          if (task?.objective_id === id) return true;
-        }
-        
         return false;
       }
       case 'task': {
-        if (selectionPath.taskId === id) return true;
-        
-        // Find this task and trace its ancestry
+        if (id === taskId) return true;
         const task = tasksById.get(id);
-        if (!task) return false;
-        
-        // Check if selected objective is this task's direct parent
-        if (selectionPath.objectiveId && task.objective_id === selectionPath.objectiveId) {
-          return true;
+        if (!task?.objective_id) return false;
+        // Task selected: siblings (same objective). Objective selected: all tasks under that objective.
+        if (objectiveId !== null && task.objective_id === objectiveId) return true;
+        // Goal selected: all tasks under that goal (more specific - takes precedence)
+        if (goalId !== null) {
+          const obj = objectivesById.get(task.objective_id);
+          if (obj?.goal_id === goalId) return true;
         }
-        
-        // Check if selected goal is this task's ancestor (objective → goal)
-        if (selectionPath.goalId && task.objective_id) {
-          const parentObjective = objectivesById.get(task.objective_id);
-          if (parentObjective?.goal_id === selectionPath.goalId) return true;
-        }
-        
-        // Check if selected vision is this task's ancestor (objective → goal → vision)
-        if (selectionPath.visionId && task.objective_id) {
-          const parentObjective = objectivesById.get(task.objective_id);
-          if (parentObjective?.goal_id) {
-            const parentGoal = goalsById.get(parentObjective.goal_id);
-            if (parentGoal?.vision_id === selectionPath.visionId) return true;
+        // Vision selected (but no goal selected): all tasks under that vision
+        if (visionId !== null && goalId === null) {
+          const obj = objectivesById.get(task.objective_id);
+          if (obj?.goal_id) {
+            const g = goalsById.get(obj.goal_id);
+            if (g?.vision_id === visionId) return true;
           }
         }
-        
         return false;
       }
       default:
         return false;
     }
-  }, [selectionPath, goalsById, objectivesById, tasksById]);
+  }, [effectivePath, goalsById, objectivesById, tasksById]);
 
   // ===== SELECTION ACTIONS =====
   const selectVision = useCallback((vision: Vision | null) => {
@@ -432,12 +409,12 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (goal && selectionPath.goalId === goal.id) {
       setSelectionPath(prev => ({ ...prev, goalId: null, objectiveId: null, taskId: null }));
     } else {
-      setSelectionPath(prev => ({
-        ...prev,
-        goalId: goal?.id || null,
+      setSelectionPath({
+        visionId: goal?.vision_id ?? null,
+        goalId: goal?.id ?? null,
         objectiveId: null,
         taskId: null,
-      }));
+      });
     }
   }, [selectionPath.goalId]);
 
@@ -445,24 +422,30 @@ export function useObjectivesState(userId: string | undefined): ObjectivesState 
     if (objective && selectionPath.objectiveId === objective.id) {
       setSelectionPath(prev => ({ ...prev, objectiveId: null, taskId: null }));
     } else {
-      setSelectionPath(prev => ({
-        ...prev,
-        objectiveId: objective?.id || null,
+      const parentGoal = objective?.goal_id ? goalsById.get(objective.goal_id) : null;
+      setSelectionPath({
+        visionId: parentGoal?.vision_id ?? null,
+        goalId: objective?.goal_id ?? null,
+        objectiveId: objective?.id ?? null,
         taskId: null,
-      }));
+      });
     }
-  }, [selectionPath.objectiveId]);
+  }, [selectionPath.objectiveId, goalsById]);
 
   const selectTask = useCallback((task: Task | null) => {
     if (task && selectionPath.taskId === task.id) {
       setSelectionPath(prev => ({ ...prev, taskId: null }));
     } else {
-      setSelectionPath(prev => ({
-        ...prev,
-        taskId: task?.id || null,
-      }));
+      const obj = task?.objective_id ? objectivesById.get(task.objective_id) : null;
+      const parentGoal = obj?.goal_id ? goalsById.get(obj.goal_id) : null;
+      setSelectionPath({
+        visionId: parentGoal?.vision_id ?? null,
+        goalId: obj?.goal_id ?? null,
+        objectiveId: task?.objective_id ?? null,
+        taskId: task?.id ?? null,
+      });
     }
-  }, [selectionPath.taskId]);
+  }, [selectionPath.taskId, objectivesById, goalsById]);
 
   const clearSelection = useCallback(() => {
     setSelectionPath({ visionId: null, goalId: null, objectiveId: null, taskId: null });
