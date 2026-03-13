@@ -1,5 +1,8 @@
 import { fetchWithRetry } from "../utils/fetchWithRetry";
 import { supabase } from "../lib/supabase";
+import { RateLimiter } from "../utils/security";
+
+const aiRateLimiter = new RateLimiter(10, 1);
 
 interface EmotionResult {
   name: string;
@@ -43,6 +46,10 @@ async function callGroqAPI(
   reasoning_effort?: "default" | "low" | "medium" | "high",
   language: "en" | "es" | "zh" = "en",
 ): Promise<string | null> {
+  if (!aiRateLimiter.canProceed()) {
+    return null;
+  }
+
   try {
     const {
       data: { session },
