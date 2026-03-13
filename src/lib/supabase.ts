@@ -1,64 +1,40 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { fetchWithRetry } from "../utils/fetchWithRetry";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-/**
- * Fetch wrapper with automatic retry for transient failures
- * Handles network errors, rate limits (429), and server errors (5xx)
- */
-async function fetchWithRetry(
-  url: RequestInfo | URL,
-  options?: RequestInit
-): Promise<Response> {
-  const maxRetries = 2;
-  const baseDelay = 1000;
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await fetch(url, options);
-
-      // Retry on server errors (5xx) or rate limits (429)
-      if ((response.status >= 500 || response.status === 429) && attempt < maxRetries) {
-        const delay = Math.min(baseDelay * Math.pow(2, attempt), 5000);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        continue;
-      }
-
-      return response;
-    } catch (error) {
-      lastError = error as Error;
-
-      // Network error - retry if attempts remaining
-      if (attempt < maxRetries) {
-        const delay = Math.min(baseDelay * Math.pow(2, attempt), 5000);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        continue;
-      }
-    }
-  }
-
-  throw lastError || new Error('Request failed after retries');
-}
+// Adapter: Supabase expects (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+const supabaseFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> => {
+  const url =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : input.url;
+  return fetchWithRetry(url, init);
+};
 
 // Create a client with placeholder values if env vars are missing
 // This allows the app to load and show an error message instead of crashing
 export const supabase: SupabaseClient = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseAnonKey || "placeholder-key",
   {
     auth: {
-      persistSession: true,        // Persist session in localStorage
-      autoRefreshToken: true,       // Auto-refresh tokens before expiry
-      detectSessionInUrl: true,     // Detect session from URL (password reset, etc.)
+      persistSession: true, // Persist session in localStorage
+      autoRefreshToken: true, // Auto-refresh tokens before expiry
+      detectSessionInUrl: true, // Detect session from URL (password reset, etc.)
       storage: window.localStorage, // Explicit storage specification
     },
     global: {
       // Use retry-enabled fetch for all Supabase requests
-      fetch: fetchWithRetry,
+      fetch: supabaseFetch,
     },
-  }
+  },
 );
 
 export const hasSupabaseConfig = !!(supabaseUrl && supabaseAnonKey);
@@ -127,7 +103,7 @@ export type Database = {
           user_id: string;
           title: string;
           description: string;
-          status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
+          status: "not_started" | "in_progress" | "completed" | "on_hold";
           target_date: string | null;
           order: number;
           created_at: string;
@@ -139,7 +115,7 @@ export type Database = {
           user_id: string;
           title: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
           target_date?: string | null;
           order?: number;
           created_at?: string;
@@ -151,7 +127,7 @@ export type Database = {
           user_id?: string;
           title?: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
           target_date?: string | null;
           order?: number;
           created_at?: string;
@@ -165,7 +141,7 @@ export type Database = {
           user_id: string;
           title: string;
           description: string;
-          status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
+          status: "not_started" | "in_progress" | "completed" | "on_hold";
           target_date: string | null;
           vision_id: string | null;
           order: number;
@@ -178,7 +154,7 @@ export type Database = {
           user_id: string;
           title: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
           target_date?: string | null;
           vision_id?: string | null;
           order?: number;
@@ -191,7 +167,7 @@ export type Database = {
           user_id?: string;
           title?: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
           target_date?: string | null;
           vision_id?: string | null;
           order?: number;
@@ -207,8 +183,8 @@ export type Database = {
           user_id: string;
           title: string;
           description: string;
-          status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
-          priority: 'high' | 'medium' | 'low';
+          status: "not_started" | "in_progress" | "completed" | "on_hold";
+          priority: "high" | "medium" | "low";
           target_date: string | null;
           order: number;
           created_at: string;
@@ -221,8 +197,8 @@ export type Database = {
           user_id: string;
           title: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
-          priority?: 'high' | 'medium' | 'low';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
+          priority?: "high" | "medium" | "low";
           target_date?: string | null;
           order?: number;
           created_at?: string;
@@ -235,8 +211,8 @@ export type Database = {
           user_id?: string;
           title?: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
-          priority?: 'high' | 'medium' | 'low';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
+          priority?: "high" | "medium" | "low";
           target_date?: string | null;
           order?: number;
           created_at?: string;
@@ -251,8 +227,8 @@ export type Database = {
           user_id: string;
           title: string;
           description: string;
-          status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
-          priority: 'high' | 'medium' | 'low';
+          status: "not_started" | "in_progress" | "completed" | "on_hold";
+          priority: "high" | "medium" | "low";
           due_date: string | null;
           completed_at: string | null;
           order: number;
@@ -268,8 +244,8 @@ export type Database = {
           user_id: string;
           title: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
-          priority?: 'high' | 'medium' | 'low';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
+          priority?: "high" | "medium" | "low";
           due_date?: string | null;
           completed_at?: string | null;
           order?: number;
@@ -285,8 +261,8 @@ export type Database = {
           user_id?: string;
           title?: string;
           description?: string;
-          status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
-          priority?: 'high' | 'medium' | 'low';
+          status?: "not_started" | "in_progress" | "completed" | "on_hold";
+          priority?: "high" | "medium" | "low";
           due_date?: string | null;
           completed_at?: string | null;
           order?: number;
