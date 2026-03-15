@@ -1,19 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { supabase } from '../../lib/supabase';
-import { Flag, Link2 } from 'lucide-react';
-import { createIsInSelectedFamily } from '../../utils/familyTree';
-import { sortObjectives } from '../../utils/autoSort';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { supabase } from "../../lib/supabase";
+import { Flag, Link2 } from "lucide-react";
+import { createIsInSelectedFamily } from "../../utils/familyTree";
+import { sortObjectives } from "../../utils/autoSort";
 
 interface Objective {
   id: string;
   goal_id: string | null;
   title: string;
   description: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
-  priority: 'high' | 'medium' | 'low';
+  status: "not_started" | "in_progress" | "completed" | "on_hold";
+  priority: "high" | "medium" | "low";
   order: number;
 }
 
@@ -32,14 +32,41 @@ interface ObjectivesKanbanProps {
   highlightedItemId?: string | null;
 }
 
-const getStatusColumns = (t: (key: string) => string) => [
-  { id: 'not_started', label: t('map.notStarted'), color: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' },
-  { id: 'in_progress', label: t('map.inProgress'), color: 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100' },
-  { id: 'on_hold', label: t('map.onHold'), color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100' },
-  { id: 'completed', label: t('map.completed'), color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100' },
-] as const;
+const getStatusColumns = (t: (key: string) => string) =>
+  [
+    {
+      id: "not_started",
+      label: t("map.notStarted"),
+      color: "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100",
+    },
+    {
+      id: "in_progress",
+      label: t("map.inProgress"),
+      color:
+        "bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100",
+    },
+    {
+      id: "on_hold",
+      label: t("map.onHold"),
+      color:
+        "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100",
+    },
+    {
+      id: "completed",
+      label: t("map.completed"),
+      color:
+        "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100",
+    },
+  ] as const;
 
-export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, selectedObjectiveId, selectedTaskId, onSelectObjective, highlightedItemId }: ObjectivesKanbanProps) {
+export default function ObjectivesKanban({
+  selectedVisionId,
+  selectedGoalId,
+  selectedObjectiveId,
+  selectedTaskId,
+  onSelectObjective,
+  highlightedItemId,
+}: ObjectivesKanbanProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -50,7 +77,9 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
-  const [draggedOverStatus, setDraggedOverStatus] = useState<string | null>(null);
+  const [draggedOverStatus, setDraggedOverStatus] = useState<string | null>(
+    null,
+  );
   const [isDragging, setIsDragging] = useState(false);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -64,10 +93,10 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
   useEffect(() => {
     if (highlightedItemId && cardRefs.current[highlightedItemId]) {
       setTimeout(() => {
-        cardRefs.current[highlightedItemId]?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'center'
+        cardRefs.current[highlightedItemId]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
         });
       }, 200);
     }
@@ -79,13 +108,18 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     setLoading(true);
     const [objectivesResult, goalsResult, tasksResult] = await Promise.all([
       supabase
-        .from('objectives')
-        .select('id, goal_id, title, description, status, priority, target_date, "order", last_edited_at')
-        .eq('user_id', user!.id)
-        .order('order', { ascending: true })
-        .order('created_at', { ascending: true }),
-      supabase.from('goals').select('id, title, vision_id').eq('user_id', user!.id),
-      supabase.from('tasks').select('id, objective_id').eq('user_id', user!.id),
+        .from("objectives")
+        .select(
+          'id, goal_id, title, description, status, priority, target_date, "order", last_edited_at',
+        )
+        .eq("user_id", user!.id)
+        .order("order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("goals")
+        .select("id, title, vision_id")
+        .eq("user_id", user!.id),
+      supabase.from("tasks").select("id, objective_id").eq("user_id", user!.id),
     ]);
 
     if (objectivesResult.data) {
@@ -94,10 +128,10 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
         hasAppliedSort.current = true;
         loadedObjectives = sortObjectives(loadedObjectives as any) as any;
       }
-      setObjectives(loadedObjectives);
+      setObjectives(loadedObjectives as Objective[]);
     }
     if (goalsResult.data) {
-      setGoals(goalsResult.data);
+      setGoals(goalsResult.data as Goal[]);
     }
     if (tasksResult.data) {
       setTasks(tasksResult.data);
@@ -106,8 +140,9 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
   };
 
   // Check if there's any selection
-  const hasSelection = selectedVisionId || selectedGoalId || selectedObjectiveId || selectedTaskId;
-  
+  const hasSelection =
+    selectedVisionId || selectedGoalId || selectedObjectiveId || selectedTaskId;
+
   // Create family filter function
   const isInSelectedFamily = createIsInSelectedFamily(
     {
@@ -118,9 +153,8 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     },
     goals,
     objectives,
-    tasks
+    tasks,
   );
-
 
   const handleDragStart = (objectiveId: string, status: string) => {
     setDraggedItem(objectiveId);
@@ -128,7 +162,11 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     setIsDragging(true);
   };
 
-  const handleDragOver = (e: React.DragEvent, objectiveId: string, status: string) => {
+  const handleDragOver = (
+    e: React.DragEvent,
+    objectiveId: string,
+    status: string,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     if (draggedItem !== objectiveId) {
@@ -148,49 +186,63 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
     setIsDragging(false);
   };
 
-  const handleDrop = async (targetObjectiveId: string | null, targetStatus: string) => {
+  const handleDrop = async (
+    targetObjectiveId: string | null,
+    targetStatus: string,
+  ) => {
     if (!draggedItem || !draggedOverStatus) return;
 
-    const draggedObjective = objectives.find(o => o.id === draggedItem);
+    const draggedObjective = objectives.find((o) => o.id === draggedItem);
     if (!draggedObjective) return;
 
     const sameStatus = draggedObjective.status === targetStatus;
-    
+
     if (sameStatus && targetObjectiveId) {
       // Vertical reordering within the same column
-      const statusObjectives = objectives.filter(o => o.status === targetStatus).sort((a, b) => a.order - b.order);
-      const targetIndex = statusObjectives.findIndex(o => o.id === targetObjectiveId);
-      const draggedIndex = statusObjectives.findIndex(o => o.id === draggedItem);
-      
+      const statusObjectives = objectives
+        .filter((o) => o.status === targetStatus)
+        .sort((a, b) => a.order - b.order);
+      const targetIndex = statusObjectives.findIndex(
+        (o) => o.id === targetObjectiveId,
+      );
+      const draggedIndex = statusObjectives.findIndex(
+        (o) => o.id === draggedItem,
+      );
+
       if (targetIndex === -1 || draggedIndex === -1) return;
-      
+
       // Calculate new order values
       const newObjectives = [...statusObjectives];
       newObjectives.splice(draggedIndex, 1);
       newObjectives.splice(targetIndex, 0, draggedObjective);
-      
+
       // Update orders
       const updates = newObjectives.map((objective, index) => ({
         id: objective.id,
-        order: index
+        order: index,
       }));
-      
+
       // Batch update orders
       for (const update of updates) {
         await supabase
-          .from('objectives')
+          .from("objectives")
           .update({ order: update.order })
-          .eq('id', update.id);
+          .eq("id", update.id);
       }
     } else {
       // Status change (horizontal movement)
-      const statusObjectives = objectives.filter(o => o.status === targetStatus).sort((a, b) => a.order - b.order);
-      const newOrder = statusObjectives.length > 0 ? Math.max(...statusObjectives.map(o => o.order)) + 1 : 0;
-      
+      const statusObjectives = objectives
+        .filter((o) => o.status === targetStatus)
+        .sort((a, b) => a.order - b.order);
+      const newOrder =
+        statusObjectives.length > 0
+          ? Math.max(...statusObjectives.map((o) => o.order)) + 1
+          : 0;
+
       await supabase
-        .from('objectives')
+        .from("objectives")
         .update({ status: targetStatus, order: newOrder })
-        .eq('id', draggedItem);
+        .eq("id", draggedItem);
     }
 
     setDraggedItem(null);
@@ -202,12 +254,14 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
 
   const getObjectivesByStatus = (status: string) => {
     let filteredObjectives = objectives.filter((obj) => obj.status === status);
-    
+
     // If there's a selection, only show family members
     if (hasSelection) {
-      filteredObjectives = filteredObjectives.filter(obj => isInSelectedFamily('objective', obj.id));
+      filteredObjectives = filteredObjectives.filter((obj) =>
+        isInSelectedFamily("objective", obj.id),
+      );
     }
-    
+
     return filteredObjectives;
   };
 
@@ -219,12 +273,12 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-700 border-red-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case "high":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "medium":
+        return "bg-yellow-100 text-yellow-700 border-yellow-200";
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
 
@@ -252,96 +306,107 @@ export default function ObjectivesKanban({ selectedVisionId, selectedGoalId, sel
           }}
           className="flex flex-col"
         >
-          <div className={`${column.color} px-4 py-2 rounded-t-lg border-x border-t border-white/20 dark:border-white/10`}>
+          <div
+            className={`${column.color} px-4 py-2 rounded-t-lg border-x border-t border-white/20 dark:border-white/10`}
+          >
             <h3 className="font-semibold">{column.label}</h3>
             <p className="text-sm opacity-80">
-              {getObjectivesByStatus(column.id).length} {t('map.objectives')}
+              {getObjectivesByStatus(column.id).length} {t("map.objectives")}
             </p>
           </div>
           <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-b-lg min-h-[200px] space-y-3 border border-white/20 dark:border-white/10">
             {getObjectivesByStatus(column.id)
               .sort((a, b) => a.order - b.order)
               .map((objective) => {
-              const isSelected = selectedObjectiveId === objective.id;
-              const isDragged = draggedItem === objective.id;
-              const isDraggedOver = draggedOverItem === objective.id && draggedOverStatus === column.id;
-              
-              const isHighlighted = highlightedItemId === objective.id;
-              
-              return (
-              <div
-                key={objective.id}
-                ref={(el) => { cardRefs.current[objective.id] = el; }}
-                draggable
-                onDragStart={() => handleDragStart(objective.id, column.id)}
-                onDragOver={(e) => handleDragOver(e, objective.id, column.id)}
-                onDragLeave={handleDragLeave}
-                onDragEnd={handleDragEnd}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleDrop(objective.id, column.id);
-                }}
-                onClick={(e) => {
-                  // Only select if not dragging
-                  if (!isDragging && !draggedItem) {
-                    e.stopPropagation();
-                    onSelectObjective(isSelected ? null : objective.id);
-                  }
-                }}
-                className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-pointer hover:shadow-md transition-all ${
-                  isSelected ? 'ring-2 ring-green-500 ring-offset-2' : ''
-                } ${isDragged ? 'opacity-50' : ''
-                } ${isDraggedOver ? 'border-t-4 border-t-green-500' : ''} ${
-                  isHighlighted ? 'ring-4 ring-green-400 ring-offset-2 dark:ring-offset-gray-900 animate-pulse shadow-lg shadow-green-500/30' : ''
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <h4 
-                    className="font-medium text-gray-900 dark:text-white flex-1 hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/objectives', { 
-                        state: { 
-                          selectObjective: objective.id,
-                          timestamp: Date.now() // Ensure each navigation is unique
-                        } 
-                      });
+                const isSelected = selectedObjectiveId === objective.id;
+                const isDragged = draggedItem === objective.id;
+                const isDraggedOver =
+                  draggedOverItem === objective.id &&
+                  draggedOverStatus === column.id;
+
+                const isHighlighted = highlightedItemId === objective.id;
+
+                return (
+                  <div
+                    key={objective.id}
+                    ref={(el) => {
+                      cardRefs.current[objective.id] = el;
                     }}
+                    draggable
+                    onDragStart={() => handleDragStart(objective.id, column.id)}
+                    onDragOver={(e) =>
+                      handleDragOver(e, objective.id, column.id)
+                    }
+                    onDragLeave={handleDragLeave}
+                    onDragEnd={handleDragEnd}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDrop(objective.id, column.id);
+                    }}
+                    onClick={(e) => {
+                      // Only select if not dragging
+                      if (!isDragging && !draggedItem) {
+                        e.stopPropagation();
+                        onSelectObjective(isSelected ? null : objective.id);
+                      }
+                    }}
+                    className={`bg-white dark:bg-white/10 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 cursor-pointer hover:shadow-md transition-all ${
+                      isSelected ? "ring-2 ring-green-500 ring-offset-2" : ""
+                    } ${
+                      isDragged ? "opacity-50" : ""
+                    } ${isDraggedOver ? "border-t-4 border-t-green-500" : ""} ${
+                      isHighlighted
+                        ? "ring-4 ring-green-400 ring-offset-2 dark:ring-offset-gray-900 animate-pulse shadow-lg shadow-green-500/30"
+                        : ""
+                    }`}
                   >
-                    {objective.title}
-                  </h4>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getPriorityColor(
-                      objective.priority
-                    )}`}
-                  >
-                    <Flag className="w-3 h-3 mr-1" />
-                    {t(`objectives.${objective.priority}`)}
-                  </span>
-                </div>
-                {objective.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
-                    {objective.description}
-                  </p>
-                )}
-                {objective.goal_id ? (
-                  <div className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                    <Link2 className="w-3 h-3" />
-                    {getGoalTitle(objective.goal_id)}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4
+                        className="font-medium text-gray-900 dark:text-white flex-1 hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/objectives", {
+                            state: {
+                              selectObjective: objective.id,
+                              timestamp: Date.now(), // Ensure each navigation is unique
+                            },
+                          });
+                        }}
+                      >
+                        {objective.title}
+                      </h4>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getPriorityColor(
+                          objective.priority,
+                        )}`}
+                      >
+                        <Flag className="w-3 h-3 mr-1" />
+                        {t(`objectives.${objective.priority}`)}
+                      </span>
+                    </div>
+                    {objective.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
+                        {objective.description}
+                      </p>
+                    )}
+                    {objective.goal_id ? (
+                      <div className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                        <Link2 className="w-3 h-3" />
+                        {getGoalTitle(objective.goal_id)}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                        <Link2 className="w-3 h-3" />
+                        {t("map.orphaned")}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
-                    <Link2 className="w-3 h-3" />
-                    {t('map.orphaned')}
-                  </div>
-                )}
-              </div>
-            );
-            })}
+                );
+              })}
             {getObjectivesByStatus(column.id).length === 0 && (
               <div className="text-center py-8 text-sm text-gray-400">
-                {t('map.noObjectivesInStatus')}
+                {t("map.noObjectivesInStatus")}
               </div>
             )}
           </div>

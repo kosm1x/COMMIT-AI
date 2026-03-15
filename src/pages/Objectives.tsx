@@ -1,16 +1,34 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
-import { supabase } from '../lib/supabase';
-import { Network, Lightbulb, Eye, Target, Flag, ListTodo, Loader2 } from 'lucide-react';
-import { useObjectivesState } from '../hooks/useObjectivesState';
-import { VisionColumn, GoalColumn, ObjectiveColumn, TaskColumn } from '../components/objectives/columns';
-import { VisionForm, GoalForm, ObjectiveForm, TaskForm } from '../components/objectives/modals';
-import { Vision, Goal, Objective, Task } from '../components/objectives/types';
-import { Header, Modal } from '../components/ui';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import { supabase } from "../lib/supabase";
+import {
+  Network,
+  Lightbulb,
+  Eye,
+  Target,
+  Flag,
+  ListTodo,
+  Loader2,
+} from "lucide-react";
+import { useObjectivesState } from "../hooks/useObjectivesState";
+import {
+  VisionColumn,
+  GoalColumn,
+  ObjectiveColumn,
+  TaskColumn,
+} from "../components/objectives/columns";
+import {
+  VisionForm,
+  GoalForm,
+  ObjectiveForm,
+  TaskForm,
+} from "../components/objectives/modals";
+import { Vision, Goal, Objective, Task } from "../components/objectives/types";
+import { Header, Modal } from "../components/ui";
 
-type ItemType = 'vision' | 'goal' | 'objective' | 'task';
+type ItemType = "vision" | "goal" | "objective" | "task";
 
 export default function Objectives() {
   const { user } = useAuth();
@@ -19,7 +37,12 @@ export default function Objectives() {
   const location = useLocation();
 
   const state = useObjectivesState(user?.id);
-  const hasAnySelection = !!(state.selectionPath.visionId || state.selectionPath.goalId || state.selectionPath.objectiveId || state.selectionPath.taskId);
+  const hasAnySelection = !!(
+    state.selectionPath.visionId ||
+    state.selectionPath.goalId ||
+    state.selectionPath.objectiveId ||
+    state.selectionPath.taskId
+  );
 
   const [showVisionForm, setShowVisionForm] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -28,16 +51,20 @@ export default function Objectives() {
 
   const [editingVisionId, setEditingVisionId] = useState<string | null>(null);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-  const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null);
+  const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(
+    null,
+  );
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const [actionModal, setActionModal] = useState<{
     type: ItemType | null;
     title: string;
     description: string;
-  }>({ type: null, title: '', description: '' });
+  }>({ type: null, title: "", description: "" });
 
-  const [activeTab, setActiveTab] = useState<'vision' | 'goals' | 'objectives' | 'tasks'>('vision');
+  const [activeTab, setActiveTab] = useState<
+    "vision" | "goals" | "objectives" | "tasks"
+  >("vision");
   const processedNavStateRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -45,76 +72,137 @@ export default function Objectives() {
   }, [location.pathname]);
 
   useEffect(() => {
-    const navState = location.state as { selectVision?: string; selectGoal?: string; selectObjective?: string; selectTask?: string; timestamp?: number } | null;
+    const navState = location.state as {
+      selectVision?: string;
+      selectGoal?: string;
+      selectObjective?: string;
+      selectTask?: string;
+      timestamp?: number;
+    } | null;
     if (!navState || !user) return;
 
     const stateKey = navState.timestamp
-      ? `${navState.selectVision || navState.selectGoal || navState.selectObjective || navState.selectTask || ''}-${navState.timestamp}`
-      : (navState.selectVision || navState.selectGoal || navState.selectObjective || navState.selectTask || null);
+      ? `${navState.selectVision || navState.selectGoal || navState.selectObjective || navState.selectTask || ""}-${navState.timestamp}`
+      : navState.selectVision ||
+        navState.selectGoal ||
+        navState.selectObjective ||
+        navState.selectTask ||
+        null;
     if (!stateKey || processedNavStateRef.current === stateKey) return;
     processedNavStateRef.current = stateKey;
 
     const selectItem = async () => {
-      const visionCols = 'id, title, description, status, target_date, "order", last_edited_at';
-      const goalCols = 'id, vision_id, title, description, status, target_date, last_edited_at';
-      const objectiveCols = 'id, goal_id, title, description, status, priority, target_date, last_edited_at';
-      const taskCols = 'id, objective_id, title, description, status, priority, due_date, completed_at, notes, document_links, last_edited_at, is_recurring';
+      const visionCols =
+        'id, title, description, status, target_date, "order", last_edited_at';
+      const goalCols =
+        "id, vision_id, title, description, status, target_date, last_edited_at";
+      const objectiveCols =
+        "id, goal_id, title, description, status, priority, target_date, last_edited_at";
+      const taskCols =
+        "id, objective_id, title, description, status, priority, due_date, completed_at, notes, document_links, last_edited_at, is_recurring";
 
       if (navState.selectVision) {
-        const { data } = await supabase.from('visions').select(visionCols).eq('id', navState.selectVision).eq('user_id', user.id).single();
-        if (data) { state.selectVision(data); setEditingVisionId(data.id); }
+        const { data } = await supabase
+          .from("visions")
+          .select(visionCols)
+          .eq("id", navState.selectVision)
+          .eq("user_id", user.id)
+          .single();
+        if (data) {
+          state.selectVision(data as Vision);
+          setEditingVisionId(data.id);
+        }
       } else if (navState.selectGoal) {
-        const { data } = await supabase.from('goals').select(goalCols).eq('id', navState.selectGoal).eq('user_id', user.id).single();
+        const { data } = await supabase
+          .from("goals")
+          .select(goalCols)
+          .eq("id", navState.selectGoal)
+          .eq("user_id", user.id)
+          .single();
         if (data) {
           if (data.vision_id) {
-            const { data: visionData } = await supabase.from('visions').select(visionCols).eq('id', data.vision_id).single();
-            if (visionData) state.selectVision(visionData);
+            const { data: visionData } = await supabase
+              .from("visions")
+              .select(visionCols)
+              .eq("id", data.vision_id)
+              .single();
+            if (visionData) state.selectVision(visionData as Vision);
           }
-          state.selectGoal(data);
+          state.selectGoal(data as Goal);
           setEditingGoalId(data.id);
         }
       } else if (navState.selectObjective) {
-        const { data } = await supabase.from('objectives').select(objectiveCols).eq('id', navState.selectObjective).eq('user_id', user.id).single();
+        const { data } = await supabase
+          .from("objectives")
+          .select(objectiveCols)
+          .eq("id", navState.selectObjective)
+          .eq("user_id", user.id)
+          .single();
         if (data) {
           if (data.goal_id) {
-            const { data: goalData } = await supabase.from('goals').select(goalCols).eq('id', data.goal_id).single();
+            const { data: goalData } = await supabase
+              .from("goals")
+              .select(goalCols)
+              .eq("id", data.goal_id)
+              .single();
             if (goalData) {
               if (goalData.vision_id) {
-                const { data: visionData } = await supabase.from('visions').select(visionCols).eq('id', goalData.vision_id).single();
-                if (visionData) state.selectVision(visionData);
+                const { data: visionData } = await supabase
+                  .from("visions")
+                  .select(visionCols)
+                  .eq("id", goalData.vision_id)
+                  .single();
+                if (visionData) state.selectVision(visionData as Vision);
               }
-              state.selectGoal(goalData);
+              state.selectGoal(goalData as Goal);
             }
           }
-          state.selectObjective(data);
+          state.selectObjective(data as Objective);
           setEditingObjectiveId(data.id);
         }
       } else if (navState.selectTask) {
-        const { data } = await supabase.from('tasks').select(taskCols).eq('id', navState.selectTask).eq('user_id', user.id).single();
+        const { data } = await supabase
+          .from("tasks")
+          .select(taskCols)
+          .eq("id", navState.selectTask)
+          .eq("user_id", user.id)
+          .single();
         if (data) {
           if (data.objective_id) {
-            const { data: objectiveData } = await supabase.from('objectives').select(objectiveCols).eq('id', data.objective_id).single();
+            const { data: objectiveData } = await supabase
+              .from("objectives")
+              .select(objectiveCols)
+              .eq("id", data.objective_id)
+              .single();
             if (objectiveData) {
               if (objectiveData.goal_id) {
-                const { data: goalData } = await supabase.from('goals').select(goalCols).eq('id', objectiveData.goal_id).single();
+                const { data: goalData } = await supabase
+                  .from("goals")
+                  .select(goalCols)
+                  .eq("id", objectiveData.goal_id)
+                  .single();
                 if (goalData) {
                   if (goalData.vision_id) {
-                    const { data: visionData } = await supabase.from('visions').select(visionCols).eq('id', goalData.vision_id).single();
-                    if (visionData) state.selectVision(visionData);
+                    const { data: visionData } = await supabase
+                      .from("visions")
+                      .select(visionCols)
+                      .eq("id", goalData.vision_id)
+                      .single();
+                    if (visionData) state.selectVision(visionData as Vision);
                   }
-                  state.selectGoal(goalData);
+                  state.selectGoal(goalData as Goal);
                 }
               }
-              state.selectObjective(objectiveData);
+              state.selectObjective(objectiveData as Objective);
             }
           }
-          state.selectTask(data);
+          state.selectTask(data as Task);
           setEditingTaskId(data.id);
         }
       }
       // Clear navigation state WITHOUT triggering React Router scroll behavior
       // Using window.history.replaceState instead of navigate() to prevent scroll reset
-      window.history.replaceState({}, '', location.pathname);
+      window.history.replaceState({}, "", location.pathname);
       // NOTE: Do NOT reset processedNavStateRef.current here - keep it set to prevent re-triggering
       // The ref will be reset when the pathname changes (line 44-45)
     };
@@ -122,55 +210,141 @@ export default function Objectives() {
     selectItem();
   }, [location.state, user, location.pathname, state]);
 
-  const handleTitleClick = (type: ItemType, title: string, description: string, e: React.MouseEvent) => {
+  const handleTitleClick = (
+    type: ItemType,
+    title: string,
+    description: string,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     setActionModal({ type, title, description });
   };
 
   const handleCreateMindMap = () => {
-    const problemStatement = `${actionModal.title}\n\n${actionModal.description || 'No description provided.'}`;
-    navigate('/boards', { state: { viewMode: 'mindmap', problemStatement } });
-    setActionModal({ type: null, title: '', description: '' });
+    const problemStatement = `${actionModal.title}\n\n${actionModal.description || "No description provided."}`;
+    navigate("/boards", { state: { viewMode: "mindmap", problemStatement } });
+    setActionModal({ type: null, title: "", description: "" });
   };
 
   const handleCreateIdea = () => {
-    const initialInput = `${actionModal.title}${actionModal.description ? `\n\n${actionModal.description}` : ''}`;
-    navigate('/ideate', { state: { initialInput } });
-    setActionModal({ type: null, title: '', description: '' });
+    const initialInput = `${actionModal.title}${actionModal.description ? `\n\n${actionModal.description}` : ""}`;
+    navigate("/ideate", { state: { initialInput } });
+    setActionModal({ type: null, title: "", description: "" });
   };
 
-  const handleCreateVision = async (title: string, description: string, targetDate: string) => {
+  const handleCreateVision = async (
+    title: string,
+    description: string,
+    targetDate: string,
+  ) => {
     const newVision = await state.createVision(title, description, targetDate);
-    if (newVision) { setShowVisionForm(false); state.selectVision(newVision); }
+    if (newVision) {
+      setShowVisionForm(false);
+      state.selectVision(newVision);
+    }
   };
 
-  const handleCreateGoal = async (title: string, description: string, targetDate: string, visionId: string | null) => {
-    const newGoal = await state.createGoal(title, description, targetDate, visionId);
-    if (newGoal) { setShowGoalForm(false); state.selectGoal(newGoal); }
+  const handleCreateGoal = async (
+    title: string,
+    description: string,
+    targetDate: string,
+    visionId: string | null,
+  ) => {
+    const newGoal = await state.createGoal(
+      title,
+      description,
+      targetDate,
+      visionId,
+    );
+    if (newGoal) {
+      setShowGoalForm(false);
+      state.selectGoal(newGoal);
+    }
   };
 
-  const handleCreateObjective = async (title: string, description: string, priority: string, goalId: string | null, targetDate: string) => {
-    const newObjective = await state.createObjective(title, description, priority, goalId, targetDate);
-    if (newObjective) { setShowObjectiveForm(false); state.selectObjective(newObjective); }
+  const handleCreateObjective = async (
+    title: string,
+    description: string,
+    priority: string,
+    goalId: string | null,
+    targetDate: string,
+  ) => {
+    const newObjective = await state.createObjective(
+      title,
+      description,
+      priority,
+      goalId,
+      targetDate,
+    );
+    if (newObjective) {
+      setShowObjectiveForm(false);
+      state.selectObjective(newObjective);
+    }
   };
 
-  const handleCreateTask = async (title: string, description: string, priority: string, dueDate: string, objectiveId: string | null, isRecurring: boolean) => {
-    const newTask = await state.createTask(title, description, priority, dueDate, objectiveId, isRecurring);
+  const handleCreateTask = async (
+    title: string,
+    description: string,
+    priority: string,
+    dueDate: string,
+    objectiveId: string | null,
+    isRecurring: boolean,
+  ) => {
+    const newTask = await state.createTask(
+      title,
+      description,
+      priority,
+      dueDate,
+      objectiveId,
+      isRecurring,
+    );
     if (newTask) setShowTaskForm(false);
   };
 
-  const handleConvertVisionToGoal = async (vision: Vision) => { await state.convertVisionToGoal(vision, null); };
-  const handleConvertGoalToVision = async (goal: Goal) => { await state.convertGoalToVision(goal); };
-  const handleConvertGoalToObjective = async (goal: Goal) => { await state.convertGoalToObjective(goal, null); };
-  const handleConvertObjectiveToGoal = async (objective: Objective) => { await state.convertObjectiveToGoal(objective, null); };
-  const handleConvertObjectiveToTask = async (objective: Objective) => { await state.convertObjectiveToTask(objective, null); };
-  const handleConvertTaskToObjective = async (task: Task) => { await state.convertTaskToObjective(task, null); };
+  const handleConvertVisionToGoal = async (vision: Vision) => {
+    await state.convertVisionToGoal(vision, null);
+  };
+  const handleConvertGoalToVision = async (goal: Goal) => {
+    await state.convertGoalToVision(goal);
+  };
+  const handleConvertGoalToObjective = async (goal: Goal) => {
+    await state.convertGoalToObjective(goal, null);
+  };
+  const handleConvertObjectiveToGoal = async (objective: Objective) => {
+    await state.convertObjectiveToGoal(objective, null);
+  };
+  const handleConvertObjectiveToTask = async (objective: Objective) => {
+    await state.convertObjectiveToTask(objective, null);
+  };
+  const handleConvertTaskToObjective = async (task: Task) => {
+    await state.convertTaskToObjective(task, null);
+  };
 
   const tabs = [
-    { id: 'vision' as const, label: t('objectives.vision'), icon: Eye, count: state.visions.length },
-    { id: 'goals' as const, label: t('nav.goals'), icon: Target, count: state.goals.length },
-    { id: 'objectives' as const, label: t('objectives.objective'), icon: Flag, count: state.objectives.length },
-    { id: 'tasks' as const, label: t('objectives.tasks'), icon: ListTodo, count: state.tasks.length },
+    {
+      id: "vision" as const,
+      label: t("objectives.vision"),
+      icon: Eye,
+      count: state.visions.length,
+    },
+    {
+      id: "goals" as const,
+      label: t("nav.goals"),
+      icon: Target,
+      count: state.goals.length,
+    },
+    {
+      id: "objectives" as const,
+      label: t("objectives.objective"),
+      icon: Flag,
+      count: state.objectives.length,
+    },
+    {
+      id: "tasks" as const,
+      label: t("objectives.tasks"),
+      icon: ListTodo,
+      count: state.tasks.length,
+    },
   ];
 
   if (state.loading) {
@@ -183,8 +357,8 @@ export default function Objectives() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      <Header title={t('nav.goals')} />
-      
+      <Header title={t("nav.goals")} />
+
       <div className="flex-1 flex flex-col gap-4 p-4 max-w-7xl mx-auto w-full pb-24">
         <div className="lg:hidden flex gap-1 p-1 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto shrink-0">
           {tabs.map((tab) => (
@@ -193,15 +367,19 @@ export default function Objectives() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
               <tab.icon className="w-4 h-4" />
               <span>{tab.label}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                activeTab === tab.id ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-800'
-              }`}>
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === tab.id
+                    ? "bg-white/20"
+                    : "bg-gray-100 dark:bg-gray-800"
+                }`}
+              >
                 {tab.count}
               </span>
             </button>
@@ -209,7 +387,9 @@ export default function Objectives() {
         </div>
 
         <div className="flex-1 flex gap-4 overflow-x-auto lg:overflow-x-hidden w-full min-w-0">
-          <div className={`${activeTab === 'vision' ? 'flex' : 'hidden'} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}>
+          <div
+            className={`${activeTab === "vision" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
+          >
             <VisionColumn
               visions={state.visions}
               selectedVisionId={state.selectionPath.visionId}
@@ -231,7 +411,9 @@ export default function Objectives() {
             />
           </div>
 
-          <div className={`${activeTab === 'goals' ? 'flex' : 'hidden'} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}>
+          <div
+            className={`${activeTab === "goals" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
+          >
             <GoalColumn
               goals={state.goals}
               objectives={state.objectives}
@@ -251,15 +433,28 @@ export default function Objectives() {
               getGoalDescendantCounts={state.getGoalDescendantCounts}
               onConvertToVision={handleConvertGoalToVision}
               onConvertToObjective={handleConvertGoalToObjective}
-              onCreateObjectiveForGoal={async (goalId, title, description, priority) => {
-                await state.createObjective(title, description, priority, goalId, '');
+              onCreateObjectiveForGoal={async (
+                goalId,
+                title,
+                description,
+                priority,
+              ) => {
+                await state.createObjective(
+                  title,
+                  description,
+                  priority,
+                  goalId,
+                  "",
+                );
                 await state.reloadObjectives();
               }}
               selectedVision={state.selectedVision}
             />
           </div>
 
-          <div className={`${activeTab === 'objectives' ? 'flex' : 'hidden'} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}>
+          <div
+            className={`${activeTab === "objectives" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
+          >
             <ObjectiveColumn
               objectives={state.objectives}
               goals={state.goals}
@@ -278,8 +473,20 @@ export default function Objectives() {
               getObjectiveDescendantCounts={state.getObjectiveDescendantCounts}
               onConvertToGoal={handleConvertObjectiveToGoal}
               onConvertToTask={handleConvertObjectiveToTask}
-              onCreateTaskForObjective={async (objectiveId, title, description, priority) => {
-                await state.createTask(title, description, priority, '', objectiveId, false);
+              onCreateTaskForObjective={async (
+                objectiveId,
+                title,
+                description,
+                priority,
+              ) => {
+                await state.createTask(
+                  title,
+                  description,
+                  priority,
+                  "",
+                  objectiveId,
+                  false,
+                );
                 await state.reloadTasks();
               }}
               selectedGoal={state.selectedGoal}
@@ -287,7 +494,9 @@ export default function Objectives() {
             />
           </div>
 
-          <div className={`${activeTab === 'tasks' ? 'flex' : 'hidden'} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}>
+          <div
+            className={`${activeTab === "tasks" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
+          >
             <TaskColumn
               tasks={state.tasks}
               objectives={state.objectives}
@@ -302,7 +511,9 @@ export default function Objectives() {
               onUpdateTask={state.updateTask}
               onDeleteTask={state.deleteTask}
               onToggleTaskStatus={state.toggleTaskStatus}
-              onMarkRecurringCompletedToday={state.markRecurringTaskCompletedToday}
+              onMarkRecurringCompletedToday={
+                state.markRecurringTaskCompletedToday
+              }
               onTitleClick={handleTitleClick}
               onConvertToObjective={handleConvertTaskToObjective}
               selectedObjective={state.selectedObjective}
@@ -311,14 +522,52 @@ export default function Objectives() {
         </div>
       </div>
 
-      {showVisionForm && <VisionForm onClose={() => setShowVisionForm(false)} onCreate={handleCreateVision} />}
-      {showGoalForm && <GoalForm onClose={() => setShowGoalForm(false)} onCreate={handleCreateGoal} visions={state.visions} selectedVision={state.selectedVision} />}
-      {showObjectiveForm && <ObjectiveForm onClose={() => setShowObjectiveForm(false)} onCreate={handleCreateObjective} goals={state.goals} selectedGoal={state.selectedGoal} />}
-      {showTaskForm && <TaskForm onClose={() => setShowTaskForm(false)} onCreate={handleCreateTask} objectives={state.objectives} selectedObjective={state.selectedObjective} />}
+      {showVisionForm && (
+        <VisionForm
+          onClose={() => setShowVisionForm(false)}
+          onCreate={handleCreateVision}
+        />
+      )}
+      {showGoalForm && (
+        <GoalForm
+          onClose={() => setShowGoalForm(false)}
+          onCreate={handleCreateGoal}
+          visions={state.visions}
+          selectedVision={state.selectedVision}
+        />
+      )}
+      {showObjectiveForm && (
+        <ObjectiveForm
+          onClose={() => setShowObjectiveForm(false)}
+          onCreate={handleCreateObjective}
+          goals={state.goals}
+          selectedGoal={state.selectedGoal}
+        />
+      )}
+      {showTaskForm && (
+        <TaskForm
+          onClose={() => setShowTaskForm(false)}
+          onCreate={handleCreateTask}
+          objectives={state.objectives}
+          selectedObjective={state.selectedObjective}
+        />
+      )}
 
-      <Modal isOpen={!!actionModal.type} onClose={() => setActionModal({ type: null, title: '', description: '' })} title={t('objectives.createFrom').replace('{{title}}', actionModal.title)}>
+      <Modal
+        isOpen={!!actionModal.type}
+        onClose={() =>
+          setActionModal({ type: null, title: "", description: "" })
+        }
+        title={t("objectives.createFrom").replace(
+          "{{title}}",
+          actionModal.title,
+        )}
+      >
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          {t('objectives.chooseHowToExplore').replace('{{type}}', actionModal.type || '')}
+          {t("objectives.chooseHowToExplore").replace(
+            "{{type}}",
+            actionModal.type || "",
+          )}
         </p>
         <div className="space-y-3">
           <button
@@ -329,8 +578,12 @@ export default function Objectives() {
               <Network className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex-1 text-left">
-              <div className="font-semibold text-gray-900 dark:text-gray-100">{t('objectives.createMindMap')}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{t('objectives.createMindMapDescription')}</div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100">
+                {t("objectives.createMindMap")}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {t("objectives.createMindMapDescription")}
+              </div>
             </div>
           </button>
           <button
@@ -341,8 +594,12 @@ export default function Objectives() {
               <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="flex-1 text-left">
-              <div className="font-semibold text-gray-900 dark:text-gray-100">{t('objectives.createIdea')}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{t('objectives.createIdeaDescription')}</div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100">
+                {t("objectives.createIdea")}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {t("objectives.createIdeaDescription")}
+              </div>
             </div>
           </button>
         </div>

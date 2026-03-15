@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { supabase } from '../../../lib/supabase';
-import { Objective, Goal, Task } from '../types';
-import { ObjectiveCard } from '../cards';
+import { useState, useEffect, useRef } from "react";
+import { Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { supabase } from "../../../lib/supabase";
+import { Objective, Goal, Task } from "../types";
+import { ObjectiveCard } from "../cards";
 
 interface ObjectiveColumnProps {
   objectives: Objective[];
@@ -11,19 +11,44 @@ interface ObjectiveColumnProps {
   selectedGoalId: string | null;
   selectedObjectiveId: string | null;
   hasAnySelection: boolean; // True if any item at any level is selected
-  isInSelectedFamily: (type: 'vision' | 'goal' | 'objective' | 'task', id: string) => boolean;
+  isInSelectedFamily: (
+    type: "vision" | "goal" | "objective" | "task",
+    id: string,
+  ) => boolean;
   editingObjectiveId: string | null;
   setEditingObjectiveId: (id: string | null) => void;
   onSelectObjective: (objective: Objective | null) => void;
   onCreateObjective: () => void;
-  onUpdateObjective: (id: string, updates: Partial<Objective>) => Promise<boolean>;
-  onDeleteObjective: (id: string, orphanDescendants?: boolean) => Promise<boolean>;
+  onUpdateObjective: (
+    id: string,
+    updates: Partial<Objective>,
+  ) => Promise<boolean>;
+  onDeleteObjective: (
+    id: string,
+    orphanDescendants?: boolean,
+  ) => Promise<boolean>;
   onToggleObjectiveStatus: (objective: Objective) => Promise<void>;
-  onTitleClick: (type: 'vision' | 'goal' | 'objective' | 'task', title: string, description: string, e: React.MouseEvent) => void;
+  onTitleClick: (
+    type: "vision" | "goal" | "objective" | "task",
+    title: string,
+    description: string,
+    e: React.MouseEvent,
+  ) => void;
   getObjectiveDescendantCounts: (id: string) => Promise<{ tasks: number }>;
-  onConvertToGoal?: (objective: Objective, targetVisionId: string | null) => Promise<void>;
-  onConvertToTask?: (objective: Objective, targetObjectiveId: string | null) => Promise<void>;
-  onCreateTaskForObjective?: (objectiveId: string, title: string, description: string, priority: string) => Promise<void>;
+  onConvertToGoal?: (
+    objective: Objective,
+    targetVisionId: string | null,
+  ) => Promise<void>;
+  onConvertToTask?: (
+    objective: Objective,
+    targetObjectiveId: string | null,
+  ) => Promise<void>;
+  onCreateTaskForObjective?: (
+    objectiveId: string,
+    title: string,
+    description: string,
+    priority: string,
+  ) => Promise<void>;
   selectedGoal: Goal | null;
   taskCounts: Record<string, { total: number; completed: number }>;
 }
@@ -52,32 +77,38 @@ export function ObjectiveColumn({
 }: ObjectiveColumnProps) {
   const { t } = useLanguage();
   const [showOrphaned, setShowOrphaned] = useState(true);
-  const [expandedObjectives, setExpandedObjectives] = useState<Set<string>>(new Set());
-  const [objectiveTasks, setObjectiveTasks] = useState<Record<string, Task[]>>({});
+  const [expandedObjectives, setExpandedObjectives] = useState<Set<string>>(
+    new Set(),
+  );
+  const [objectiveTasks, setObjectiveTasks] = useState<Record<string, Task[]>>(
+    {},
+  );
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Split objectives into goal-attached and orphaned
   // When filtering by family, we need to show all objectives (not pre-filtered by selectedGoalId)
   // because isInSelectedFamily will correctly identify family members
-  const allGoalObjectives = objectives.filter(o => o.goal_id !== null);
-  const orphanedObjectives = objectives.filter(o => o.goal_id === null);
+  const allGoalObjectives = objectives.filter((o) => o.goal_id !== null);
+  const orphanedObjectives = objectives.filter((o) => o.goal_id === null);
 
   // Filter: if something is selected, only show family members; otherwise show all
   // When a vision/goal/objective/task is selected, show only objectives in that family
   const visibleGoalObjectives = hasAnySelection
-    ? allGoalObjectives.filter(o => isInSelectedFamily('objective', o.id))
+    ? allGoalObjectives.filter((o) => isInSelectedFamily("objective", o.id))
     : allGoalObjectives;
   const visibleOrphanedObjectives = hasAnySelection
-    ? orphanedObjectives.filter(o => isInSelectedFamily('objective', o.id))
+    ? orphanedObjectives.filter((o) => isInSelectedFamily("objective", o.id))
     : orphanedObjectives;
 
   // For display purposes, if a goal is selected, show only objectives attached to that goal
   // Otherwise, show all goal-attached objectives
   const displayGoalObjectives = selectedGoalId
-    ? visibleGoalObjectives.filter(o => o.goal_id === selectedGoalId)
+    ? visibleGoalObjectives.filter((o) => o.goal_id === selectedGoalId)
     : visibleGoalObjectives;
 
-  const totalCount = displayGoalObjectives.length + (showOrphaned ? visibleOrphanedObjectives.length : 0);
+  const totalCount =
+    displayGoalObjectives.length +
+    (showOrphaned ? visibleOrphanedObjectives.length : 0);
 
   const handleDelete = async (id: string) => {
     // Check for descendants
@@ -86,21 +117,21 @@ export function ObjectiveColumn({
 
     if (!hasDescendants) {
       // No descendants, simple confirmation
-      if (confirm(t('objectives.deleteObjectiveConfirm'))) {
+      if (confirm(t("objectives.deleteObjectiveConfirm"))) {
         await onDeleteObjective(id);
       }
       return;
     }
 
     // Has descendants - show detailed confirmation
-    const message = t('objectives.deleteWithDescendantsMessage')
-      .replace('{{type}}', t('objectives.objective'))
-      .replace('{{goals}}', '0')
-      .replace('{{goalsPlural}}', '')
-      .replace('{{objectives}}', '0')
-      .replace('{{objectivesPlural}}', '')
-      .replace('{{tasks}}', counts.tasks.toString())
-      .replace('{{tasksPlural}}', counts.tasks !== 1 ? 's' : '');
+    const message = t("objectives.deleteWithDescendantsMessage")
+      .replace("{{type}}", t("objectives.objective"))
+      .replace("{{goals}}", "0")
+      .replace("{{goalsPlural}}", "")
+      .replace("{{objectives}}", "0")
+      .replace("{{objectivesPlural}}", "")
+      .replace("{{tasks}}", counts.tasks.toString())
+      .replace("{{tasksPlural}}", counts.tasks !== 1 ? "s" : "");
 
     const deleteAll = confirm(message);
     await onDeleteObjective(id, !deleteAll); // If deleteAll is false, orphan descendants
@@ -116,15 +147,15 @@ export function ObjectiveColumn({
       // Load tasks for this objective if not already loaded
       if (!objectiveTasks[objectiveId]) {
         const { data } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('objective_id', objectiveId)
-          .order('created_at', { ascending: false });
+          .from("tasks")
+          .select("*")
+          .eq("objective_id", objectiveId)
+          .order("created_at", { ascending: false });
 
         if (data) {
-          setObjectiveTasks(prev => ({
+          setObjectiveTasks((prev) => ({
             ...prev,
-            [objectiveId]: data
+            [objectiveId]: data as Task[],
           }));
         }
       }
@@ -142,44 +173,49 @@ export function ObjectiveColumn({
   // Scroll to editing card when editingObjectiveId changes - robust scroll mechanism
   useEffect(() => {
     if (!editingObjectiveId) return;
-    
+
     let isCancelled = false;
     const timeoutIds: NodeJS.Timeout[] = [];
-    
+
     const scrollToEditingCard = () => {
       if (isCancelled) return;
       const cardElement = cardRefs.current[editingObjectiveId];
       if (cardElement) {
         requestAnimationFrame(() => {
           if (isCancelled) return;
-          cardRefs.current[editingObjectiveId]?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'center'
+          cardRefs.current[editingObjectiveId]?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "center",
           });
         });
       }
     };
-    
+
     // Multiple scroll attempts with increasing delays
     const delays = [100, 300, 600, 1000];
-    delays.forEach(delay => {
+    delays.forEach((delay) => {
       timeoutIds.push(setTimeout(scrollToEditingCard, delay));
     });
-    
+
     return () => {
       isCancelled = true;
-      timeoutIds.forEach(id => clearTimeout(id));
+      timeoutIds.forEach((id) => clearTimeout(id));
     };
   }, [editingObjectiveId]);
 
   const renderObjectiveCard = (objective: Objective) => (
-    <div key={objective.id} ref={(el) => { cardRefs.current[objective.id] = el; }}>
+    <div
+      key={objective.id}
+      ref={(el) => {
+        cardRefs.current[objective.id] = el;
+      }}
+    >
       <ObjectiveCard
         objective={objective}
         goals={goals}
         isSelected={selectedObjectiveId === objective.id}
-        isInFamily={isInSelectedFamily('objective', objective.id)}
+        isInFamily={isInSelectedFamily("objective", objective.id)}
         isEditing={editingObjectiveId === objective.id}
         onSelect={() => onSelectObjective(objective)}
         onStartEdit={() => setEditingObjectiveId(objective.id)}
@@ -190,16 +226,38 @@ export function ObjectiveColumn({
         }}
         onDelete={() => handleDelete(objective.id)}
         onToggleStatus={() => onToggleObjectiveStatus(objective)}
-        onTitleClick={(e) => onTitleClick('objective', objective.title, objective.description, e)}
-        onConvertToGoal={onConvertToGoal ? (targetVisionId) => onConvertToGoal(objective, targetVisionId) : undefined}
-        onConvertToTask={onConvertToTask ? (targetObjectiveId) => onConvertToTask(objective, targetObjectiveId) : undefined}
+        onTitleClick={(e) =>
+          onTitleClick(
+            "objective",
+            objective.title,
+            objective.description || "",
+            e,
+          )
+        }
+        onConvertToGoal={
+          onConvertToGoal
+            ? (targetVisionId) => onConvertToGoal(objective, targetVisionId)
+            : undefined
+        }
+        onConvertToTask={
+          onConvertToTask
+            ? (targetObjectiveId) =>
+                onConvertToTask(objective, targetObjectiveId)
+            : undefined
+        }
         taskCount={taskCounts[objective.id]}
         isExpanded={expandedObjectives.has(objective.id)}
         onToggleExpand={() => toggleObjectiveExpanded(objective.id)}
         tasks={objectiveTasks[objective.id] || []}
         onCreateTask={
           onCreateTaskForObjective
-            ? (title, description, priority) => onCreateTaskForObjective(objective.id, title, description, priority)
+            ? (title, description, priority) =>
+                onCreateTaskForObjective(
+                  objective.id,
+                  title,
+                  description,
+                  priority,
+                )
             : undefined
         }
       />
@@ -211,10 +269,16 @@ export function ObjectiveColumn({
       <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm relative overflow-visible z-10">
         <div className="flex items-center justify-between mb-3">
           <div className="group relative z-20">
-            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">{t('objectives.objective')}</h2>
+            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">
+              {t("objectives.objective")}
+            </h2>
             <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] pointer-events-none whitespace-normal">
-              <div className="font-semibold mb-1 text-green-400">{t('objectives.bestUse')}</div>
-              <p className="leading-relaxed">{t('objectives.objectiveBestUse')}</p>
+              <div className="font-semibold mb-1 text-green-400">
+                {t("objectives.bestUse")}
+              </div>
+              <p className="leading-relaxed">
+                {t("objectives.objectiveBestUse")}
+              </p>
               <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
             </div>
           </div>
@@ -227,7 +291,7 @@ export function ObjectiveColumn({
           className="btn-primary w-full shadow-lg shadow-green-500/20 bg-green-600 hover:bg-green-700 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 flex-shrink-0" />
-          <span>{t('objectives.addObjective')}</span>
+          <span>{t("objectives.addObjective")}</span>
         </button>
       </div>
 
@@ -239,8 +303,13 @@ export function ObjectiveColumn({
               onClick={() => setShowOrphaned(!showOrphaned)}
               className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-2 px-1 hover:text-text-secondary transition-colors"
             >
-              {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              {t('objectives.orphanedObjectives')} ({visibleOrphanedObjectives.length})
+              {showOrphaned ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+              {t("objectives.orphanedObjectives")} (
+              {visibleOrphanedObjectives.length})
             </button>
             {showOrphaned && (
               <div className="space-y-2">
@@ -261,7 +330,7 @@ export function ObjectiveColumn({
                 displayGoalObjectives.map(renderObjectiveCard)
               ) : (
                 <div className="text-xs text-text-tertiary text-center py-4 bg-white/30 dark:bg-white/5 rounded-lg border border-dashed border-border-secondary">
-                  {t('objectives.noObjectivesYet')}
+                  {t("objectives.noObjectivesYet")}
                 </div>
               )}
             </div>
@@ -281,4 +350,3 @@ export function ObjectiveColumn({
     </div>
   );
 }
-

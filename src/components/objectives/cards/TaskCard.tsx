@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Edit2,
   Trash2,
@@ -13,11 +13,11 @@ import {
   RefreshCw,
   ExternalLink,
   Plus,
-} from 'lucide-react';
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { Task, Objective } from '../types';
-import { formatLastEdited, getPriorityColor } from '../utils';
-import { formatShortDate } from '../../../utils/trackingStats';
+} from "lucide-react";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { Task, Objective } from "../types";
+import { formatLastEdited, getPriorityColor } from "../utils";
+import { formatShortDate } from "../../../utils/trackingStats";
 
 interface TaskCardProps {
   task: Task;
@@ -58,27 +58,31 @@ export function TaskCard({
 }: TaskCardProps) {
   const { t } = useLanguage();
   const [editTitle, setEditTitle] = useState(task.title);
-  const [editDescription, setEditDescription] = useState(task.description);
-  const [editStatus, setEditStatus] = useState(task.status);
-  const [editPriority, setEditPriority] = useState(task.priority);
-  const [editDueDate, setEditDueDate] = useState(task.due_date || '');
-  const [editObjectiveId, setEditObjectiveId] = useState<string | null>(task.objective_id);
+  const [editDescription, setEditDescription] = useState(
+    task.description || "",
+  );
+  const [editStatus, setEditStatus] = useState(task.status || "not_started");
+  const [editPriority, setEditPriority] = useState(task.priority || "medium");
+  const [editDueDate, setEditDueDate] = useState(task.due_date || "");
+  const [editObjectiveId, setEditObjectiveId] = useState<string | null>(
+    task.objective_id,
+  );
   const [showConvertMenu, setShowConvertMenu] = useState(false);
   const [editIsRecurring, setEditIsRecurring] = useState(task.is_recurring);
   const [isLinksExpanded, setIsLinksExpanded] = useState(false);
-  const [localDocumentLinks, setLocalDocumentLinks] = useState<Array<{ url: string; label: string }>>(
-    task.document_links || []
-  );
-  const [newLinkUrl, setNewLinkUrl] = useState('');
-  const [newLinkLabel, setNewLinkLabel] = useState('');
+  const [localDocumentLinks, setLocalDocumentLinks] = useState<
+    Array<{ url: string; label: string }>
+  >(task.document_links || []);
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [newLinkLabel, setNewLinkLabel] = useState("");
 
   useEffect(() => {
     if (isEditing) {
       setEditTitle(task.title);
-      setEditDescription(task.description);
-      setEditStatus(task.status);
-      setEditPriority(task.priority);
-      setEditDueDate(task.due_date || '');
+      setEditDescription(task.description || "");
+      setEditStatus(task.status || "not_started");
+      setEditPriority(task.priority || "medium");
+      setEditDueDate(task.due_date || "");
       setEditObjectiveId(task.objective_id);
       setEditIsRecurring(task.is_recurring);
     }
@@ -94,7 +98,7 @@ export function TaskCard({
       description: editDescription,
       status: editStatus,
       priority: editPriority,
-      due_date: editIsRecurring ? null : (editDueDate || null),
+      due_date: editIsRecurring ? null : editDueDate || null,
       objective_id: editObjectiveId,
       is_recurring: editIsRecurring,
     });
@@ -111,8 +115,8 @@ export function TaskCard({
         label: newLinkLabel.trim() || newLinkUrl.trim(),
       };
       setLocalDocumentLinks([...localDocumentLinks, newLink]);
-      setNewLinkUrl('');
-      setNewLinkLabel('');
+      setNewLinkUrl("");
+      setNewLinkLabel("");
     }
   };
 
@@ -122,8 +126,11 @@ export function TaskCard({
 
   const handleDragStart = (e: React.DragEvent) => {
     e.stopPropagation();
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('application/json', JSON.stringify({ type: 'task', item: task }));
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ type: "task", item: task }),
+    );
     onDragStart?.(e);
   };
 
@@ -131,11 +138,12 @@ export function TaskCard({
 
   const cardClasses = `
     p-4 rounded-xl border transition-all duration-200 group cursor-move
-    ${isSelected
-      ? 'bg-purple-50 border-purple-200 shadow-sm dark:bg-purple-900/20 dark:border-purple-700'
-      : isInFamily
-      ? 'bg-purple-50/50 border-purple-200/50 shadow-sm dark:bg-purple-900/10 dark:border-purple-700/50'
-      : 'glass-card hover:bg-white/80 dark:hover:bg-white/10 hover:border-purple-100 dark:hover:border-purple-900/50 hover:shadow-sm'
+    ${
+      isSelected
+        ? "bg-purple-50 border-purple-200 shadow-sm dark:bg-purple-900/20 dark:border-purple-700"
+        : isInFamily
+          ? "bg-purple-50/50 border-purple-200/50 shadow-sm dark:bg-purple-900/10 dark:border-purple-700/50"
+          : "glass-card hover:bg-white/80 dark:hover:bg-white/10 hover:border-purple-100 dark:hover:border-purple-900/50 hover:shadow-sm"
     }
   `.trim();
 
@@ -163,21 +171,21 @@ export function TaskCard({
             placeholder="Description"
           />
           <select
-            value={editObjectiveId || ''}
+            value={editObjectiveId || ""}
             onChange={(e) => setEditObjectiveId(e.target.value || null)}
             className="input-modern py-1.5 px-2 text-sm"
           >
             <option value="">No Objective (Orphaned)</option>
             {objectives.map((obj) => (
               <option key={obj.id} value={obj.id}>
-                {obj.title} {!obj.goal_id ? '(Orphan)' : ''}
+                {obj.title} {!obj.goal_id ? "(Orphan)" : ""}
               </option>
             ))}
           </select>
           <div className="flex gap-2">
             <select
               value={editStatus}
-              onChange={(e) => setEditStatus(e.target.value as Task['status'])}
+              onChange={(e) => setEditStatus(e.target.value)}
               className="flex-1 input-modern py-1.5 px-2 text-sm"
             >
               <option value="not_started">Not Started</option>
@@ -187,7 +195,7 @@ export function TaskCard({
             </select>
             <select
               value={editPriority}
-              onChange={(e) => setEditPriority(e.target.value as Task['priority'])}
+              onChange={(e) => setEditPriority(e.target.value)}
               className="flex-1 input-modern py-1.5 px-2 text-sm"
             >
               <option value="low">Low</option>
@@ -212,7 +220,10 @@ export function TaskCard({
               onChange={(e) => setEditIsRecurring(e.target.checked)}
               className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
             />
-            <label htmlFor={`recurring-${task.id}`} className="text-sm font-medium text-text-secondary cursor-pointer">
+            <label
+              htmlFor={`recurring-${task.id}`}
+              className="text-sm font-medium text-text-secondary cursor-pointer"
+            >
               Recurring task
             </label>
           </div>
@@ -251,7 +262,7 @@ export function TaskCard({
               }}
               className="mt-0.5 flex-shrink-0 transition-transform active:scale-90"
             >
-              {task.status === 'completed' ? (
+              {task.status === "completed" ? (
                 <CheckCircle2 className="w-6 h-6 text-green-600" />
               ) : (
                 <Circle className="w-6 h-6 text-text-tertiary hover:text-green-600 transition-colors" />
@@ -262,7 +273,9 @@ export function TaskCard({
                 <div className="flex items-center gap-2 flex-1">
                   <h3
                     className={`font-semibold text-sm leading-snug ${
-                      task.status === 'completed' ? 'text-text-tertiary line-through' : 'text-text-primary'
+                      task.status === "completed"
+                        ? "text-text-tertiary line-through"
+                        : "text-text-primary"
                     } hover:text-accent-primary transition-colors cursor-pointer`}
                     onClick={onTitleClick}
                   >
@@ -281,7 +294,7 @@ export function TaskCard({
                       setShowConvertMenu(!showConvertMenu);
                     }}
                     className="text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
-                    title={t('objectives.convert')}
+                    title={t("objectives.convert")}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
@@ -316,7 +329,7 @@ export function TaskCard({
                         }}
                         className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
                       >
-                        {t('objectives.convertToObjective')}
+                        {t("objectives.convertToObjective")}
                       </button>
                     </div>
                   )}
@@ -340,11 +353,13 @@ export function TaskCard({
                     }}
                     className={`text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
                       isRecurringCompletedToday
-                        ? 'bg-green-100 text-green-700 border-green-300'
-                        : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:border-green-300'
+                        ? "bg-green-100 text-green-700 border-green-300"
+                        : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:border-green-300"
                     }`}
                   >
-                    {isRecurringCompletedToday ? '✓ Completed Today' : 'Mark Completed Today'}
+                    {isRecurringCompletedToday
+                      ? "✓ Completed Today"
+                      : "Mark Completed Today"}
                   </button>
                 </div>
               )}
@@ -360,12 +375,14 @@ export function TaskCard({
               <div className="flex items-center justify-between">
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${getPriorityColor(
-                    task.priority
+                    task.priority || "medium",
                   )}`}
                 >
-                  {task.priority}
+                  {task.priority || "medium"}
                 </span>
-                <span className="text-[10px] text-text-tertiary">{formatLastEdited(task.last_edited_at)}</span>
+                <span className="text-[10px] text-text-tertiary">
+                  {formatLastEdited(task.last_edited_at)}
+                </span>
               </div>
 
               {/* Document Links (always accessible) */}
@@ -378,8 +395,14 @@ export function TaskCard({
                   className="w-full flex items-center justify-between text-xs hover:bg-white/50 dark:hover:bg-white/5 -mx-1 px-2 py-1 rounded transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    {isLinksExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    <span className="text-text-secondary font-medium">{t('objectives.documentLinks')}</span>
+                    {isLinksExpanded ? (
+                      <ChevronDown className="w-3 h-3" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3" />
+                    )}
+                    <span className="text-text-secondary font-medium">
+                      {t("objectives.documentLinks")}
+                    </span>
                   </div>
                   <span className="text-text-tertiary">
                     {localDocumentLinks.length}
@@ -387,14 +410,17 @@ export function TaskCard({
                 </button>
 
                 {isLinksExpanded && (
-                  <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="mt-2 space-y-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {/* Add Link Form */}
                     <div className="space-y-1.5">
                       <input
                         type="url"
                         value={newLinkUrl}
                         onChange={(e) => setNewLinkUrl(e.target.value)}
-                        placeholder={t('objectives.linkUrlPlaceholder')}
+                        placeholder={t("objectives.linkUrlPlaceholder")}
                         className="w-full px-2 py-1.5 bg-white/50 dark:bg-white/5 border border-border-secondary rounded text-xs focus:ring-1 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
                       />
                       <div className="flex gap-1.5">
@@ -402,7 +428,7 @@ export function TaskCard({
                           type="text"
                           value={newLinkLabel}
                           onChange={(e) => setNewLinkLabel(e.target.value)}
-                          placeholder={t('objectives.linkLabelPlaceholder')}
+                          placeholder={t("objectives.linkLabelPlaceholder")}
                           className="flex-1 min-w-0 px-2 py-1.5 bg-white/50 dark:bg-white/5 border border-border-secondary rounded text-xs focus:ring-1 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
                         />
                         <button
@@ -446,13 +472,14 @@ export function TaskCard({
                     )}
 
                     {/* Save Button */}
-                    {JSON.stringify(localDocumentLinks) !== JSON.stringify(task.document_links || []) && (
+                    {JSON.stringify(localDocumentLinks) !==
+                      JSON.stringify(task.document_links || []) && (
                       <button
                         onClick={handleSaveLinks}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700 transition-colors"
                       >
                         <Save className="w-3 h-3" />
-                        {t('objectives.saveChanges')}
+                        {t("objectives.saveChanges")}
                       </button>
                     )}
                   </div>
@@ -472,4 +499,3 @@ export function TaskCard({
     </div>
   );
 }
-

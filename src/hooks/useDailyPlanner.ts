@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { Task, Goal, Objective } from '../components/objectives/types';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
+import { Task, Goal, Objective } from "../components/objectives/types";
 
-export type TimeSlot = 'morning' | 'afternoon' | 'evening' | 'night';
+export type TimeSlot = "morning" | "afternoon" | "evening" | "night";
 
 export interface PlannedTask {
   id: string;
@@ -31,29 +31,38 @@ export interface DailyPlannerState {
   // Current date being viewed
   selectedDate: string;
   setSelectedDate: (date: string) => void;
-  
+
   // Daily plan for selected date
   dailyPlan: DailyPlan | null;
   plannedTasks: PlannedTask[];
-  
+
   // All available tasks (pending/in-progress)
-  availableTasks: (Task & { objective?: Objective | null; goal?: Goal | null })[];
-  
+  availableTasks: (Task & {
+    objective?: Objective | null;
+    goal?: Goal | null;
+  })[];
+
   // Loading states
   loading: boolean;
-  
+
   // Actions
   addTaskToPlan: (taskId: string, timeSlot: TimeSlot) => Promise<boolean>;
   removeTaskFromPlan: (plannedTaskId: string) => Promise<boolean>;
-  moveTaskToSlot: (plannedTaskId: string, newTimeSlot: TimeSlot) => Promise<boolean>;
-  reorderTaskInSlot: (plannedTaskId: string, newOrderIndex: number) => Promise<boolean>;
+  moveTaskToSlot: (
+    plannedTaskId: string,
+    newTimeSlot: TimeSlot,
+  ) => Promise<boolean>;
+  reorderTaskInSlot: (
+    plannedTaskId: string,
+    newOrderIndex: number,
+  ) => Promise<boolean>;
   toggleTaskCompletion: (taskId: string) => Promise<boolean>;
   updatePlanNotes: (notes: string) => Promise<boolean>;
-  
+
   // Helpers
   getTasksBySlot: (slot: TimeSlot) => PlannedTask[];
   isTaskPlanned: (taskId: string) => boolean;
-  
+
   // Reload
   reload: () => Promise<void>;
 }
@@ -61,13 +70,15 @@ export interface DailyPlannerState {
 export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
   const getLocalDateString = () => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   };
 
   const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [dailyPlan, setDailyPlan] = useState<DailyPlan | null>(null);
   const [plannedTasks, setPlannedTasks] = useState<PlannedTask[]>([]);
-  const [availableTasks, setAvailableTasks] = useState<(Task & { objective?: Objective | null; goal?: Goal | null })[]>([]);
+  const [availableTasks, setAvailableTasks] = useState<
+    (Task & { objective?: Objective | null; goal?: Goal | null })[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   // Load all available tasks (not completed)
@@ -76,11 +87,13 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
 
     // Load tasks with their objectives and goals
     const { data: tasks } = await supabase
-      .from('tasks')
-      .select('id, title, status, priority, due_date, objective_id, is_recurring, description')
-      .eq('user_id', userId)
-      .in('status', ['not_started', 'in_progress'])
-      .order('created_at', { ascending: false });
+      .from("tasks")
+      .select(
+        "id, title, status, priority, due_date, objective_id, is_recurring, description",
+      )
+      .eq("user_id", userId)
+      .in("status", ["not_started", "in_progress"])
+      .order("created_at", { ascending: false });
 
     if (!tasks) {
       setAvailableTasks([]);
@@ -88,28 +101,48 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     }
 
     // Load objectives for context
-    const objectiveIds = [...new Set(tasks.filter(t => t.objective_id).map(t => t.objective_id))];
-    const { data: objectives } = objectiveIds.length > 0
-      ? await supabase.from('objectives').select('id, title, goal_id').in('id', objectiveIds)
-      : { data: [] };
+    const objectiveIds = [
+      ...new Set(
+        tasks.filter((t) => t.objective_id).map((t) => t.objective_id!),
+      ),
+    ];
+    const { data: objectives } =
+      objectiveIds.length > 0
+        ? await supabase
+            .from("objectives")
+            .select("id, title, goal_id")
+            .in("id", objectiveIds)
+        : { data: [] };
 
     // Load goals for context
-    const goalIds = [...new Set((objectives || []).filter(o => o.goal_id).map(o => o.goal_id))];
-    const { data: goals } = goalIds.length > 0
-      ? await supabase.from('goals').select('id, title').in('id', goalIds)
-      : { data: [] };
+    const goalIds = [
+      ...new Set(
+        (objectives || []).filter((o) => o.goal_id).map((o) => o.goal_id!),
+      ),
+    ];
+    const { data: goals } =
+      goalIds.length > 0
+        ? await supabase.from("goals").select("id, title").in("id", goalIds)
+        : { data: [] };
 
     // Map objectives and goals to tasks
-    const objectivesMap = new Map((objectives || []).map(o => [o.id, o]));
-    const goalsMap = new Map((goals || []).map(g => [g.id, g]));
+    const objectivesMap = new Map((objectives || []).map((o) => [o.id, o]));
+    const goalsMap = new Map((goals || []).map((g) => [g.id, g]));
 
-    const enrichedTasks = tasks.map(task => {
-      const objective = task.objective_id ? objectivesMap.get(task.objective_id) : null;
+    const enrichedTasks = tasks.map((task) => {
+      const objective = task.objective_id
+        ? objectivesMap.get(task.objective_id)
+        : null;
       const goal = objective?.goal_id ? goalsMap.get(objective.goal_id) : null;
       return { ...task, objective, goal };
     });
 
-    setAvailableTasks(enrichedTasks as (Task & { objective?: Objective | null; goal?: Goal | null })[]);
+    setAvailableTasks(
+      enrichedTasks as (Task & {
+        objective?: Objective | null;
+        goal?: Goal | null;
+      })[],
+    );
   }, [userId]);
 
   // Load daily plan for selected date
@@ -120,13 +153,15 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
 
     // Get or create daily plan for the date
     let { data: plan } = await supabase
-      .from('daily_plans')
-      .select('id, user_id, plan_date, notes, created_at, updated_at')
-      .eq('user_id', userId)
-      .eq('plan_date', selectedDate)
+      .from("daily_plans")
+      .select("id, user_id, plan_date, notes, created_at, updated_at")
+      .eq("user_id", userId)
+      .eq("plan_date", selectedDate)
       .single();
 
-    setDailyPlan(plan);
+    setDailyPlan(
+      plan ? ({ ...plan, notes: plan.notes || "" } as DailyPlan) : null,
+    );
 
     if (!plan) {
       setPlannedTasks([]);
@@ -136,10 +171,10 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
 
     // Load planned tasks with joined task data
     const { data: planTasks } = await supabase
-      .from('daily_plan_tasks')
-      .select('id, daily_plan_id, task_id, time_slot, order_index, created_at')
-      .eq('daily_plan_id', plan.id)
-      .order('order_index', { ascending: true });
+      .from("daily_plan_tasks")
+      .select("id, daily_plan_id, task_id, time_slot, order_index, created_at")
+      .eq("daily_plan_id", plan.id)
+      .order("order_index", { ascending: true });
 
     if (!planTasks || planTasks.length === 0) {
       setPlannedTasks([]);
@@ -148,40 +183,61 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     }
 
     // Load the actual task data
-    const taskIds = planTasks.map(pt => pt.task_id);
+    const taskIds = planTasks.map((pt) => pt.task_id);
     const { data: tasks } = await supabase
-      .from('tasks')
-      .select('id, title, status, priority, due_date, objective_id, is_recurring, description')
-      .in('id', taskIds);
+      .from("tasks")
+      .select(
+        "id, title, status, priority, due_date, objective_id, is_recurring, description",
+      )
+      .in("id", taskIds);
 
     // Load objectives for context
-    const objectiveIds = [...new Set((tasks || []).filter(t => t.objective_id).map(t => t.objective_id))];
-    const { data: objectives } = objectiveIds.length > 0
-      ? await supabase.from('objectives').select('id, title, goal_id').in('id', objectiveIds)
-      : { data: [] };
+    const objectiveIds = [
+      ...new Set(
+        (tasks || []).filter((t) => t.objective_id).map((t) => t.objective_id!),
+      ),
+    ];
+    const { data: objectives } =
+      objectiveIds.length > 0
+        ? await supabase
+            .from("objectives")
+            .select("id, title, goal_id")
+            .in("id", objectiveIds)
+        : { data: [] };
 
     // Load goals for context
-    const goalIds = [...new Set((objectives || []).filter(o => o.goal_id).map(o => o.goal_id))];
-    const { data: goals } = goalIds.length > 0
-      ? await supabase.from('goals').select('id, title').in('id', goalIds)
-      : { data: [] };
+    const goalIds = [
+      ...new Set(
+        (objectives || []).filter((o) => o.goal_id).map((o) => o.goal_id!),
+      ),
+    ];
+    const { data: goals } =
+      goalIds.length > 0
+        ? await supabase.from("goals").select("id, title").in("id", goalIds)
+        : { data: [] };
 
-    const tasksMap = new Map((tasks || []).map(t => [t.id, t]));
-    const objectivesMap = new Map((objectives || []).map(o => [o.id, o]));
-    const goalsMap = new Map((goals || []).map(g => [g.id, g]));
+    const tasksMap = new Map((tasks || []).map((t) => [t.id, t]));
+    const objectivesMap = new Map((objectives || []).map((o) => [o.id, o]));
+    const goalsMap = new Map((goals || []).map((g) => [g.id, g]));
 
     const enrichedPlannedTasks = planTasks
-      .map(pt => {
+      .map((pt) => {
         const task = tasksMap.get(pt.task_id);
         if (!task) return null;
-        const objective = task.objective_id ? objectivesMap.get(task.objective_id) : null;
-        const goal = objective?.goal_id ? goalsMap.get(objective.goal_id) : null;
+        const objective = task.objective_id
+          ? objectivesMap.get(task.objective_id)
+          : null;
+        const goal = objective?.goal_id
+          ? goalsMap.get(objective.goal_id)
+          : null;
         return {
           ...pt,
-          task: { ...task, objective, goal }
+          task: { ...task, objective, goal },
         };
       })
-      .filter((pt): pt is NonNullable<typeof pt> => pt !== null) as PlannedTask[];
+      .filter(
+        (pt): pt is NonNullable<typeof pt> => pt !== null,
+      ) as PlannedTask[];
 
     setPlannedTasks(enrichedPlannedTasks);
     setLoading(false);
@@ -194,186 +250,233 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     if (dailyPlan) return dailyPlan;
 
     const { data: newPlan, error } = await supabase
-      .from('daily_plans')
+      .from("daily_plans")
       .insert({
         user_id: userId,
         plan_date: selectedDate,
-        notes: ''
+        notes: "",
       })
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating daily plan:', error);
+      console.error("Error creating daily plan:", error);
       return null;
     }
 
-    setDailyPlan(newPlan);
-    return newPlan;
+    const plan = { ...newPlan, notes: newPlan.notes || "" } as DailyPlan;
+    setDailyPlan(plan);
+    return plan;
   }, [userId, selectedDate, dailyPlan]);
 
   // Add task to plan
-  const addTaskToPlan = useCallback(async (taskId: string, timeSlot: TimeSlot): Promise<boolean> => {
-    const plan = await ensureDailyPlan();
-    if (!plan) return false;
+  const addTaskToPlan = useCallback(
+    async (taskId: string, timeSlot: TimeSlot): Promise<boolean> => {
+      const plan = await ensureDailyPlan();
+      if (!plan) return false;
 
-    // Check if task is already planned
-    const existing = plannedTasks.find(pt => pt.task_id === taskId);
-    if (existing) {
-      // Move to new slot instead
-      return moveTaskToSlot(existing.id, timeSlot);
-    }
+      // Check if task is already planned
+      const existing = plannedTasks.find((pt) => pt.task_id === taskId);
+      if (existing) {
+        // Move to new slot instead
+        return moveTaskToSlot(existing.id, timeSlot);
+      }
 
-    // Get max order index for this slot
-    const slotTasks = plannedTasks.filter(pt => pt.time_slot === timeSlot);
-    const maxOrder = slotTasks.length > 0 ? Math.max(...slotTasks.map(pt => pt.order_index)) : -1;
+      // Get max order index for this slot
+      const slotTasks = plannedTasks.filter((pt) => pt.time_slot === timeSlot);
+      const maxOrder =
+        slotTasks.length > 0
+          ? Math.max(...slotTasks.map((pt) => pt.order_index))
+          : -1;
 
-    const { error } = await supabase
-      .from('daily_plan_tasks')
-      .insert({
+      const { error } = await supabase.from("daily_plan_tasks").insert({
         daily_plan_id: plan.id,
         task_id: taskId,
         time_slot: timeSlot,
-        order_index: maxOrder + 1
+        order_index: maxOrder + 1,
       });
 
-    if (error) {
-      console.error('Error adding task to plan:', error);
-      return false;
-    }
+      if (error) {
+        console.error("Error adding task to plan:", error);
+        return false;
+      }
 
-    // Reload to get enriched data
-    await loadDailyPlan();
-    return true;
-  }, [ensureDailyPlan, plannedTasks, loadDailyPlan]);
+      // Reload to get enriched data
+      await loadDailyPlan();
+      return true;
+    },
+    [ensureDailyPlan, plannedTasks, loadDailyPlan],
+  );
 
   // Remove task from plan
-  const removeTaskFromPlan = useCallback(async (plannedTaskId: string): Promise<boolean> => {
-    const { error } = await supabase
-      .from('daily_plan_tasks')
-      .delete()
-      .eq('id', plannedTaskId);
+  const removeTaskFromPlan = useCallback(
+    async (plannedTaskId: string): Promise<boolean> => {
+      const { error } = await supabase
+        .from("daily_plan_tasks")
+        .delete()
+        .eq("id", plannedTaskId);
 
-    if (error) {
-      console.error('Error removing task from plan:', error);
-      return false;
-    }
+      if (error) {
+        console.error("Error removing task from plan:", error);
+        return false;
+      }
 
-    setPlannedTasks(prev => prev.filter(pt => pt.id !== plannedTaskId));
-    return true;
-  }, []);
+      setPlannedTasks((prev) => prev.filter((pt) => pt.id !== plannedTaskId));
+      return true;
+    },
+    [],
+  );
 
   // Move task to different slot
-  const moveTaskToSlot = useCallback(async (plannedTaskId: string, newTimeSlot: TimeSlot): Promise<boolean> => {
-    // Get max order index for new slot
-    const slotTasks = plannedTasks.filter(pt => pt.time_slot === newTimeSlot && pt.id !== plannedTaskId);
-    const maxOrder = slotTasks.length > 0 ? Math.max(...slotTasks.map(pt => pt.order_index)) : -1;
+  const moveTaskToSlot = useCallback(
+    async (plannedTaskId: string, newTimeSlot: TimeSlot): Promise<boolean> => {
+      // Get max order index for new slot
+      const slotTasks = plannedTasks.filter(
+        (pt) => pt.time_slot === newTimeSlot && pt.id !== plannedTaskId,
+      );
+      const maxOrder =
+        slotTasks.length > 0
+          ? Math.max(...slotTasks.map((pt) => pt.order_index))
+          : -1;
 
-    const { error } = await supabase
-      .from('daily_plan_tasks')
-      .update({
-        time_slot: newTimeSlot,
-        order_index: maxOrder + 1
-      })
-      .eq('id', plannedTaskId);
+      const { error } = await supabase
+        .from("daily_plan_tasks")
+        .update({
+          time_slot: newTimeSlot,
+          order_index: maxOrder + 1,
+        })
+        .eq("id", plannedTaskId);
 
-    if (error) {
-      console.error('Error moving task to slot:', error);
-      return false;
-    }
+      if (error) {
+        console.error("Error moving task to slot:", error);
+        return false;
+      }
 
-    setPlannedTasks(prev => prev.map(pt =>
-      pt.id === plannedTaskId
-        ? { ...pt, time_slot: newTimeSlot, order_index: maxOrder + 1 }
-        : pt
-    ));
-    return true;
-  }, [plannedTasks]);
+      setPlannedTasks((prev) =>
+        prev.map((pt) =>
+          pt.id === plannedTaskId
+            ? { ...pt, time_slot: newTimeSlot, order_index: maxOrder + 1 }
+            : pt,
+        ),
+      );
+      return true;
+    },
+    [plannedTasks],
+  );
 
   // Reorder task within slot
-  const reorderTaskInSlot = useCallback(async (plannedTaskId: string, newOrderIndex: number): Promise<boolean> => {
-    const { error } = await supabase
-      .from('daily_plan_tasks')
-      .update({ order_index: newOrderIndex })
-      .eq('id', plannedTaskId);
+  const reorderTaskInSlot = useCallback(
+    async (plannedTaskId: string, newOrderIndex: number): Promise<boolean> => {
+      const { error } = await supabase
+        .from("daily_plan_tasks")
+        .update({ order_index: newOrderIndex })
+        .eq("id", plannedTaskId);
 
-    if (error) {
-      console.error('Error reordering task:', error);
-      return false;
-    }
+      if (error) {
+        console.error("Error reordering task:", error);
+        return false;
+      }
 
-    setPlannedTasks(prev => prev.map(pt =>
-      pt.id === plannedTaskId ? { ...pt, order_index: newOrderIndex } : pt
-    ));
-    return true;
-  }, []);
+      setPlannedTasks((prev) =>
+        prev.map((pt) =>
+          pt.id === plannedTaskId ? { ...pt, order_index: newOrderIndex } : pt,
+        ),
+      );
+      return true;
+    },
+    [],
+  );
 
   // Toggle task completion (affects original task)
-  const toggleTaskCompletion = useCallback(async (taskId: string): Promise<boolean> => {
-    const task = availableTasks.find(t => t.id === taskId) ||
-                 plannedTasks.find(pt => pt.task_id === taskId)?.task;
-    
-    if (!task) return false;
+  const toggleTaskCompletion = useCallback(
+    async (taskId: string): Promise<boolean> => {
+      const task =
+        availableTasks.find((t) => t.id === taskId) ||
+        plannedTasks.find((pt) => pt.task_id === taskId)?.task;
 
-    const newStatus = task.status === 'completed' ? 'not_started' : 'completed';
-    const completedAt = newStatus === 'completed' ? new Date().toISOString() : null;
+      if (!task) return false;
 
-    const { error } = await supabase
-      .from('tasks')
-      .update({
-        status: newStatus,
-        completed_at: completedAt,
-        last_edited_at: new Date().toISOString()
-      })
-      .eq('id', taskId);
+      const newStatus =
+        task.status === "completed" ? "not_started" : "completed";
+      const completedAt =
+        newStatus === "completed" ? new Date().toISOString() : null;
 
-    if (error) {
-      console.error('Error toggling task completion:', error);
-      return false;
-    }
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          status: newStatus,
+          completed_at: completedAt,
+          last_edited_at: new Date().toISOString(),
+        })
+        .eq("id", taskId);
 
-    // Update local state
-    setPlannedTasks(prev => prev.map(pt =>
-      pt.task_id === taskId
-        ? { ...pt, task: { ...pt.task, status: newStatus, completed_at: completedAt } }
-        : pt
-    ));
+      if (error) {
+        console.error("Error toggling task completion:", error);
+        return false;
+      }
 
-    // Reload available tasks to reflect changes
-    await loadAvailableTasks();
-    return true;
-  }, [availableTasks, plannedTasks, loadAvailableTasks]);
+      // Update local state
+      setPlannedTasks((prev) =>
+        prev.map((pt) =>
+          pt.task_id === taskId
+            ? {
+                ...pt,
+                task: {
+                  ...pt.task,
+                  status: newStatus,
+                  completed_at: completedAt,
+                },
+              }
+            : pt,
+        ),
+      );
+
+      // Reload available tasks to reflect changes
+      await loadAvailableTasks();
+      return true;
+    },
+    [availableTasks, plannedTasks, loadAvailableTasks],
+  );
 
   // Update plan notes
-  const updatePlanNotes = useCallback(async (notes: string): Promise<boolean> => {
-    const plan = await ensureDailyPlan();
-    if (!plan) return false;
+  const updatePlanNotes = useCallback(
+    async (notes: string): Promise<boolean> => {
+      const plan = await ensureDailyPlan();
+      if (!plan) return false;
 
-    const { error } = await supabase
-      .from('daily_plans')
-      .update({ notes, updated_at: new Date().toISOString() })
-      .eq('id', plan.id);
+      const { error } = await supabase
+        .from("daily_plans")
+        .update({ notes, updated_at: new Date().toISOString() })
+        .eq("id", plan.id);
 
-    if (error) {
-      console.error('Error updating plan notes:', error);
-      return false;
-    }
+      if (error) {
+        console.error("Error updating plan notes:", error);
+        return false;
+      }
 
-    setDailyPlan(prev => prev ? { ...prev, notes } : null);
-    return true;
-  }, [ensureDailyPlan]);
+      setDailyPlan((prev) => (prev ? { ...prev, notes } : null));
+      return true;
+    },
+    [ensureDailyPlan],
+  );
 
   // Get tasks by slot
-  const getTasksBySlot = useCallback((slot: TimeSlot): PlannedTask[] => {
-    return plannedTasks
-      .filter(pt => pt.time_slot === slot)
-      .sort((a, b) => a.order_index - b.order_index);
-  }, [plannedTasks]);
+  const getTasksBySlot = useCallback(
+    (slot: TimeSlot): PlannedTask[] => {
+      return plannedTasks
+        .filter((pt) => pt.time_slot === slot)
+        .sort((a, b) => a.order_index - b.order_index);
+    },
+    [plannedTasks],
+  );
 
   // Check if task is already planned
-  const isTaskPlanned = useCallback((taskId: string): boolean => {
-    return plannedTasks.some(pt => pt.task_id === taskId);
-  }, [plannedTasks]);
+  const isTaskPlanned = useCallback(
+    (taskId: string): boolean => {
+      return plannedTasks.some((pt) => pt.task_id === taskId);
+    },
+    [plannedTasks],
+  );
 
   // Reload all data
   const reload = useCallback(async () => {
@@ -409,6 +512,6 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     updatePlanNotes,
     getTasksBySlot,
     isTaskPlanned,
-    reload
+    reload,
   };
 }

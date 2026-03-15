@@ -13,13 +13,15 @@ npm run lint:fix     # ESLint with auto-fix
 npm run test         # Vitest (81 tests, 4 files)
 npm run test:watch   # Vitest watch mode
 npm run test:coverage # Vitest with v8 coverage
+npm run types:generate # Regenerate Supabase types (requires local Supabase running)
 ```
 
 ## Stack
 
 - **Frontend**: React 18 + TypeScript 5.5 + Vite 5 + Tailwind 3
 - **Database**: Supabase (PostgreSQL + RLS on all 14 tables + Auth)
-- **AI**: Groq API (Qwen 3.2) via Supabase Edge Function (`ai-proxy`) — key is server-side
+- **AI**: Groq API (Qwen 3.2) via Supabase Edge Function (`ai-proxy`) — key is server-side, vendor-agnostic via `LLM_MODEL`/`LLM_ENDPOINT` env vars
+- **Validation**: Zod schemas for all 11 AI response types (`src/lib/aiSchemas.ts`)
 - **Mobile**: Capacitor 8 (iOS + Android)
 - **Diagrams**: Mermaid 11 (mind maps)
 - **No custom backend** — Supabase Edge Functions for AI proxy, browser for everything else
@@ -27,25 +29,36 @@ npm run test:coverage # Vitest with v8 coverage
 ## Architecture
 
 ```
-src/                             # 103 files, 24.5 KLOC
-  App.tsx                        # Router + context providers (Language > Theme > Auth > BrowserRouter)
+src/
+  App.tsx                        # Router + context providers (Language > Theme > Auth > Notification > BrowserRouter)
   pages/                         # 8 lazy-loaded route components
-    IdeaDetail.tsx               # 1009 LOC — needs split (Phase 2.2)
-  components/                    # 57 components in domain folders:
+    IdeaDetail.tsx               # Layout orchestrator (split in Phase 2.2)
+  components/                    # 60+ components in domain folders:
+    ideas/                       #   types.ts, SelectionMenu.tsx, ConnectionsSidebar.tsx
     journal/, objectives/,       #   cards/, columns/, modals/ subfolders
     map/, tracking/,             #   widgets/ subfolder
     navigation/, layout/, ui/
-  contexts/                      # AuthContext (182), ThemeContext (78), LanguageContext (97)
-  hooks/                         # 6 custom hooks
-    useObjectivesState.ts        # 1332 LOC — needs split (Phase 2.1)
+  contexts/                      # AuthContext, ThemeContext, LanguageContext, NotificationContext
+  hooks/                         # 10 custom hooks
+    useObjectivesState.ts        # Thin composer (split in Phase 2.1)
+    useObjectivesData.ts         # Data loading + state
+    useObjectivesSelection.ts    # Selection path + navigation
+    useObjectivesCRUD.ts         # CRUD + toggles + conversions
+    useIdeaEditor.ts             # Text selection + AI transforms
   services/                      # 6 services
-    aiService.ts                 # 1841 LOC, 9 AI functions via callGroqAPI()
+    aiService.ts                 # 12 AI functions via callLLM(), Zod-validated responses
     objectivesService.ts         # CRUD for Vision/Goal/Objective/Task
+  lib/
+    supabase.ts                  # Typed client: createClient<Database>()
+    database.types.ts            # Auto-generated from DB (npm run types:generate)
+    aiSchemas.ts                 # Zod schemas for all AI response types
   utils/                         # fetchWithRetry, security, trackingStats, autoSort, familyTree
-  lib/supabase.ts                # Client init + 290 LOC manual DB types (should be generated)
-  i18n/                          # en.ts, es.ts, zh.ts (548 LOC each)
+  i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
-supabase/migrations/             # 14 SQL migrations (additive only)
+supabase/
+  migrations/                    # 14 SQL migrations (additive only)
+  functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
+  config.toml                    # Local Supabase config (for types:generate)
 docs/                            # Improvement plan, deployment, tech spec
 ```
 
@@ -59,7 +72,7 @@ Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent
 
 ### AI service (`src/services/aiService.ts`)
 
-9 functions via `callGroqAPI()`: `analyzeJournalEntry`, `extractObjectivesFromJournal`, `generateMindMap`, `completeIdea`, `findIdeaConnections`, `generateDivergentPaths`, `suggestNextSteps`, `generateCriticalAnalysis`, `generateRelatedConcepts`. All return mock data when API key missing.
+12 functions via `callLLM()`: `analyzeJournalEntry`, `extractObjectivesFromJournal`, `generateMindMap`, `completeIdea`, `findIdeaConnections`, `generateDivergentPaths`, `suggestNextSteps`, `generateCriticalAnalysis`, `generateRelatedConcepts`, `suggestObjectivesForGoal`, `suggestTasksForObjective`, `transformIdeaText`. All validated through Zod schemas (`lib/aiSchemas.ts`). All return mock data when API key missing.
 
 ### Auth flow
 
@@ -72,7 +85,7 @@ Supabase Auth (email/password). `AuthContext` manages session + syncs `user_pref
 - **Styling**: Tailwind utility classes. Dark mode via `dark:` variant + HTML class toggle. No hardcoded colors — use Tailwind palette
 - **i18n**: `useLanguage().t('key')` — all user-visible strings must use translation keys, never hardcoded English
 - **Fetch**: `fetchWithRetry()` with exponential backoff (utils version is canonical — do NOT create new retry logic)
-- **Types**: Database types manually defined in `lib/supabase.ts` (Phase 2.4 will auto-generate)
+- **Types**: Auto-generated from DB via `npm run types:generate` (`lib/database.types.ts`). Typed Supabase client provides full query inference
 - **Env vars**: `VITE_` prefix required (Vite convention). Access via `import.meta.env`
 - **Error handling**: Never swallow errors silently. Show user-facing feedback for all async failures
 - **Accessibility**: Every interactive element needs `aria-label`. Every image needs `alt`. Modals need focus trap
@@ -91,11 +104,11 @@ VITE_SUPABASE_ANON_KEY=...
 
 1. ~~**CRITICAL — API key exposed client-side**~~: Fixed (Phase 1.1) — moved to Edge Function
 2. ~~**CRITICAL — Zero tests**~~: Fixed (Phase 1.2-1.3) — 81 tests via Vitest
-3. **HIGH — Monolithic state hook**: `useObjectivesState.ts` at 1332 LOC, 80+ functions → Phase 2.1
-4. **HIGH — No error UI**: Async failures logged to console, user sees nothing → Phase 2.3
-5. **HIGH — No AI response validation**: Groq JSON parsed without schema check → Phase 2.5
+3. ~~**HIGH — Monolithic state hook**~~: Fixed (Phase 2.1) — split into 4 focused hooks
+4. ~~**HIGH — No error UI**~~: Fixed (Phase 2.3) — NotificationContext + toast system, Journal integrated
+5. ~~**HIGH — No AI response validation**~~: Fixed (Phase 2.5) — 11 Zod schemas with safeParse
 6. ~~**MEDIUM — Duplicate fetchWithRetry**~~: Fixed (Phase 1.4) — consolidated to canonical utils version
-7. **MEDIUM — Manual DB types**: 290 LOC hand-written, drift risk → Phase 2.4
+7. ~~**MEDIUM — Manual DB types**~~: Fixed (Phase 2.4) — auto-generated from DB (14 tables, 743 LOC)
 8. **MEDIUM — No memoization**: Cards/widgets re-render on every parent change → Phase 3.1
 9. **MEDIUM — No pagination**: Full list loads (Journal 30, Ideas 100) → Phase 3.2
 10. **MEDIUM — Missing accessibility**: Only 4 ARIA labels across 57 components → Phase 3.4
@@ -109,7 +122,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 Validated across agent-controller (190 tests) and crm-azteca (1143 tests):
 
-- **Vendor-agnostic inference**: `callLLM(messages, opts)` adapter targeting any OpenAI-compatible endpoint. Current `callGroqAPI` is close — generalize endpoint + model config
+- **Vendor-agnostic inference**: `callLLM()` adapter done (Phase 2.6). Edge Function reads `LLM_MODEL`/`LLM_ENDPOINT`/`LLM_API_KEY` with Groq fallback
 - **Parallel AI calls**: `Promise.allSettled()` for independent AI operations. 30-40% speedup measured
 - **Graceful fallbacks are correct**: Mock-data-on-missing-key pattern is exactly right. Keep it
 - **Schema migrations must be additive**: Never DROP or ALTER existing columns. Add, backfill, deprecate
@@ -122,9 +135,9 @@ Validated across agent-controller (190 tests) and crm-azteca (1143 tests):
 ## Improvement Plan
 
 See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
-1. Security & Foundation (critical fixes, testing infra)
-2. Architecture Refactor (split monoliths, error handling, type generation)
-3. Performance & UX (memoization, pagination, accessibility)
+1. ~~Security & Foundation~~ — DONE (2026-03-13)
+2. ~~Architecture Refactor~~ — DONE (2026-03-15)
+3. Performance & UX (memoization, pagination, accessibility) — NEXT
 4. Testing Depth (hooks, components, integration, CI)
 5. Documentation Cleanup (consolidate 18 files → 6)
 6. Future Enhancements (PWA, undo/redo, soft deletes, E2E)

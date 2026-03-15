@@ -1,6 +1,20 @@
 import { fetchWithRetry } from "../utils/fetchWithRetry";
 import { supabase } from "../lib/supabase";
 import { RateLimiter } from "../utils/security";
+import {
+  safeParse,
+  AnalysisResultSchema,
+  ObjectivesArraySchema,
+  MindMapSchema,
+  CompleteIdeaSchema,
+  IdeaConnectionsArraySchema,
+  DivergentPathsArraySchema,
+  NextStepsArraySchema,
+  CriticalAnalysisSchema,
+  RelatedConceptsArraySchema,
+  SuggestedObjectivesArraySchema,
+  SuggestedTasksArraySchema,
+} from "../lib/aiSchemas";
 
 const aiRateLimiter = new RateLimiter(10, 1);
 
@@ -38,7 +52,7 @@ const emotionColors: { [key: string]: string } = {
  * instructions, and forwards to Groq. Requires authenticated session.
  * @returns The text response, or null on any failure (triggers mock fallback)
  */
-async function callGroqAPI(
+async function callLLM(
   prompt: string,
   temperature: number,
   max_tokens: number,
@@ -128,7 +142,7 @@ Focus on:
 
 Return ONLY the JSON object, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.7,
     1024,
@@ -144,7 +158,9 @@ Return ONLY the JSON object, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsedResult = JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsedResult = safeParse(AnalysisResultSchema, raw, null);
+      if (!parsedResult) return generateMockAnalysis(content, language);
 
       interface ParsedEmotion {
         name: string;
@@ -342,7 +358,7 @@ ${content}
 
 Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.5,
     512,
@@ -358,7 +374,10 @@ Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
   try {
     const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsed = safeParse(ObjectivesArraySchema, raw, null);
+      if (!parsed) return [];
+      return parsed;
     }
 
     return [];
@@ -414,7 +433,7 @@ mindmap
 
 Return ONLY the JSON object with title and mermaidSyntax fields, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.7,
     2048,
@@ -430,7 +449,10 @@ Return ONLY the JSON object with title and mermaidSyntax fields, no additional t
   try {
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsedResult = JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsedResult = safeParse(MindMapSchema, raw, null);
+      if (!parsedResult)
+        return generateMockMindMap(problemStatement, context, language);
       const defaultTitles: Record<"en" | "es" | "zh", string> = {
         en: "Mind Map",
         es: "Mapa Mental",
@@ -518,7 +540,7 @@ Instructions:
 
 Return ONLY the JSON object, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.8,
     2048,
@@ -534,7 +556,10 @@ Return ONLY the JSON object, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsedResult = JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsedResult = safeParse(CompleteIdeaSchema, raw, null);
+      if (!parsedResult)
+        return generateMockIdeaCompletion(initialInput, language);
       const defaultTitles: Record<"en" | "es" | "zh", string> = {
         en: "New Idea",
         es: "Nueva Idea",
@@ -688,7 +713,7 @@ IMPORTANT:
 
 Return ONLY a JSON array of connection objects with strength >= 70. Return empty array [] if no close connections exist.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.5,
     2048,
@@ -733,32 +758,36 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
     }
 
     if (jsonMatch) {
-      const connections = JSON.parse(jsonMatch[0]);
+      const rawConnections = JSON.parse(jsonMatch[0]);
+
+      // Ensure connections is an array
+      const rawArray = Array.isArray(rawConnections)
+        ? rawConnections
+        : [rawConnections];
+
+      const connections = safeParse(IdeaConnectionsArraySchema, rawArray, null);
+      if (!connections) {
+        return findSimilarIdeasFallback(
+          currentIdea,
+          currentTitle,
+          currentContent,
+          existingIdeas,
+          currentIdeaMeta,
+          language,
+        );
+      }
+
       console.log(
         "[findIdeaConnections] Parsed connections:",
         connections.length,
       );
 
-      interface ParsedConnection {
-        ideaId: string;
-        connectionType?:
-          | "similar"
-          | "complementary"
-          | "prerequisite"
-          | "related";
-        strength?: number;
-        reason?: string;
-      }
-
-      // Ensure connections is an array
-      const connectionsArray = Array.isArray(connections)
-        ? connections
-        : [connections];
+      const connectionsArray = connections;
 
       const MIN_STRENGTH_THRESHOLD = 70;
 
       const filteredConnections = connectionsArray
-        .map((conn: ParsedConnection) => {
+        .map((conn) => {
           const matchedIdea = existingIdeas.find(
             (idea) => idea.id === conn.ideaId,
           );
@@ -774,7 +803,11 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
           return {
             ideaId: conn.ideaId,
             ideaTitle: matchedIdea.title,
-            connectionType: conn.connectionType || "related",
+            connectionType: (conn.connectionType || "related") as
+              | "similar"
+              | "complementary"
+              | "prerequisite"
+              | "related",
             strength,
             reason: conn.reason || "Related concept",
           };
@@ -1540,7 +1573,7 @@ Make each path distinctly different - consider variations in:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.9,
     1536,
@@ -1556,7 +1589,10 @@ Return ONLY the JSON array, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsed = safeParse(DivergentPathsArraySchema, raw, null);
+      if (!parsed) return generateMockDivergentPaths(ideaTitle, language);
+      return parsed;
     }
 
     return generateMockDivergentPaths(ideaTitle, language);
@@ -1691,7 +1727,7 @@ Make steps:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.7,
     1024,
@@ -1707,7 +1743,10 @@ Return ONLY the JSON array, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsed = safeParse(NextStepsArraySchema, raw, null);
+      if (!parsed) return generateMockNextSteps(language);
+      return parsed as NextStep[];
     }
 
     return generateMockNextSteps(language);
@@ -1845,7 +1884,7 @@ Be constructive but honest. Help strengthen the idea through critical thinking.
 
 Return ONLY the JSON object, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.6,
     1024,
@@ -1861,7 +1900,10 @@ Return ONLY the JSON object, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsed = safeParse(CriticalAnalysisSchema, raw, null);
+      if (!parsed) return generateMockCriticalAnalysis(language);
+      return parsed;
     }
 
     return generateMockCriticalAnalysis(language);
@@ -1978,7 +2020,7 @@ Suggest concepts that:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.7,
     1536,
@@ -1994,7 +2036,10 @@ Return ONLY the JSON array, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsed = safeParse(RelatedConceptsArraySchema, raw, null);
+      if (!parsed) return generateMockRelatedConcepts(language);
+      return parsed;
     }
 
     return generateMockRelatedConcepts(language);
@@ -2132,7 +2177,7 @@ Guidelines:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.7,
     1536,
@@ -2148,7 +2193,10 @@ Return ONLY the JSON array, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsed = safeParse(SuggestedObjectivesArraySchema, raw, null);
+      if (!parsed) return generateMockObjectives(goalTitle, language);
+      return parsed as SuggestedObjective[];
     }
     return generateMockObjectives(goalTitle, language);
   } catch (error) {
@@ -2310,7 +2358,7 @@ RULES:
   }
 
   // Use 600 tokens to ensure we get complete text even if there's some overhead
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.5,
     600,
@@ -2417,7 +2465,7 @@ Guidelines:
 
 Return ONLY the JSON array, no additional text.`;
 
-  const textResponse = await callGroqAPI(
+  const textResponse = await callLLM(
     prompt,
     0.7,
     1536,
@@ -2433,7 +2481,10 @@ Return ONLY the JSON array, no additional text.`;
   try {
     const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const raw = JSON.parse(jsonMatch[0]);
+      const parsed = safeParse(SuggestedTasksArraySchema, raw, null);
+      if (!parsed) return generateMockTasks(objectiveTitle, language);
+      return parsed as SuggestedTask[];
     }
     return generateMockTasks(objectiveTitle, language);
   } catch (error) {

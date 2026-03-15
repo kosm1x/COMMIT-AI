@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import Login from "./pages/Login";
 import { AppLayout } from "./components/layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -200,9 +201,11 @@ export default function App() {
     <LanguageProvider>
       <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
+          <NotificationProvider>
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </LanguageProvider>

@@ -79,9 +79,13 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Get Groq API key from server-side secrets
-  const groqApiKey = Deno.env.get("GROQ_API_KEY");
-  if (!groqApiKey) {
+  // Get LLM config from server-side secrets (backwards compatible with GROQ_API_KEY)
+  const llmApiKey = Deno.env.get("LLM_API_KEY") || Deno.env.get("GROQ_API_KEY");
+  const llmEndpoint =
+    Deno.env.get("LLM_ENDPOINT") ||
+    "https://api.groq.com/openai/v1/chat/completions";
+  const llmModel = Deno.env.get("LLM_MODEL") || "qwen/qwen3-32b";
+  if (!llmApiKey) {
     return new Response(
       JSON.stringify({ error: "AI service not configured" }),
       {
@@ -103,9 +107,9 @@ Deno.serve(async (req: Request) => {
     languageInstructions[language] || languageInstructions.en;
   const fullPrompt = `${body.prompt}\n\n${languagePrompt}`;
 
-  // Build Groq request
+  // Build LLM request
   const requestBody: Record<string, unknown> = {
-    model: "qwen/qwen3-32b",
+    model: llmModel,
     messages: [{ role: "user", content: fullPrompt }],
     temperature: body.temperature,
     max_tokens: body.max_tokens,
@@ -116,27 +120,24 @@ Deno.serve(async (req: Request) => {
     requestBody.reasoning_effort = body.reasoning_effort;
   }
 
-  // Call Groq API
+  // Call LLM API
   try {
-    const groqResponse = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${groqApiKey}`,
-        },
-        body: JSON.stringify(requestBody),
+    const llmResponse = await fetch(llmEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${llmApiKey}`,
       },
-    );
+      body: JSON.stringify(requestBody),
+    });
 
-    if (!groqResponse.ok) {
-      const errorText = await groqResponse.text();
-      console.error("Groq API error:", groqResponse.status, errorText);
+    if (!llmResponse.ok) {
+      const errorText = await llmResponse.text();
+      console.error("LLM API error:", llmResponse.status, errorText);
       return new Response(
         JSON.stringify({
           error: "AI service error",
-          status: groqResponse.status,
+          status: llmResponse.status,
         }),
         {
           status: 502,
@@ -145,7 +146,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const data = await groqResponse.json();
+    const data = await llmResponse.json();
     const content = data.choices?.[0]?.message?.content || null;
 
     return new Response(JSON.stringify({ content }), {
@@ -153,7 +154,7 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error calling Groq:", error);
+    console.error("Error calling LLM:", error);
     return new Response(JSON.stringify({ error: "AI service unavailable" }), {
       status: 502,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

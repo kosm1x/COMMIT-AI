@@ -1,11 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X, Link2, ChevronDown, ChevronRight, CheckCircle2, Circle, RefreshCw, Sparkles } from 'lucide-react';
-import { Objective, Goal, Task } from '../types';
-import { formatLastEdited, getPriorityColor } from '../utils';
-import { formatShortDate } from '../../../utils/trackingStats';
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { suggestTasksForObjective } from '../../../services/aiService';
-import TaskSuggestionsModal from '../modals/TaskSuggestionsModal';
+import { useState, useEffect } from "react";
+import {
+  Edit2,
+  Trash2,
+  Calendar,
+  Save,
+  X,
+  Link2,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle2,
+  Circle,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import { Objective, Goal, Task } from "../types";
+import { formatLastEdited, getPriorityColor } from "../utils";
+import { formatShortDate } from "../../../utils/trackingStats";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { suggestTasksForObjective } from "../../../services/aiService";
+import TaskSuggestionsModal from "../modals/TaskSuggestionsModal";
 
 interface ObjectiveCardProps {
   objective: Objective;
@@ -29,7 +42,11 @@ interface ObjectiveCardProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   tasks?: Task[];
-  onCreateTask?: (title: string, description: string, priority: string) => Promise<void>;
+  onCreateTask?: (
+    title: string,
+    description: string,
+    priority: string,
+  ) => Promise<void>;
 }
 
 export function ObjectiveCard({
@@ -56,14 +73,26 @@ export function ObjectiveCard({
 }: ObjectiveCardProps) {
   const { t, language } = useLanguage();
   const [editTitle, setEditTitle] = useState(objective.title);
-  const [editDescription, setEditDescription] = useState(objective.description);
-  const [editStatus, setEditStatus] = useState(objective.status);
-  const [editPriority, setEditPriority] = useState(objective.priority);
-  const [editTargetDate, setEditTargetDate] = useState(objective.target_date || '');
-  const [editGoalId, setEditGoalId] = useState<string | null>(objective.goal_id);
+  const [editDescription, setEditDescription] = useState(
+    objective.description || "",
+  );
+  const [editStatus, setEditStatus] = useState(
+    objective.status || "not_started",
+  );
+  const [editPriority, setEditPriority] = useState(
+    objective.priority || "medium",
+  );
+  const [editTargetDate, setEditTargetDate] = useState(
+    objective.target_date || "",
+  );
+  const [editGoalId, setEditGoalId] = useState<string | null>(
+    objective.goal_id,
+  );
   const [showConvertMenu, setShowConvertMenu] = useState(false);
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
-  const [suggestions, setSuggestions] = useState<Awaited<ReturnType<typeof suggestTasksForObjective>>>([]);
+  const [suggestions, setSuggestions] = useState<
+    Awaited<ReturnType<typeof suggestTasksForObjective>>
+  >([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
 
@@ -73,16 +102,22 @@ export function ObjectiveCard({
     setShowSuggestionsModal(true);
 
     try {
-      const generated = await suggestTasksForObjective(objective.title, objective.description || '', language);
+      const generated = await suggestTasksForObjective(
+        objective.title,
+        objective.description || "",
+        language,
+      );
       setSuggestions(generated);
     } catch {
-      setSuggestionsError('Failed to generate suggestions. Please try again.');
+      setSuggestionsError("Failed to generate suggestions. Please try again.");
     } finally {
       setSuggestionsLoading(false);
     }
   };
 
-  const handleCreateTasks = async (selectedTasks: Awaited<ReturnType<typeof suggestTasksForObjective>>) => {
+  const handleCreateTasks = async (
+    selectedTasks: Awaited<ReturnType<typeof suggestTasksForObjective>>,
+  ) => {
     for (const task of selectedTasks) {
       await onCreateTask?.(task.title, task.description, task.priority);
     }
@@ -93,10 +128,10 @@ export function ObjectiveCard({
   useEffect(() => {
     if (isEditing) {
       setEditTitle(objective.title);
-      setEditDescription(objective.description);
-      setEditStatus(objective.status);
-      setEditPriority(objective.priority);
-      setEditTargetDate(objective.target_date || '');
+      setEditDescription(objective.description || "");
+      setEditStatus(objective.status || "not_started");
+      setEditPriority(objective.priority || "medium");
+      setEditTargetDate(objective.target_date || "");
       setEditGoalId(objective.goal_id);
     }
   }, [isEditing, objective]);
@@ -114,8 +149,11 @@ export function ObjectiveCard({
 
   const handleDragStart = (e: React.DragEvent) => {
     e.stopPropagation();
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('application/json', JSON.stringify({ type: 'objective', item: objective }));
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ type: "objective", item: objective }),
+    );
     onDragStart?.(e);
   };
 
@@ -123,11 +161,12 @@ export function ObjectiveCard({
 
   const cardClasses = `
     p-4 rounded-xl border transition-all duration-200 group cursor-move
-    ${isSelected
-      ? 'bg-green-50 border-green-200 shadow-sm dark:bg-green-900/20 dark:border-green-700'
-      : isInFamily
-      ? 'bg-green-50/50 border-green-200/50 shadow-sm dark:bg-green-900/10 dark:border-green-700/50'
-      : 'glass-card hover:bg-white/80 dark:hover:bg-white/10 hover:border-green-100 dark:hover:border-green-900/50 hover:shadow-sm'
+    ${
+      isSelected
+        ? "bg-green-50 border-green-200 shadow-sm dark:bg-green-900/20 dark:border-green-700"
+        : isInFamily
+          ? "bg-green-50/50 border-green-200/50 shadow-sm dark:bg-green-900/10 dark:border-green-700/50"
+          : "glass-card hover:bg-white/80 dark:hover:bg-white/10 hover:border-green-100 dark:hover:border-green-900/50 hover:shadow-sm"
     }
   `.trim();
 
@@ -155,14 +194,14 @@ export function ObjectiveCard({
             placeholder="Description"
           />
           <select
-            value={editGoalId || ''}
+            value={editGoalId || ""}
             onChange={(e) => setEditGoalId(e.target.value || null)}
             className="input-modern py-1.5 px-2 text-sm"
           >
             <option value="">No Goal (Orphaned)</option>
             {goals.map((goal) => (
               <option key={goal.id} value={goal.id}>
-                {goal.title} {!goal.vision_id ? '(Orphan)' : ''}
+                {goal.title} {!goal.vision_id ? "(Orphan)" : ""}
               </option>
             ))}
           </select>
@@ -180,7 +219,7 @@ export function ObjectiveCard({
           <div className="flex gap-2">
             <select
               value={editStatus}
-              onChange={(e) => setEditStatus(e.target.value as Objective['status'])}
+              onChange={(e) => setEditStatus(e.target.value)}
               className="flex-1 input-modern py-1.5 px-2 text-sm"
             >
               <option value="not_started">Not Started</option>
@@ -190,7 +229,7 @@ export function ObjectiveCard({
             </select>
             <select
               value={editPriority}
-              onChange={(e) => setEditPriority(e.target.value as Objective['priority'])}
+              onChange={(e) => setEditPriority(e.target.value)}
               className="flex-1 input-modern py-1.5 px-2 text-sm"
             >
               <option value="low">Low</option>
@@ -240,7 +279,7 @@ export function ObjectiveCard({
               }}
               className="mt-0.5 flex-shrink-0 transition-transform active:scale-90"
             >
-              {objective.status === 'completed' ? (
+              {objective.status === "completed" ? (
                 <CheckCircle2 className="w-6 h-6 text-green-600" />
               ) : (
                 <Circle className="w-6 h-6 text-text-tertiary hover:text-green-600 transition-colors" />
@@ -251,7 +290,9 @@ export function ObjectiveCard({
                 <div className="flex items-center gap-2 flex-1">
                   <h3
                     className={`font-semibold text-sm leading-snug ${
-                      objective.status === 'completed' ? 'text-text-tertiary line-through' : 'text-text-primary'
+                      objective.status === "completed"
+                        ? "text-text-tertiary line-through"
+                        : "text-text-primary"
                     } hover:text-accent-primary transition-colors cursor-pointer`}
                     onClick={onTitleClick}
                   >
@@ -265,7 +306,7 @@ export function ObjectiveCard({
                       setShowConvertMenu(!showConvertMenu);
                     }}
                     className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors"
-                    title={t('objectives.convert')}
+                    title={t("objectives.convert")}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
@@ -300,7 +341,7 @@ export function ObjectiveCard({
                         }}
                         className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
                       >
-                        {t('objectives.convertToGoal')}
+                        {t("objectives.convertToGoal")}
                       </button>
                       <button
                         onClick={(e) => {
@@ -310,7 +351,7 @@ export function ObjectiveCard({
                         }}
                         className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
                       >
-                        {t('objectives.convertToTask')}
+                        {t("objectives.convertToTask")}
                       </button>
                     </div>
                   )}
@@ -332,12 +373,14 @@ export function ObjectiveCard({
               <div className="flex items-center justify-between">
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${getPriorityColor(
-                    objective.priority
+                    objective.priority || "medium",
                   )}`}
                 >
-                  {objective.priority}
+                  {objective.priority || "medium"}
                 </span>
-                <span className="text-[10px] text-text-tertiary">{formatLastEdited(objective.last_edited_at)}</span>
+                <span className="text-[10px] text-text-tertiary">
+                  {formatLastEdited(objective.last_edited_at)}
+                </span>
               </div>
 
               {/* Task count progress */}
@@ -351,8 +394,14 @@ export function ObjectiveCard({
                     className="w-full flex items-center justify-between text-xs hover:bg-white/50 dark:bg-white/5 -mx-1 px-2 py-1 rounded transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                      <span className="text-text-secondary font-medium">Tasks</span>
+                      {isExpanded ? (
+                        <ChevronDown className="w-3 h-3" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3" />
+                      )}
+                      <span className="text-text-secondary font-medium">
+                        Tasks
+                      </span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -372,8 +421,8 @@ export function ObjectiveCard({
                     <div
                       className={`h-1.5 rounded-full transition-all duration-500 ${
                         taskCount.completed === taskCount.total
-                          ? 'bg-green-500'
-                          : 'bg-blue-500'
+                          ? "bg-green-500"
+                          : "bg-blue-500"
                       }`}
                       style={{
                         width: `${(taskCount.completed / taskCount.total) * 100}%`,
@@ -389,14 +438,16 @@ export function ObjectiveCard({
                           className="flex items-start gap-2 text-xs bg-white/50 dark:bg-white/5 p-2 rounded-lg border border-white/50"
                         >
                           <div className="mt-0.5">
-                            {task.status === 'completed' ? (
+                            {task.status === "completed" ? (
                               <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
                             ) : (
                               <Circle className="w-3.5 h-3.5 text-text-tertiary" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-medium truncate ${task.status === 'completed' ? 'text-text-tertiary line-through' : 'text-text-secondary'}`}>
+                            <p
+                              className={`font-medium truncate ${task.status === "completed" ? "text-text-tertiary line-through" : "text-text-secondary"}`}
+                            >
                               {task.title}
                             </p>
                           </div>
@@ -435,4 +486,3 @@ export function ObjectiveCard({
     </div>
   );
 }
-

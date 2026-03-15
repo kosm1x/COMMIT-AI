@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Edit2, Trash2, Calendar, Save, X, RefreshCw } from 'lucide-react';
-import { formatShortDate } from '../../../utils/trackingStats';
-import { Vision } from '../types';
-import { getStatusIcon, formatLastEdited } from '../utils';
-import { useLanguage } from '../../../contexts/LanguageContext';
+import { useState, useEffect } from "react";
+import { Edit2, Trash2, Calendar, Save, X, RefreshCw } from "lucide-react";
+import { formatShortDate } from "../../../utils/trackingStats";
+import { Vision } from "../types";
+import { getStatusIcon, formatLastEdited } from "../utils";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface VisionCardProps {
   vision: Vision;
@@ -47,18 +47,22 @@ export function VisionCard({
 }: VisionCardProps) {
   const { t } = useLanguage();
   const [editTitle, setEditTitle] = useState(vision.title);
-  const [editDescription, setEditDescription] = useState(vision.description);
-  const [editStatus, setEditStatus] = useState(vision.status);
-  const [editTargetDate, setEditTargetDate] = useState(vision.target_date || '');
+  const [editDescription, setEditDescription] = useState(
+    vision.description || "",
+  );
+  const [editStatus, setEditStatus] = useState(vision.status || "not_started");
+  const [editTargetDate, setEditTargetDate] = useState(
+    vision.target_date || "",
+  );
   const [showConvertMenu, setShowConvertMenu] = useState(false);
 
   // Sync edit state when editing starts or vision changes
   useEffect(() => {
     if (isEditing) {
       setEditTitle(vision.title);
-      setEditDescription(vision.description);
-      setEditStatus(vision.status);
-      setEditTargetDate(vision.target_date || '');
+      setEditDescription(vision.description || "");
+      setEditStatus(vision.status || "not_started");
+      setEditTargetDate(vision.target_date || "");
     }
   }, [isEditing, vision]);
 
@@ -78,14 +82,15 @@ export function VisionCard({
 
   const cardClasses = `
     p-4 rounded-xl border transition-all duration-200 group cursor-move
-    ${isSelected
-      ? 'bg-amber-50 border-amber-300 shadow-md ring-2 ring-amber-400 dark:bg-amber-900/30 dark:border-amber-600 dark:ring-amber-500'
-      : isInFamily
-      ? 'bg-amber-50/50 border-amber-200 shadow-sm dark:bg-amber-900/10 dark:border-amber-700/50'
-      : 'glass-card hover:bg-white/80 dark:hover:bg-white/10 hover:border-amber-100 dark:hover:border-amber-900/50 hover:shadow-sm opacity-60'
+    ${
+      isSelected
+        ? "bg-amber-50 border-amber-300 shadow-md ring-2 ring-amber-400 dark:bg-amber-900/30 dark:border-amber-600 dark:ring-amber-500"
+        : isInFamily
+          ? "bg-amber-50/50 border-amber-200 shadow-sm dark:bg-amber-900/10 dark:border-amber-700/50"
+          : "glass-card hover:bg-white/80 dark:hover:bg-white/10 hover:border-amber-100 dark:hover:border-amber-900/50 hover:shadow-sm opacity-60"
     }
-    ${isDragged ? 'opacity-50' : ''}
-    ${isDraggedOver ? 'border-t-4 border-t-amber-500' : ''}
+    ${isDragged ? "opacity-50" : ""}
+    ${isDraggedOver ? "border-t-4 border-t-amber-500" : ""}
   `.trim();
 
   return (
@@ -117,7 +122,7 @@ export function VisionCard({
           />
           <select
             value={editStatus}
-            onChange={(e) => setEditStatus(e.target.value as Vision['status'])}
+            onChange={(e) => setEditStatus(e.target.value)}
             className="input-modern py-1.5 px-2 text-sm"
           >
             <option value="not_started">Not Started</option>
@@ -152,7 +157,7 @@ export function VisionCard({
         <>
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-1">
-              {getStatusIcon(vision.status)}
+              {getStatusIcon(vision.status || "not_started")}
               <h3
                 className="font-semibold text-text-primary text-sm leading-snug hover:text-accent-primary transition-colors cursor-pointer"
                 onClick={onTitleClick}
@@ -167,7 +172,7 @@ export function VisionCard({
                   setShowConvertMenu(!showConvertMenu);
                 }}
                 className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors"
-                title={t('objectives.convert')}
+                title={t("objectives.convert")}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
@@ -202,7 +207,7 @@ export function VisionCard({
                     }}
                     className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-text-primary"
                   >
-                    {t('objectives.convertToGoal')}
+                    {t("objectives.convertToGoal")}
                   </button>
                 </div>
               )}
@@ -220,12 +225,12 @@ export function VisionCard({
                 {formatShortDate(new Date(vision.target_date))}
               </div>
             )}
-            <span className="ml-auto">{formatLastEdited(vision.last_edited_at)}</span>
+            <span className="ml-auto">
+              {formatLastEdited(vision.last_edited_at)}
+            </span>
           </div>
         </>
       )}
     </div>
   );
 }
-
-

@@ -1,5 +1,12 @@
-import { CheckCircle2, Circle, X, GripVertical, Target, Flag } from 'lucide-react';
-import { PlannedTask } from '../../hooks/useDailyPlanner';
+import {
+  CheckCircle2,
+  Circle,
+  X,
+  GripVertical,
+  Target,
+  Flag,
+} from "lucide-react";
+import { PlannedTask } from "../../hooks/useDailyPlanner";
 
 interface PlannedTaskCardProps {
   plannedTask: PlannedTask;
@@ -17,14 +24,18 @@ export function PlannedTaskCard({
   // index is available for future reordering functionality
 }: PlannedTaskCardProps) {
   const { task } = plannedTask;
-  const isCompleted = task.status === 'completed';
+  const isCompleted = task.status === "completed";
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'border-l-red-500';
-      case 'medium': return 'border-l-yellow-500';
-      case 'low': return 'border-l-green-500';
-      default: return 'border-l-gray-300';
+      case "high":
+        return "border-l-red-500";
+      case "medium":
+        return "border-l-yellow-500";
+      case "low":
+        return "border-l-green-500";
+      default:
+        return "border-l-gray-300";
     }
   };
 
@@ -32,8 +43,8 @@ export function PlannedTaskCard({
     <div
       draggable
       onDragStart={onDragStart}
-      className={`group relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${getPriorityColor(task.priority)} transition-all hover:shadow-md cursor-grab active:cursor-grabbing ${
-        isCompleted ? 'opacity-60' : ''
+      className={`group relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 border-l-4 ${getPriorityColor(task.priority || "medium")} transition-all hover:shadow-md cursor-grab active:cursor-grabbing ${
+        isCompleted ? "opacity-60" : ""
       }`}
     >
       <div className="flex items-start p-3 gap-2">
@@ -59,11 +70,13 @@ export function PlannedTaskCard({
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h4 className={`text-sm font-medium leading-snug ${
-            isCompleted
-              ? 'text-gray-400 dark:text-gray-500 line-through'
-              : 'text-gray-900 dark:text-white'
-          }`}>
+          <h4
+            className={`text-sm font-medium leading-snug ${
+              isCompleted
+                ? "text-gray-400 dark:text-gray-500 line-through"
+                : "text-gray-900 dark:text-white"
+            }`}
+          >
             {task.title}
           </h4>
 
@@ -78,20 +91,24 @@ export function PlannedTaskCard({
             {task.objective && (
               <div className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400">
                 <Flag className="w-2.5 h-2.5" />
-                <span className="truncate max-w-[80px]">{task.objective.title}</span>
+                <span className="truncate max-w-[80px]">
+                  {task.objective.title}
+                </span>
               </div>
             )}
           </div>
 
           {/* Priority badge */}
           <div className="mt-1.5">
-            <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-              task.priority === 'high'
-                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                : task.priority === 'medium'
-                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-            }`}>
+            <span
+              className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+                task.priority === "high"
+                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  : task.priority === "medium"
+                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                    : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+              }`}
+            >
               {task.priority}
             </span>
           </div>
