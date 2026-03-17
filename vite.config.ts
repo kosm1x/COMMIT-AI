@@ -69,7 +69,13 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary"],
-      include: ["src/utils/**", "src/services/**"],
+      include: [
+        "src/utils/**",
+        "src/services/**",
+        "src/hooks/**",
+        "src/components/**",
+        "src/pages/**",
+      ],
     },
   },
   // Production optimizations via esbuild

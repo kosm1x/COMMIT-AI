@@ -10,7 +10,7 @@ npm run build        # Typecheck + Vite production build
 npm run typecheck    # tsc --noEmit -p tsconfig.app.json
 npm run lint         # ESLint
 npm run lint:fix     # ESLint with auto-fix
-npm run test         # Vitest (83 tests, 4 files)
+npm run test         # Vitest (215 tests, 14 files)
 npm run test:watch   # Vitest watch mode
 npm run test:coverage # Vitest with v8 coverage
 npm run types:generate # Regenerate Supabase types (requires local Supabase running)
@@ -139,6 +139,6 @@ See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
 1. ~~Security & Foundation~~ — DONE (2026-03-13)
 2. ~~Architecture Refactor~~ — DONE (2026-03-15)
 3. ~~Performance & UX~~ — DONE (2026-03-17)
-4. Testing Depth (hooks, components, integration, CI) — NEXT
-5. Documentation Cleanup (consolidate 18 files → 6)
+4. ~~Testing Depth~~ — DONE (2026-03-17)
+5. Documentation Cleanup (consolidate 18 files → 6) — NEXT
 6. Future Enhancements (PWA, undo/redo, soft deletes, E2E)

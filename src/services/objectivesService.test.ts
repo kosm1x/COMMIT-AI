@@ -1,29 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-// Build a chainable Supabase query mock
-function createChainMock(resolveWith: { data: unknown; error: unknown }) {
-  const chain: Record<string, ReturnType<typeof vi.fn>> = {};
-
-  const handler = {
-    get(_target: unknown, prop: string) {
-      if (prop === "then") {
-        // Make it thenable — resolves with { data, error }
-        return (
-          resolve: (v: unknown) => void,
-          reject: (v: unknown) => void,
-        ) => {
-          return Promise.resolve(resolveWith).then(resolve, reject);
-        };
-      }
-      if (!chain[prop]) {
-        chain[prop] = vi.fn().mockReturnValue(new Proxy({}, handler));
-      }
-      return chain[prop];
-    },
-  };
-
-  return new Proxy({}, handler);
-}
+import { createChainMock } from "../test/helpers";
 
 const mockFrom = vi.fn();
 
