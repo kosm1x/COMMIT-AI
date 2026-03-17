@@ -605,7 +605,12 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      prune_completed_tasks: {
+        Args: {
+          retention_interval?: unknown;
+        };
+        Returns: number;
+      };
     };
     Enums: {
       [_ in never]: never;

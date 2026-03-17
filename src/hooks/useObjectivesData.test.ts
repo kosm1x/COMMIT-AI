@@ -8,8 +8,12 @@ import {
 } from "../test/helpers";
 
 const mockFrom = vi.fn();
+const mockRpc = vi.fn().mockResolvedValue({ data: 0, error: null });
 vi.mock("../lib/supabase", () => ({
-  supabase: { from: (...args: unknown[]) => mockFrom(...args) },
+  supabase: {
+    from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
+  },
 }));
 
 vi.mock("../utils/autoSort", () => ({
@@ -236,5 +240,32 @@ describe("useObjectivesData", () => {
     expect(mockFrom).toHaveBeenCalledWith("goals");
     expect(mockFrom).toHaveBeenCalledWith("objectives");
     expect(mockFrom).toHaveBeenCalledWith("tasks");
+  });
+
+  it("calls prune_completed_tasks RPC on initial load", async () => {
+    setupMocks();
+    renderHook(() => useObjectivesData("user-123"));
+
+    await waitFor(() => {
+      expect(mockRpc).toHaveBeenCalledWith("prune_completed_tasks");
+    });
+  });
+
+  it("loads data even if prune RPC fails", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "function not found" },
+    });
+    setupMocks({
+      visions: [makeVision({ id: "v1", title: "Survives prune failure" })],
+    });
+
+    const { result } = renderHook(() => useObjectivesData("user-123"));
+
+    await waitFor(() => {
+      expect(result.current.visions).toEqual([
+        expect.objectContaining({ id: "v1" }),
+      ]);
+    });
   });
 });
