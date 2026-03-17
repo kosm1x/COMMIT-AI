@@ -109,7 +109,7 @@ A beautiful, minimal journaling application based on the COMMIT framework (Conte
 
 ## Database Schema
 
-The application uses the following tables:
+The application uses 14 tables:
 
 - **journal_entries** - Stores all user journal entries
 - **ai_analysis** - Stores AI-generated emotional analysis
@@ -123,28 +123,33 @@ The application uses the following tables:
 - **idea_connections** - Relationships between ideas
 - **idea_ai_suggestions** - AI-generated idea enhancements
 - **mind_maps** - Saved mind map visualizations
+- **user_preferences** - User settings and preferences
+- **daily_planner** - Daily planning entries
+- **daily_plan_tasks** - Tasks within daily plans
 
 All tables have Row Level Security (RLS) enabled to ensure data privacy.
 
 ## AI Integration
 
-### Using Groq Qwen 3.2
+### Edge Function Proxy
 
-The app integrates with Groq's Qwen 3.2 model for intelligent analysis:
+AI calls go through a Supabase Edge Function (`ai-proxy`). The API key is stored server-side as a Supabase Edge Function secret — no client-side API key is needed.
 
-1. Get your API key from [Groq Console](https://console.groq.com/)
-2. Set it as a Supabase Edge Function secret: `supabase secrets set GROQ_API_KEY=your_key`
-3. Deploy the Edge Function: `supabase functions deploy ai-proxy`
-4. The AI will:
-   - Analyze journal entries for emotions and patterns (using thinking mode for complex reasoning)
-   - Suggest coping strategies
-   - Extract potential goals from your writing
-   - Generate mind maps and idea expansions
-   - Provide critical analysis and related concepts
+The Edge Function is vendor-agnostic, configured via server-side env vars:
+- `LLM_API_KEY` — API key (required)
+- `LLM_MODEL` — model name (defaults to Groq Qwen 3.2)
+- `LLM_ENDPOINT` — API endpoint (defaults to Groq)
+
+AI capabilities include:
+- Journal entry emotion analysis and pattern recognition
+- Coping strategy suggestions
+- Goal extraction from journal entries
+- Mind map and idea expansion generation
+- Critical analysis and related concepts
 
 ### Fallback Mode
 
-If no API key is provided, the app uses intelligent mock analysis based on keyword detection to demonstrate the UI without requiring API access.
+If the Edge Function is unreachable or unconfigured, the app uses intelligent mock analysis based on keyword detection to demonstrate the UI without requiring API access.
 
 ## Design Philosophy
 
@@ -159,9 +164,10 @@ If no API key is provided, the app uses intelligent mock analysis based on keywo
 
 ## Security
 
-- All user data is protected with Row Level Security
+- All user data is protected with Row Level Security on all 14 tables
 - Authentication handled by Supabase Auth
-- API keys never exposed to client-side code
+- API keys are server-side only (Supabase Edge Function secrets)
+- Input sanitization via `src/utils/security.ts`
 - Secure session management
 
 ## Development
@@ -170,31 +176,25 @@ If no API key is provided, the app uses intelligent mock analysis based on keywo
 
 ```
 src/
-├── components/       # Reusable UI components
-├── contexts/         # React contexts (Auth)
-├── lib/             # Utilities and configurations
-├── pages/           # Main application pages
-├── services/        # External service integrations
-└── App.tsx          # Main application component
+├── components/       # 70+ components in domain folders (ui/, objectives/, journal/, etc.)
+├── contexts/         # AuthContext, ThemeContext, LanguageContext, NotificationContext
+├── hooks/            # 11 custom hooks (objectives data/selection/CRUD, focusTrap, etc.)
+├── services/         # AI service (12 functions), objectives service
+├── lib/              # Supabase client, auto-generated types, Zod schemas
+├── utils/            # fetchWithRetry, security, trackingStats, autoSort
+├── i18n/             # en, es, zh translations
+├── test/             # Shared test helpers
+└── pages/            # 8 lazy-loaded route components
 ```
 
 ### Key Commands
 
 - `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run lint` - Run ESLint
+- `npm run build` - Build for production (includes typecheck)
+- `npm run test` - Run 215 tests
 - `npm run typecheck` - Type check with TypeScript
-
-## User Guide
-
-For a comprehensive, non-technical guide to using the COMMIT method, see **[COMMIT_METHOD_GUIDE.md](./COMMIT_METHOD_GUIDE.md)**.
-
-This guide explains:
-- What each phase of COMMIT means
-- How to use each feature
-- Best practices for personal growth
-- How the phases work together
-- Getting started tips
+- `npm run lint` - Run ESLint
+- `npm run test:coverage` - Run tests with coverage report
 
 ## Contributing
 
@@ -234,6 +234,13 @@ High-contrast dark theme for comfortable use in any lighting condition. Your pre
 - Completion rates help you adjust your approach
 - Streak counters keep you motivated
 - Status overviews show where everything stands
+
+## Documentation
+
+- **[COMMIT_METHOD_GUIDE.md](./COMMIT_METHOD_GUIDE.md)** - Non-technical user guide to the COMMIT method
+- **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - Deployment guide, checklist, and troubleshooting
+- **[docs/IMPROVEMENT-PLAN.md](./docs/IMPROVEMENT-PLAN.md)** - 6-phase improvement roadmap
+- **[docs/TECHNICAL_SPECIFICATION.md](./docs/TECHNICAL_SPECIFICATION.md)** - Technical architecture details
 
 ## Acknowledgments
 

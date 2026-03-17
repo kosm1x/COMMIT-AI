@@ -5,6 +5,7 @@ Phase 1 completed: 2026-03-13 | 81 tests, 4 test files, API key secured
 Phase 2 completed: 2026-03-15 | Monoliths split, Zod validation, auto-generated types, error toasts
 Phase 3 completed: 2026-03-17 | Memoization, pagination, AbortController, accessibility (46 labels), localStorage cleanup
 Phase 4 completed: 2026-03-17 | 215 tests (14 files), shared helpers, hook/component/util tests, CI pipeline
+Phase 5 completed: 2026-03-17 | 17 root .md files → 3, consolidated deployment docs, updated README
 
 ## Executive Summary
 
@@ -179,27 +180,29 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 
 ---
 
-## Phase 5: Documentation Cleanup
+## Phase 5: Documentation Cleanup — DONE
 
 **Goal**: Consolidate 18 markdown files into a maintainable set.
+**Status**: Completed 2026-03-17. All exit criteria met.
 
-### 5.1 Consolidate docs
-- Keep: `README.md`, `CLAUDE.md`, `COMMIT_METHOD_GUIDE.md`
-- Merge into README: `RELEASE_NOTES.md` (as changelog section), `AI_SERVICE_STATUS.md` (as AI section)
-- Merge into single `docs/DEPLOYMENT.md`: `DEPLOYMENT.md`, `DEPLOYMENT_CHECKLIST.md`, `DEPLOYMENT_REVIEW.md`
-- Delete: `DROPDOWN_SELECTION_FIX.md`, `FINAL_RESPONSIVE_FIX.md`, `ORPHAN_LINKING_FEATURE.md`, `ORPHAN_LINKING_FIX.md`, `RESPONSIVE_FIX_SUMMARY.md`, `TOGGLE_SELECTION_FEATURE.md` (implementation details belong in git history)
-- Move `TECHNICAL_SPECIFICATION.md` to `docs/`
+### 5.1 Consolidate docs — DONE
+- **Kept** at root: `README.md`, `CLAUDE.md`, `COMMIT_METHOD_GUIDE.md` (3 files)
+- **Merged** 3 deployment files → `docs/DEPLOYMENT.md` (145 LOC)
+- **Moved** `TECHNICAL_SPECIFICATION.md` → `docs/`
+- **Deleted** 13 obsolete files: AI_SERVICE_STATUS.md, RELEASE_NOTES.md, DEPLOYMENT.md, DEPLOYMENT_CHECKLIST.md, DEPLOYMENT_REVIEW.md, DROPDOWN_SELECTION_FIX.md, FINAL_RESPONSIVE_FIX.md, ORPHAN_LINKING_FEATURE.md, ORPHAN_LINKING_FIX.md, RESPONSIVE_FIX_SUMMARY.md, TOGGLE_SELECTION_FEATURE.md, replit.md, "Commit Method Intro.md"
+- **Result**: 17 root .md files → 3
 
-### 5.2 Add missing docs
-- `docs/DATABASE-SCHEMA.md` — Mermaid ER diagram (auto-generated from migrations)
-- Update `README.md` with current file counts and architecture diagram
+### 5.2 Update README — DONE
+- Removed stale `VITE_GROQ_API_KEY` references (now server-side Edge Function secret)
+- Updated AI Integration section to describe Edge Function proxy model
+- Updated Database Schema to 14 tables
+- Updated Project Structure to match current architecture
+- Updated Key Commands with test/coverage commands
+- Updated Documentation references to `docs/` paths
 
 ### 5.3 Fix package.json metadata — DONE (moved to Phase 1.2)
-- ~~Change `name` from `vite-react-typescript-starter` to `commit-ai`~~ Done
-- ~~Set `version` to `1.0.0`~~ Done
-- Add `description`, `author`, `license` fields
 
-**Exit criteria**: Max 6 markdown files at root, all current and accurate.
+**Exit criteria**: All met — 3 markdown files at root (target was max 6), all current and accurate.
 
 ---
 

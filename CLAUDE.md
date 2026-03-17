@@ -140,5 +140,5 @@ See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
 2. ~~Architecture Refactor~~ — DONE (2026-03-15)
 3. ~~Performance & UX~~ — DONE (2026-03-17)
 4. ~~Testing Depth~~ — DONE (2026-03-17)
-5. Documentation Cleanup (consolidate 18 files → 6) — NEXT
-6. Future Enhancements (PWA, undo/redo, soft deletes, E2E)
+5. ~~Documentation Cleanup~~ — DONE (2026-03-17)
+6. Future Enhancements (PWA, undo/redo, soft deletes, E2E) — BACKLOG
