@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   Edit2,
   Trash2,
@@ -49,7 +49,7 @@ interface ObjectiveCardProps {
   ) => Promise<void>;
 }
 
-export function ObjectiveCard({
+export const ObjectiveCard = memo(function ObjectiveCard({
   objective,
   goals,
   isSelected,
@@ -278,6 +278,7 @@ export function ObjectiveCard({
                 onToggleStatus();
               }}
               className="mt-0.5 flex-shrink-0 transition-transform active:scale-90"
+              aria-label="Toggle status"
             >
               {objective.status === "completed" ? (
                 <CheckCircle2 className="w-6 h-6 text-green-600" />
@@ -307,6 +308,7 @@ export function ObjectiveCard({
                     }}
                     className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors"
                     title={t("objectives.convert")}
+                    aria-label="Convert type"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
@@ -316,6 +318,7 @@ export function ObjectiveCard({
                       onStartEdit();
                     }}
                     className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors"
+                    aria-label={t("common.edit")}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -325,6 +328,7 @@ export function ObjectiveCard({
                       onDelete();
                     }}
                     className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                    aria-label={t("common.delete")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -409,6 +413,7 @@ export function ObjectiveCard({
                         }}
                         className="text-purple-600 hover:text-purple-700 dark:text-purple-400 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
                         title="AI Suggest Tasks"
+                        aria-label="AI suggestions"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                       </button>
@@ -485,4 +490,4 @@ export function ObjectiveCard({
       )}
     </div>
   );
-}
+});

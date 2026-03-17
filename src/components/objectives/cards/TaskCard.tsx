@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   Edit2,
   Trash2,
@@ -38,7 +38,7 @@ interface TaskCardProps {
   onDragStart?: (e: React.DragEvent) => void;
 }
 
-export function TaskCard({
+export const TaskCard = memo(function TaskCard({
   task,
   objectives,
   isSelected,
@@ -261,6 +261,7 @@ export function TaskCard({
                 onToggleStatus();
               }}
               className="mt-0.5 flex-shrink-0 transition-transform active:scale-90"
+              aria-label="Toggle status"
             >
               {task.status === "completed" ? (
                 <CheckCircle2 className="w-6 h-6 text-green-600" />
@@ -295,6 +296,7 @@ export function TaskCard({
                     }}
                     className="text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
                     title={t("objectives.convert")}
+                    aria-label="Convert type"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
@@ -304,6 +306,7 @@ export function TaskCard({
                       onStartEdit();
                     }}
                     className="text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors"
+                    aria-label={t("common.edit")}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -313,6 +316,7 @@ export function TaskCard({
                       onDelete();
                     }}
                     className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                    aria-label={t("common.delete")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -435,6 +439,7 @@ export function TaskCard({
                           onClick={handleAddLink}
                           disabled={!newLinkUrl.trim()}
                           className="flex items-center gap-1 px-2 py-1.5 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Add link"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
@@ -463,6 +468,7 @@ export function TaskCard({
                             <button
                               onClick={() => handleRemoveLink(index)}
                               className="flex-shrink-0 p-0.5 text-red-600 hover:bg-red-50 rounded opacity-0 group-hover/link:opacity-100 transition-opacity"
+                              aria-label="Remove link"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -498,4 +504,4 @@ export function TaskCard({
       )}
     </div>
   );
-}
+});

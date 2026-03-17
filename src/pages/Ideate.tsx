@@ -56,6 +56,9 @@ export default function Ideate() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [libraryCollapsed, setLibraryCollapsed] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 30;
 
   useEffect(() => {
     if (user) loadIdeas();
@@ -65,8 +68,8 @@ export default function Ideate() {
       setInitialInput(location.state.initialInput);
   }, [location.state]);
 
-  const loadIdeas = async () => {
-    setLoading(true);
+  const loadIdeas = async (offset = 0) => {
+    if (offset === 0) setLoading(true);
     try {
       const { data, error } = await supabase
         .from("ideas")
@@ -75,14 +78,29 @@ export default function Ideate() {
         )
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .range(offset, offset + PAGE_SIZE - 1);
       if (error) throw error;
-      setIdeas((data || []) as Idea[]);
+
+      const newIdeas = (data || []) as Idea[];
+      setHasMore(newIdeas.length === PAGE_SIZE);
+
+      if (offset === 0) {
+        setIdeas(newIdeas);
+      } else {
+        setIdeas((prev) => [...prev, ...newIdeas]);
+      }
     } catch (error) {
       console.error("Error loading ideas:", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMoreIdeas = () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    loadIdeas(ideas.length);
   };
 
   const handleGenerateIdea = async () => {
@@ -214,6 +232,7 @@ export default function Ideate() {
           <button
             onClick={() => setShowFilters(true)}
             className="lg:hidden p-2 rounded-xl bg-gray-100 dark:bg-gray-800"
+            aria-label="Filter ideas"
           >
             <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
@@ -375,6 +394,7 @@ export default function Ideate() {
                   <button
                     onClick={() => setLibraryCollapsed(true)}
                     className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                    aria-label="Collapse idea library"
                   >
                     <ChevronDown className="w-4 h-4 text-gray-500" />
                   </button>
@@ -445,11 +465,23 @@ export default function Ideate() {
                           handleDeleteIdea(idea.id);
                         }}
                         className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                        aria-label={t("common.delete")}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </Card>
                   ))}
+                  {hasMore && (
+                    <div className="col-span-full flex justify-center pt-4">
+                      <Button
+                        variant="ghost"
+                        onClick={loadMoreIdeas}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? "..." : t("common.loadMore")}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -492,6 +524,7 @@ export default function Ideate() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={t("ideate.searchIdeas")}
+                  aria-label={t("common.search")}
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100"
                 />
               </div>
@@ -543,6 +576,7 @@ export default function Ideate() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={t("ideate.searchIdeas")}
+              aria-label={t("common.search")}
               className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100"
             />
           </div>

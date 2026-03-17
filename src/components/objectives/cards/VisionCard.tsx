@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Edit2, Trash2, Calendar, Save, X, RefreshCw } from "lucide-react";
 import { formatShortDate } from "../../../utils/trackingStats";
 import { Vision } from "../types";
@@ -26,7 +26,7 @@ interface VisionCardProps {
   isDraggedOver?: boolean;
 }
 
-export function VisionCard({
+export const VisionCard = memo(function VisionCard({
   vision,
   isSelected,
   isInFamily,
@@ -173,6 +173,7 @@ export function VisionCard({
                 }}
                 className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors"
                 title={t("objectives.convert")}
+                aria-label="Convert type"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
@@ -182,6 +183,7 @@ export function VisionCard({
                   onStartEdit();
                 }}
                 className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors"
+                aria-label={t("common.edit")}
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
@@ -191,6 +193,7 @@ export function VisionCard({
                   onDelete();
                 }}
                 className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                aria-label={t("common.delete")}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -233,4 +236,4 @@ export function VisionCard({
       )}
     </div>
   );
-}
+});

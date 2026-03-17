@@ -134,7 +134,7 @@ export default function MindMapView() {
     }
   };
 
-  const renderMermaid = async () => {
+  const renderMermaid = useCallback(async () => {
     if (!diagramRef.current || !currentMindMap) return;
 
     try {
@@ -152,7 +152,7 @@ export default function MindMapView() {
       console.error("Error rendering mermaid:", error);
       diagramRef.current.innerHTML = `<div class="text-red-600 p-4">${t("map.errorRendering")}</div>`;
     }
-  };
+  }, [currentMindMap, loadMermaid, t]);
 
   const addNodeClickHandlers = () => {
     if (!diagramRef.current) return;
@@ -696,6 +696,7 @@ export default function MindMapView() {
                     disabled={historyIndex < 0}
                     className="flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm font-medium"
                     title={t("map.goBack")}
+                    aria-label="Previous mind map"
                   >
                     <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
@@ -704,6 +705,7 @@ export default function MindMapView() {
                     disabled={historyIndex >= navigationHistory.length - 1}
                     className="flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-1.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-sm font-medium"
                     title={t("map.goForward")}
+                    aria-label="Next mind map"
                   >
                     <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
@@ -718,6 +720,7 @@ export default function MindMapView() {
                   <button
                     onClick={() => setShowDownloadMenu(!showDownloadMenu)}
                     className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm font-medium"
+                    aria-label="Download mind map"
                   >
                     <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">
@@ -793,6 +796,7 @@ export default function MindMapView() {
                       ? t("map.exitFullscreen")
                       : t("map.enterFullscreen")
                   }
+                  aria-label="Toggle fullscreen"
                 >
                   {isFullscreen ? (
                     <Minimize className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -852,6 +856,7 @@ export default function MindMapView() {
               <button
                 onClick={() => setShowHistory(false)}
                 className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded text-text-secondary"
+                aria-label={t("common.close")}
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -880,6 +885,7 @@ export default function MindMapView() {
                     <button
                       onClick={() => handleDelete(map.id)}
                       className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded flex-shrink-0"
+                      aria-label={t("common.delete")}
                     >
                       <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>

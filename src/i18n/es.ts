@@ -19,6 +19,7 @@ export const es = {
     select: "Seleccionar",
     add: "Agregar",
     remove: "Eliminar",
+    loadMore: "Cargar Más",
   },
   // Language
   language: {

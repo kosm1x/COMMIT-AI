@@ -59,9 +59,18 @@ async function callLLM(
   top_p: number = 0.95,
   reasoning_effort?: "default" | "low" | "medium" | "high",
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<string | null> {
   if (!aiRateLimiter.canProceed()) {
     return null;
+  }
+
+  const internalController = new AbortController();
+  const timeoutId = setTimeout(() => internalController.abort(), 30_000);
+  if (signal) {
+    signal.addEventListener("abort", () => internalController.abort(), {
+      once: true,
+    });
   }
 
   try {
@@ -98,6 +107,7 @@ async function callLLM(
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(body),
+        signal: internalController.signal,
       },
       {
         maxRetries: 2,
@@ -114,14 +124,21 @@ async function callLLM(
     const data = await response.json();
     return data.content || null;
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      console.warn("AI call aborted or timed out");
+      return null;
+    }
     console.error("Error calling AI proxy:", error);
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
 export async function analyzeJournalEntry(
   content: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<AnalysisResult> {
   const prompt = `Analyze this journal entry and provide emotional insights, patterns, and coping strategies. Return your response in JSON format with the following structure:
 {
@@ -149,6 +166,7 @@ Return ONLY the JSON object, no additional text.`;
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -350,6 +368,7 @@ function generateMockAnalysis(
 export async function extractObjectivesFromJournal(
   content: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<string[]> {
   const prompt = `Extract potential goals or objectives from this journal entry. Return a JSON array of strings, each representing a goal or objective the person might want to pursue. If no clear goals are mentioned, return an empty array.
 
@@ -365,6 +384,7 @@ Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
     0.95,
     undefined,
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -396,6 +416,7 @@ export async function generateMindMap(
   problemStatement: string,
   context?: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<MindMapResult> {
   const contextPrompt = context
     ? `\n\nPrevious Context (from earlier mind maps in this exploration):
@@ -440,6 +461,7 @@ Return ONLY the JSON object with title and mermaidSyntax fields, no additional t
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -518,6 +540,7 @@ interface IdeaCompletionResult {
 export async function completeIdea(
   initialInput: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<IdeaCompletionResult> {
   const prompt = `You are a creative assistant helping expand on a minimal idea. Take this initial idea input and help complete it. Return your response in JSON format with the following structure:
 {
@@ -547,6 +570,7 @@ Return ONLY the JSON object, no additional text.`;
     0.95,
     undefined,
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -649,6 +673,7 @@ export async function findIdeaConnections(
   }[],
   currentIdeaMeta?: { title: string; tags?: string[] },
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<IdeaConnection[]> {
   if (existingIdeas.length === 0) {
     console.log("[findIdeaConnections] No existing ideas to compare");
@@ -720,6 +745,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -1548,6 +1574,7 @@ export async function generateDivergentPaths(
   ideaTitle: string,
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<DivergentPath[]> {
   const prompt = `Analyze this idea and generate 3-4 divergent paths or alternative approaches to explore it. Each path should offer a different angle, perspective, or methodology. Return a JSON array with this structure:
 
@@ -1580,6 +1607,7 @@ Return ONLY the JSON array, no additional text.`;
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -1703,6 +1731,7 @@ export async function suggestNextSteps(
   ideaTitle: string,
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<NextStep[]> {
   const prompt = `Based on this idea, suggest 4-6 specific, actionable next steps. Return a JSON array:
 
@@ -1734,6 +1763,7 @@ Return ONLY the JSON array, no additional text.`;
     0.95,
     undefined,
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -1860,6 +1890,7 @@ export async function generateCriticalAnalysis(
   ideaTitle: string,
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<CriticalAnalysis> {
   const prompt = `Provide a balanced critical analysis of this idea. Return JSON:
 
@@ -1891,6 +1922,7 @@ Return ONLY the JSON object, no additional text.`;
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -1996,6 +2028,7 @@ export async function generateRelatedConcepts(
   ideaTitle: string,
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<RelatedConcept[]> {
   const prompt = `Identify 3-4 related concepts, frameworks, or methodologies that connect to this idea. Return JSON array:
 
@@ -2027,6 +2060,7 @@ Return ONLY the JSON array, no additional text.`;
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -2148,6 +2182,7 @@ export async function suggestObjectivesForGoal(
   goalTitle: string,
   goalDescription: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<SuggestedObjective[]> {
   const prompt = `You are analyzing a goal to break it down into actionable objectives. Consider BOTH the title and the full description to understand the complete context and intent.
 
@@ -2184,6 +2219,7 @@ Return ONLY the JSON array, no additional text.`;
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {
@@ -2297,6 +2333,7 @@ export async function transformIdeaText(
     fullContext?: string;
   },
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<string> {
   const prompts: Record<typeof mode, string> = {
     enhance: `Improve clarity, style, and impact of the following text. Keep the author's intent and voice. Return only the rewritten text, nothing else.`,
@@ -2365,6 +2402,7 @@ RULES:
     0.95,
     undefined,
     language,
+    signal,
   );
   if (!textResponse) {
     return selectedText;
@@ -2436,6 +2474,7 @@ export async function suggestTasksForObjective(
   objectiveTitle: string,
   objectiveDescription: string,
   language: "en" | "es" | "zh" = "en",
+  signal?: AbortSignal,
 ): Promise<SuggestedTask[]> {
   const prompt = `You are analyzing an objective to break it down into actionable tasks. Consider BOTH the title and the full description to understand the complete context and intent.
 
@@ -2472,6 +2511,7 @@ Return ONLY the JSON array, no additional text.`;
     0.95,
     "default",
     language,
+    signal,
   );
 
   if (!textResponse) {

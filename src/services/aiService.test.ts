@@ -224,6 +224,45 @@ describe("completeIdea", () => {
   });
 });
 
+describe("AbortController integration", () => {
+  it("returns mock data when external signal is aborted", async () => {
+    mockAuthSession();
+    const controller = new AbortController();
+    controller.abort();
+
+    const result = await analyzeJournalEntry(
+      "test entry",
+      "en",
+      controller.signal,
+    );
+
+    // Should return mock data (not throw)
+    expect(result.emotions.length).toBeGreaterThan(0);
+    expect(result.primary_emotion).toBeDefined();
+    // fetchWithRetry should not have been called (abort happens before or during fetch)
+    // The internal controller aborts immediately due to external signal
+  });
+
+  it("returns mock data when callLLM fetch is aborted mid-flight", async () => {
+    mockAuthSession();
+    const controller = new AbortController();
+
+    // Mock fetchWithRetry to throw AbortError
+    mockFetch.mockRejectedValueOnce(
+      new DOMException("The operation was aborted", "AbortError"),
+    );
+
+    const result = await analyzeJournalEntry(
+      "test entry",
+      "en",
+      controller.signal,
+    );
+
+    expect(result.emotions.length).toBeGreaterThan(0);
+    expect(result.primary_emotion).toBeDefined();
+  });
+});
+
 describe("rate limiter integration", () => {
   it("returns mock data when rate limiter denies", async () => {
     mockCanProceed.mockReturnValue(false);

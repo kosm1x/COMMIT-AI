@@ -10,7 +10,7 @@ npm run build        # Typecheck + Vite production build
 npm run typecheck    # tsc --noEmit -p tsconfig.app.json
 npm run lint         # ESLint
 npm run lint:fix     # ESLint with auto-fix
-npm run test         # Vitest (81 tests, 4 files)
+npm run test         # Vitest (83 tests, 4 files)
 npm run test:watch   # Vitest watch mode
 npm run test:coverage # Vitest with v8 coverage
 npm run types:generate # Regenerate Supabase types (requires local Supabase running)
@@ -39,14 +39,15 @@ src/
     map/, tracking/,             #   widgets/ subfolder
     navigation/, layout/, ui/
   contexts/                      # AuthContext, ThemeContext, LanguageContext, NotificationContext
-  hooks/                         # 10 custom hooks
+  hooks/                         # 11 custom hooks
     useObjectivesState.ts        # Thin composer (split in Phase 2.1)
     useObjectivesData.ts         # Data loading + state
     useObjectivesSelection.ts    # Selection path + navigation
     useObjectivesCRUD.ts         # CRUD + toggles + conversions
     useIdeaEditor.ts             # Text selection + AI transforms
+    useFocusTrap.ts              # Tab cycling + focus restore for modals
   services/                      # 6 services
-    aiService.ts                 # 12 AI functions via callLLM(), Zod-validated responses
+    aiService.ts                 # 12 AI functions via callLLM(), Zod-validated, 30s timeout, AbortSignal
     objectivesService.ts         # CRUD for Vision/Goal/Objective/Task
   lib/
     supabase.ts                  # Typed client: createClient<Database>()
@@ -109,14 +110,14 @@ VITE_SUPABASE_ANON_KEY=...
 5. ~~**HIGH — No AI response validation**~~: Fixed (Phase 2.5) — 11 Zod schemas with safeParse
 6. ~~**MEDIUM — Duplicate fetchWithRetry**~~: Fixed (Phase 1.4) — consolidated to canonical utils version
 7. ~~**MEDIUM — Manual DB types**~~: Fixed (Phase 2.4) — auto-generated from DB (14 tables, 743 LOC)
-8. **MEDIUM — No memoization**: Cards/widgets re-render on every parent change → Phase 3.1
-9. **MEDIUM — No pagination**: Full list loads (Journal 30, Ideas 100) → Phase 3.2
-10. **MEDIUM — Missing accessibility**: Only 4 ARIA labels across 57 components → Phase 3.4
+8. ~~**MEDIUM — No memoization**~~: Fixed (Phase 3.1) — 4 card components wrapped in `React.memo`, MindMapView render memoized
+9. ~~**MEDIUM — No pagination**~~: Fixed (Phase 3.2) — Journal cursor-based (20/page), Ideas offset-based (30/page)
+10. ~~**MEDIUM — Missing accessibility**~~: Fixed (Phase 3.4) — 46 ARIA labels, focus traps on Modal/BottomSheet, nav landmarks
 11. **LOW — 71 `any`/`@ts-ignore` instances**: Type safety gaps throughout
 12. **LOW — 18 markdown files at root**: Documentation sprawl → Phase 5.1
 13. ~~**LOW — Package.json metadata**~~: Fixed (Phase 1.2) — name=commit-ai, version=1.0.0
 14. ~~**LOW — RateLimiter unused**~~: Fixed (Phase 1.5) — activated on AI service calls
-15. **LOW — localStorage not cleared on logout**: Preferences leak between users → Phase 3.5
+15. ~~**LOW — localStorage not cleared on logout**~~: Fixed (Phase 3.5) — all 12 keys cleared on signout
 
 ## Hard-Won Lessons (from sister projects)
 
@@ -137,7 +138,7 @@ Validated across agent-controller (190 tests) and crm-azteca (1143 tests):
 See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
 1. ~~Security & Foundation~~ — DONE (2026-03-13)
 2. ~~Architecture Refactor~~ — DONE (2026-03-15)
-3. Performance & UX (memoization, pagination, accessibility) — NEXT
-4. Testing Depth (hooks, components, integration, CI)
+3. ~~Performance & UX~~ — DONE (2026-03-17)
+4. Testing Depth (hooks, components, integration, CI) — NEXT
 5. Documentation Cleanup (consolidate 18 files → 6)
 6. Future Enhancements (PWA, undo/redo, soft deletes, E2E)

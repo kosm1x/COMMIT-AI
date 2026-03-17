@@ -19,6 +19,7 @@ export const en = {
     select: "Select",
     add: "Add",
     remove: "Remove",
+    loadMore: "Load More",
   },
   // Language
   language: {

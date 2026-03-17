@@ -58,6 +58,9 @@ export default function Journal() {
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 20;
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -82,15 +85,21 @@ export default function Journal() {
     };
   }, [content, selectedEntry?.content]);
 
-  const loadEntries = async () => {
-    const { data, error } = await supabase
+  const loadEntries = async (cursor?: string) => {
+    let query = supabase
       .from("journal_entries")
       .select(
         "id, content, entry_date, primary_emotion, created_at, updated_at",
       )
       .eq("user_id", user!.id)
       .order("entry_date", { ascending: false })
-      .limit(30);
+      .limit(PAGE_SIZE + 1);
+
+    if (cursor) {
+      query = query.lt("entry_date", cursor);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       notify({
@@ -101,13 +110,31 @@ export default function Journal() {
       return;
     }
     if (data) {
-      const entries = data.map((e) => ({
+      const hasMoreResults = data.length > PAGE_SIZE;
+      const pageData = hasMoreResults ? data.slice(0, PAGE_SIZE) : data;
+      const mapped = pageData.map((e) => ({
         ...e,
         primary_emotion: e.primary_emotion ?? undefined,
       })) as JournalEntry[];
-      setEntries(entries);
-      if (entries.length > 0 && !selectedEntry) setSelectedEntry(entries[0]);
+
+      if (cursor) {
+        setEntries((prev) => [...prev, ...mapped]);
+      } else {
+        setEntries(mapped);
+        if (mapped.length > 0 && !selectedEntry) setSelectedEntry(mapped[0]);
+      }
+      setHasMore(hasMoreResults);
     }
+  };
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    const lastEntry = entries[entries.length - 1];
+    if (lastEntry) {
+      await loadEntries(lastEntry.entry_date);
+    }
+    setLoadingMore(false);
   };
 
   const loadAnalysis = async (entryId: string) => {
@@ -300,10 +327,16 @@ export default function Journal() {
             {/* Journal-specific actions */}
             {viewMode === "journal" && (
               <div className="flex items-center gap-1">
-                <IconButton onClick={() => setShowEntryList(true)}>
+                <IconButton
+                  onClick={() => setShowEntryList(true)}
+                  aria-label={t("journal.recentEntries")}
+                >
                   <Calendar className="w-5 h-5" />
                 </IconButton>
-                <IconButton onClick={handleNewEntry}>
+                <IconButton
+                  onClick={handleNewEntry}
+                  aria-label={t("journal.newEntry")}
+                >
                   <Plus className="w-5 h-5" />
                 </IconButton>
               </div>
@@ -328,7 +361,11 @@ export default function Journal() {
                 <h3 className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
                   {t("journal.recentEntries")}
                 </h3>
-                <Button size="sm" onClick={handleNewEntry}>
+                <Button
+                  size="sm"
+                  onClick={handleNewEntry}
+                  aria-label={t("journal.newEntry")}
+                >
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -370,6 +407,18 @@ export default function Journal() {
                     </p>
                   </button>
                 ))}
+                {hasMore && (
+                  <div className="flex justify-center py-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? "..." : t("common.loadMore")}
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
@@ -385,6 +434,7 @@ export default function Journal() {
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
+                    aria-label="Select date"
                     className="bg-transparent border-none text-gray-900 dark:text-gray-100 font-semibold focus:ring-0 p-0 cursor-pointer"
                   />
                   <span
@@ -407,12 +457,19 @@ export default function Journal() {
                     </Button>
                   )}
                   {analysis && (
-                    <IconButton onClick={() => setShowAnalysis(true)}>
+                    <IconButton
+                      onClick={() => setShowAnalysis(true)}
+                      aria-label={t("journal.aiInsights")}
+                    >
                       <ChevronRight className="w-4 h-4" />
                     </IconButton>
                   )}
                   {selectedEntry && (
-                    <IconButton variant="danger" onClick={handleDelete}>
+                    <IconButton
+                      variant="danger"
+                      onClick={handleDelete}
+                      aria-label={t("common.delete")}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </IconButton>
                   )}
@@ -422,6 +479,7 @@ export default function Journal() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={t("journal.placeholder")}
+                aria-label={t("journal.placeholder")}
                 className="flex-1 p-4 bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 resize-none focus:outline-none text-base leading-relaxed"
               />
             </Card>
@@ -489,6 +547,18 @@ export default function Journal() {
                   </p>
                 </button>
               ))}
+              {hasMore && (
+                <div className="flex justify-center py-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? "..." : t("common.loadMore")}
+                  </Button>
+                </div>
+              )}
             </div>
           </BottomSheet>
 

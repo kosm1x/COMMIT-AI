@@ -19,6 +19,7 @@ export const zh = {
     select: "选择",
     add: "添加",
     remove: "移除",
+    loadMore: "加载更多",
   },
   // Language
   language: {

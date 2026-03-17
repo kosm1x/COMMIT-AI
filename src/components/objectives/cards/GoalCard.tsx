@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   Edit2,
   Trash2,
@@ -51,7 +51,7 @@ interface GoalCardProps {
   ) => Promise<void>;
 }
 
-export function GoalCard({
+export const GoalCard = memo(function GoalCard({
   goal,
   visions,
   // objectives, // Not used currently but kept in interface for future expansion
@@ -252,6 +252,7 @@ export function GoalCard({
                 onToggleStatus();
               }}
               className="mt-0.5 flex-shrink-0 transition-transform active:scale-90"
+              aria-label="Toggle status"
             >
               {goal.status === "completed" ? (
                 <CheckCircle2 className="w-6 h-6 text-green-600" />
@@ -281,6 +282,7 @@ export function GoalCard({
                     }}
                     className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
                     title={t("objectives.convert")}
+                    aria-label="Convert type"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
@@ -290,6 +292,7 @@ export function GoalCard({
                       onStartEdit();
                     }}
                     className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
+                    aria-label={t("common.edit")}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -299,6 +302,7 @@ export function GoalCard({
                       onDelete();
                     }}
                     className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                    aria-label={t("common.delete")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -380,6 +384,7 @@ export function GoalCard({
                         }}
                         className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
                         title="AI Suggest Objectives"
+                        aria-label="AI suggestions"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                       </button>
@@ -449,4 +454,4 @@ export function GoalCard({
       )}
     </div>
   );
-}
+});
