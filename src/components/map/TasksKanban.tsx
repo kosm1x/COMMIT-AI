@@ -130,7 +130,7 @@ export default function TasksKanban({
       let loadedTasks = tasksResult.data;
       if (!hasAppliedSort.current) {
         hasAppliedSort.current = true;
-        loadedTasks = sortTasks(loadedTasks as any) as any;
+        loadedTasks = sortTasks(loadedTasks as never) as typeof loadedTasks;
       }
       setTasks(loadedTasks as Task[]);
     }
@@ -250,7 +250,10 @@ export default function TasksKanban({
             ? Math.max(...statusTasks.map((t) => t.order)) + 1
             : 0;
 
-        const updates: any = { status: targetStatus, order: newOrder };
+        const updates: Record<string, string | number | null> = {
+          status: targetStatus,
+          order: newOrder,
+        };
         if (targetStatus === "completed") {
           updates.completed_at = new Date().toISOString();
         } else {

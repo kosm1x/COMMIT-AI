@@ -152,7 +152,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
     setLoading(true);
 
     // Get or create daily plan for the date
-    let { data: plan } = await supabase
+    const { data: plan } = await supabase
       .from("daily_plans")
       .select("id, user_id, plan_date, notes, created_at, updated_at")
       .eq("user_id", userId)

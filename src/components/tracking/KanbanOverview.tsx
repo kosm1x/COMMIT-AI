@@ -18,6 +18,7 @@ interface Item {
   title: string;
   status: "not_started" | "in_progress" | "completed" | "on_hold";
   type: "vision" | "goal" | "objective" | "task";
+  is_recurring?: boolean;
 }
 
 const STATUS_COLUMNS = [
@@ -260,7 +261,7 @@ export default function KanbanOverview() {
                         <span className="text-xs font-medium text-text-primary flex-1 truncate">
                           {item.title}
                         </span>
-                        {item.type === "task" && (item as any).is_recurring && (
+                        {item.type === "task" && item.is_recurring && (
                           <span className="text-xs text-purple-600 dark:text-purple-400">
                             🔁
                           </span>

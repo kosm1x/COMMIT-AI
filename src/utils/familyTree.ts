@@ -11,19 +11,16 @@ interface SelectionPath {
 interface Goal {
   id: string;
   vision_id: string | null;
-  [key: string]: any;
 }
 
 interface Objective {
   id: string;
   goal_id: string | null;
-  [key: string]: any;
 }
 
 interface Task {
   id: string;
   objective_id: string | null;
-  [key: string]: any;
 }
 
 // Resolve full ancestor chain from selection path (mirrors useObjectivesState effectivePath)
@@ -31,7 +28,7 @@ function getEffectivePath(
   selectionPath: SelectionPath,
   goals: Goal[],
   objectives: Objective[],
-  tasks: Task[]
+  tasks: Task[],
 ): SelectionPath {
   const { visionId, goalId, objectiveId, taskId } = selectionPath;
   let effVision: string | null = visionId ?? null;
@@ -39,84 +36,98 @@ function getEffectivePath(
   let effObjective: string | null = objectiveId ?? null;
 
   if (taskId) {
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (task?.objective_id) {
-      const obj = objectives.find(o => o.id === task.objective_id);
+      const obj = objectives.find((o) => o.id === task.objective_id);
       if (obj) {
         if (effObjective === null) effObjective = obj.id;
         if (effGoal === null && obj.goal_id) effGoal = obj.goal_id;
         if (effVision === null && obj.goal_id) {
-          const g = goals.find(gr => gr.id === obj.goal_id);
+          const g = goals.find((gr) => gr.id === obj.goal_id);
           if (g?.vision_id) effVision = g.vision_id;
         }
       }
     }
   }
   if (objectiveId && (effGoal === null || effVision === null)) {
-    const obj = objectives.find(o => o.id === objectiveId);
+    const obj = objectives.find((o) => o.id === objectiveId);
     if (obj?.goal_id) {
       if (effGoal === null) effGoal = obj.goal_id;
       if (effVision === null) {
-        const g = goals.find(gr => gr.id === obj.goal_id);
+        const g = goals.find((gr) => gr.id === obj.goal_id);
         if (g?.vision_id) effVision = g.vision_id;
       }
     }
   }
   if (goalId && effVision === null) {
-    const g = goals.find(gr => gr.id === goalId);
+    const g = goals.find((gr) => gr.id === goalId);
     if (g?.vision_id) effVision = g.vision_id;
   }
 
-  return { visionId: effVision, goalId: effGoal, objectiveId: effObjective, taskId: taskId ?? null };
+  return {
+    visionId: effVision,
+    goalId: effGoal,
+    objectiveId: effObjective,
+    taskId: taskId ?? null,
+  };
 }
 
 export function createIsInSelectedFamily(
   selectionPath: SelectionPath,
   goals: Goal[],
   objectives: Objective[],
-  tasks: Task[]
+  tasks: Task[],
 ) {
-  return (type: 'vision' | 'goal' | 'objective' | 'task', id: string): boolean => {
-    const { visionId, goalId, objectiveId, taskId } = getEffectivePath(selectionPath, goals, objectives, tasks);
+  return (
+    type: "vision" | "goal" | "objective" | "task",
+    id: string,
+  ): boolean => {
+    const { visionId, goalId, objectiveId, taskId } = getEffectivePath(
+      selectionPath,
+      goals,
+      objectives,
+      tasks,
+    );
     if (!visionId && !goalId && !objectiveId && !taskId) return false;
 
     switch (type) {
-      case 'vision': {
+      case "vision": {
         return id === visionId;
       }
-      case 'goal': {
+      case "goal": {
         if (id === goalId) return true;
-        const goal = goals.find(g => g.id === id);
+        const goal = goals.find((g) => g.id === id);
         if (!goal) return false;
         return visionId !== null && goal.vision_id === visionId;
       }
-      case 'objective': {
+      case "objective": {
         if (id === objectiveId) return true;
-        const obj = objectives.find(o => o.id === id);
+        const obj = objectives.find((o) => o.id === id);
         if (!obj) return false;
         if (goalId !== null && obj.goal_id === goalId) return true;
         // Vision only selected (no goal selected): all objectives under any goal of that vision
         if (visionId !== null && goalId === null && obj.goal_id) {
-          const g = goals.find(gr => gr.id === obj.goal_id);
+          const g = goals.find((gr) => gr.id === obj.goal_id);
           if (g?.vision_id === visionId) return true;
         }
         return false;
       }
-      case 'task': {
+      case "task": {
         if (id === taskId) return true;
-        const task = tasks.find(t => t.id === id);
+        const task = tasks.find((t) => t.id === id);
         if (!task?.objective_id) return false;
-        if (objectiveId !== null && task.objective_id === objectiveId) return true;
+        if (objectiveId !== null && task.objective_id === objectiveId)
+          return true;
         // Goal selected: all tasks under that goal (more specific - takes precedence)
         if (goalId !== null) {
-          const obj = objectives.find(o => o.id === task.objective_id);
+          const obj = objectives.find((o) => o.id === task.objective_id);
           if (obj?.goal_id === goalId) return true;
         }
         // Vision selected (but no goal selected): all tasks under that vision
         if (visionId !== null && goalId === null) {
-          const obj = objectives.find(o => o.id === task.objective_id);
+          const obj = objectives.find((o) => o.id === task.objective_id);
           if (obj?.goal_id) {
-            const g = goals.find(gr => gr.id === obj.goal_id);
+            const g = goals.find((gr) => gr.id === obj.goal_id);
             if (g?.vision_id === visionId) return true;
           }
         }
@@ -127,4 +138,3 @@ export function createIsInSelectedFamily(
     }
   };
 }
-

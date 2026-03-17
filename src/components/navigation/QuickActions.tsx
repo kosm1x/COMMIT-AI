@@ -1,10 +1,18 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, X, BookOpen, Target, ListChecks, Flag } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  Plus,
+  X,
+  BookOpen,
+  Target,
+  ListChecks,
+  Flag,
+  type LucideIcon,
+} from "lucide-react";
 
 interface QuickAction {
   id: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   description: string;
   onClick: () => void;
 }
@@ -29,8 +37,9 @@ export default function QuickActions({
   onOpen: controlledOnOpen,
 }: QuickActionsProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
-  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
-  
+  const isOpen =
+    controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
   const handleClose = useCallback(() => {
     if (controlledOnClose) {
       controlledOnClose();
@@ -38,7 +47,7 @@ export default function QuickActions({
       setInternalIsOpen(false);
     }
   }, [controlledOnClose]);
-  
+
   const handleOpen = useCallback(() => {
     if (controlledOnOpen) {
       controlledOnOpen();
@@ -46,7 +55,7 @@ export default function QuickActions({
       setInternalIsOpen(true);
     }
   }, [controlledOnOpen]);
-  
+
   const handleToggle = useCallback(() => {
     if (isOpen) {
       handleClose();
@@ -58,40 +67,40 @@ export default function QuickActions({
 
   const actions: QuickAction[] = [
     {
-      id: 'journal',
-      label: 'New Journal Entry',
+      id: "journal",
+      label: "New Journal Entry",
       icon: BookOpen,
-      description: 'Start writing',
+      description: "Start writing",
       onClick: () => {
         onCreateJournalEntry?.();
         handleClose();
       },
     },
     {
-      id: 'goal',
-      label: 'New Goal',
+      id: "goal",
+      label: "New Goal",
       icon: Flag,
-      description: 'Set a long-term goal',
+      description: "Set a long-term goal",
       onClick: () => {
         onCreateGoal?.();
         handleClose();
       },
     },
     {
-      id: 'objective',
-      label: 'New Objective',
+      id: "objective",
+      label: "New Objective",
       icon: Target,
-      description: 'Add a milestone',
+      description: "Add a milestone",
       onClick: () => {
         onCreateObjective?.();
         handleClose();
       },
     },
     {
-      id: 'task',
-      label: 'New Task',
+      id: "task",
+      label: "New Task",
       icon: ListChecks,
-      description: 'Create an action item',
+      description: "Create an action item",
       onClick: () => {
         onCreateTask?.();
         handleClose();
@@ -107,23 +116,23 @@ export default function QuickActions({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, handleClose]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         handleClose();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, handleClose]);
 
   return (
@@ -143,8 +152,12 @@ export default function QuickActions({
                     <Icon className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900">{action.label}</div>
-                    <div className="text-xs text-gray-500">{action.description}</div>
+                    <div className="font-medium text-gray-900">
+                      {action.label}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {action.description}
+                    </div>
                   </div>
                 </button>
               );
@@ -158,10 +171,10 @@ export default function QuickActions({
           onClick={handleToggle}
           className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all ${
             isOpen
-              ? 'bg-gray-900 hover:bg-gray-800 rotate-45'
-              : 'bg-blue-600 hover:bg-blue-700'
+              ? "bg-gray-900 hover:bg-gray-800 rotate-45"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
-          aria-label={isOpen ? 'Close quick actions' : 'Open quick actions'}
+          aria-label={isOpen ? "Close quick actions" : "Open quick actions"}
         >
           {isOpen ? (
             <X className="w-6 h-6 text-white" />

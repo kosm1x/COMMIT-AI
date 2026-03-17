@@ -73,7 +73,9 @@ export default function ObjectivesKanban({
   const STATUS_COLUMNS = getStatusColumns(t);
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<
+    { id: string; objective_id: string | null }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
@@ -126,7 +128,9 @@ export default function ObjectivesKanban({
       let loadedObjectives = objectivesResult.data;
       if (!hasAppliedSort.current) {
         hasAppliedSort.current = true;
-        loadedObjectives = sortObjectives(loadedObjectives as any) as any;
+        loadedObjectives = sortObjectives(
+          loadedObjectives as unknown as import("../../components/objectives/types").Objective[],
+        ) as unknown as typeof loadedObjectives;
       }
       setObjectives(loadedObjectives as Objective[]);
     }

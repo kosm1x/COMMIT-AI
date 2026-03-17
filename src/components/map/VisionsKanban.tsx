@@ -64,9 +64,15 @@ export default function VisionsKanban({
   const navigate = useNavigate();
   const STATUS_COLUMNS = getStatusColumns(t);
   const [visions, setVisions] = useState<Vision[]>([]);
-  const [goals, setGoals] = useState<any[]>([]);
-  const [objectives, setObjectives] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [goals, setGoals] = useState<
+    { id: string; vision_id: string | null }[]
+  >([]);
+  const [objectives, setObjectives] = useState<
+    { id: string; goal_id: string | null }[]
+  >([]);
+  const [tasks, setTasks] = useState<
+    { id: string; objective_id: string | null }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);

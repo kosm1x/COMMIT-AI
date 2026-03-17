@@ -518,7 +518,7 @@ export default function MindMapView() {
   const handleCreateItem = async () => {
     if (!createModal.type) return;
 
-    const itemData: any = {
+    const itemData: Record<string, string> = {
       user_id: user!.id,
       title: createModal.nodeText,
       description: `${t("map.createdFromMindMap")} ${currentMindMap?.title}`,
@@ -542,7 +542,9 @@ export default function MindMapView() {
         break;
     }
 
-    const { error } = await supabase.from(table as any).insert(itemData);
+    const { error } = await supabase
+      .from(table as "goals" | "objectives" | "tasks")
+      .insert(itemData as never);
 
     if (!error) {
       setCreateModal({ type: null, nodeText: "" });
