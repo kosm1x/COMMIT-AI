@@ -127,7 +127,7 @@ The application uses 14 tables:
 - **daily_planner** - Daily planning entries
 - **daily_plan_tasks** - Tasks within daily plans
 
-All tables have Row Level Security (RLS) enabled to ensure data privacy.
+All tables have Row Level Security (RLS) enabled to ensure data privacy. Completed non-recurring tasks are automatically pruned after 15 days.
 
 ## AI Integration
 
@@ -191,7 +191,7 @@ src/
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production (includes typecheck)
-- `npm run test` - Run 215 tests
+- `npm run test` - Run 217 tests
 - `npm run typecheck` - Type check with TypeScript
 - `npm run lint` - Run ESLint
 - `npm run test:coverage` - Run tests with coverage report

@@ -6,6 +6,8 @@ Phase 2 completed: 2026-03-15 | Monoliths split, Zod validation, auto-generated 
 Phase 3 completed: 2026-03-17 | Memoization, pagination, AbortController, accessibility (46 labels), localStorage cleanup
 Phase 4 completed: 2026-03-17 | 215 tests (14 files), shared helpers, hook/component/util tests, CI pipeline
 Phase 5 completed: 2026-03-17 | 17 root .md files → 3, consolidated deployment docs, updated README
+Lint cleanup: 2026-03-17 | All 35 lint errors eliminated (28 any, 4 case-decl, 2 unused-vars, 1 prefer-const)
+Task pruning: 2026-03-17 | Auto-delete completed non-recurring tasks after 15 days (pg_cron + client RPC)
 
 ## Executive Summary
 
@@ -214,7 +216,7 @@ These are not immediate priorities but should be planned:
 |---|---|---|---|
 | PWA support (offline) | Medium | High | Service worker + IndexedDB cache for offline reads |
 | Undo/redo for CRUD ops | Medium | Medium | Transaction queue with 10-item history |
-| Soft deletes | Low | Medium | Add `deleted_at` column, filter in queries |
+| ~~Soft deletes~~ | ~~Low~~ | ~~Medium~~ | Hard-delete pruning implemented (15-day retention). Soft deletes deferred — would require `WHERE deleted_at IS NULL` on all queries |
 | Virtual scrolling | Low | Medium | react-window for objectives columns |
 | Password validation UI | Low | Low | Client-side strength indicator on signup |
 | WebAuthn fallback | Medium | Low | Biometric auth for web users |
@@ -229,13 +231,13 @@ These are not immediate priorities but should be planned:
 
 Track these to measure improvement:
 
-| Metric | Pre-Phase 1 | Phase 1 Actual | Phase 2 Actual | Phase 3 Actual | Phase 4 Actual |
+| Metric | Pre-Phase 1 | Phase 1 Actual | Phase 2 Actual | Phase 3 Actual | Phase 4+ Actual |
 |---|---|---|---|---|---|
 | Test files | 0 | **4** | **4** | **4** | **14** |
-| Test assertions | 0 | **81** | **81** | **83** | **215** |
+| Test assertions | 0 | **81** | **81** | **83** | **217** |
 | Line coverage | 0% | ~15% | ~15% | ~15% | ~45% |
 | Max file LOC | 1841 (aiService) | 1841 | 1841 | 1841 | <600 |
-| `any` / `@ts-ignore` | 71 | 71 | ~60 | ~60 | <20 |
+| `any` / `@ts-ignore` | 71 | 71 | ~60 | ~60 | **0 lint errors** |
 | ARIA labels | 4 | 4 | 4 | **46** | 40+ |
 | Focus traps | 0 | 0 | 0 | **2 (Modal, BottomSheet)** | 2 |
 | Memoized cards | 0 | 0 | 0 | **4** | 4 |

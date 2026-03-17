@@ -10,7 +10,7 @@ npm run build        # Typecheck + Vite production build
 npm run typecheck    # tsc --noEmit -p tsconfig.app.json
 npm run lint         # ESLint
 npm run lint:fix     # ESLint with auto-fix
-npm run test         # Vitest (215 tests, 14 files)
+npm run test         # Vitest (217 tests, 14 files)
 npm run test:watch   # Vitest watch mode
 npm run test:coverage # Vitest with v8 coverage
 npm run types:generate # Regenerate Supabase types (requires local Supabase running)
@@ -57,7 +57,7 @@ src/
   i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
 supabase/
-  migrations/                    # 14 SQL migrations (additive only)
+  migrations/                    # 15 SQL migrations (additive only)
   functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
   config.toml                    # Local Supabase config (for types:generate)
 docs/                            # Improvement plan, deployment, tech spec
@@ -65,7 +65,7 @@ docs/                            # Improvement plan, deployment, tech spec
 
 ### Data hierarchy
 
-Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent (orphaned items supported). Status: `not_started | in_progress | completed | on_hold`. Priority: `high | medium | low`.
+Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent (orphaned items supported). Status: `not_started | in_progress | completed | on_hold`. Priority: `high | medium | low`. Completed non-recurring tasks are auto-pruned after 15 days via `prune_completed_tasks()` (pg_cron daily + client RPC on login).
 
 ### Database tables (14)
 
@@ -113,8 +113,8 @@ VITE_SUPABASE_ANON_KEY=...
 8. ~~**MEDIUM — No memoization**~~: Fixed (Phase 3.1) — 4 card components wrapped in `React.memo`, MindMapView render memoized
 9. ~~**MEDIUM — No pagination**~~: Fixed (Phase 3.2) — Journal cursor-based (20/page), Ideas offset-based (30/page)
 10. ~~**MEDIUM — Missing accessibility**~~: Fixed (Phase 3.4) — 46 ARIA labels, focus traps on Modal/BottomSheet, nav landmarks
-11. **LOW — 71 `any`/`@ts-ignore` instances**: Type safety gaps throughout
-12. **LOW — 18 markdown files at root**: Documentation sprawl → Phase 5.1
+11. ~~**LOW — 71 `any`/`@ts-ignore` instances**~~: Fixed — all 35 lint errors eliminated (0 errors remaining)
+12. ~~**LOW — 18 markdown files at root**~~: Fixed (Phase 5) — consolidated to 3 root + 3 docs/
 13. ~~**LOW — Package.json metadata**~~: Fixed (Phase 1.2) — name=commit-ai, version=1.0.0
 14. ~~**LOW — RateLimiter unused**~~: Fixed (Phase 1.5) — activated on AI service calls
 15. ~~**LOW — localStorage not cleared on logout**~~: Fixed (Phase 3.5) — all 12 keys cleared on signout
