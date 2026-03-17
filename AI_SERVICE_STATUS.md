@@ -6,9 +6,9 @@ The AI service uses Groq's Qwen 3.2 model via OpenAI-compatible API for various 
 ## Configuration Status
 
 ### API Key Configuration
-- **Environment Variable**: `VITE_GROQ_API_KEY`
-- **Status**: ⚠️ **NOT CONFIGURED** (No .env file found)
-- **Fallback Behavior**: ✅ Service gracefully falls back to mock data when API key is missing
+- **Secret**: `GROQ_API_KEY` (Supabase Edge Function secret — server-side only, not a client env var)
+- **Status**: ✅ Configured in Supabase project via `supabase secrets set`
+- **Fallback Behavior**: ✅ Service gracefully falls back to mock data when Edge Function is unavailable
 
 ### API Endpoint
 - **Base URL**: `https://api.groq.com/openai/v1/chat/completions`
@@ -100,18 +100,22 @@ The AI service uses Groq's Qwen 3.2 model via OpenAI-compatible API for various 
 
 ### To Enable Full AI Functionality:
 
-1. **Create `.env` file** in project root:
-   ```
-   VITE_GROQ_API_KEY=your_actual_api_key_here
-   ```
-
-2. **Get API Key**:
+1. **Get a Groq API Key**:
    - Visit: https://console.groq.com/
    - Create a new API key
-   - Copy and paste into `.env` file
 
-3. **Restart Development Server**:
-   - Environment variables are loaded at build time
+2. **Set it as a Supabase Edge Function secret** (server-side — never in `.env`):
+   ```bash
+   supabase secrets set GROQ_API_KEY=your_actual_api_key_here
+   ```
+
+3. **Deploy the Edge Function**:
+   ```bash
+   supabase functions deploy ai-proxy
+   ```
+
+4. **Restart Development Server** if needed:
+   - The `.env` file only needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
    - Restart required for changes to take effect
 
 ### Testing the Connection:

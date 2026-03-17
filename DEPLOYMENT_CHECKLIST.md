@@ -52,7 +52,11 @@ Before deploying, ensure:
    ```
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VITE_GROQ_API_KEY=your_groq_api_key
+   ```
+   Groq API key is a Supabase server-side secret (not in `.env`):
+   ```bash
+   supabase secrets set GROQ_API_KEY=your_groq_api_key
+   supabase functions deploy ai-proxy
    ```
 
 2. **Build the Application**:

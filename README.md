@@ -95,7 +95,6 @@ A beautiful, minimal journaling application based on the COMMIT framework (Conte
    ```
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VITE_GROQ_API_KEY=your_groq_api_key_here
    ```
 
 4. Run the development server:
@@ -134,8 +133,9 @@ All tables have Row Level Security (RLS) enabled to ensure data privacy.
 The app integrates with Groq's Qwen 3.2 model for intelligent analysis:
 
 1. Get your API key from [Groq Console](https://console.groq.com/)
-2. Add it to your `.env` file as `VITE_GROQ_API_KEY`
-3. The AI will:
+2. Set it as a Supabase Edge Function secret: `supabase secrets set GROQ_API_KEY=your_key`
+3. Deploy the Edge Function: `supabase functions deploy ai-proxy`
+4. The AI will:
    - Analyze journal entries for emotions and patterns (using thinking mode for complex reasoning)
    - Suggest coping strategies
    - Extract potential goals from your writing

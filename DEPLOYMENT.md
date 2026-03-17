@@ -18,7 +18,12 @@ Create a `.env` file in the root directory with the following variables:
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GROQ_API_KEY=your_groq_api_key_here
+```
+
+The Groq API key is a **server-side secret** stored in Supabase, not in `.env`:
+```bash
+supabase secrets set GROQ_API_KEY=your_groq_api_key_here
+supabase functions deploy ai-proxy
 ```
 
 **Important**: Never commit `.env` files to version control. The `.env.example` file is provided as a template.

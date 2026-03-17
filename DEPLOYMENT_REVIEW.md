@@ -35,7 +35,7 @@ The codebase has been reviewed for deployment readiness. The application is **pr
 - [ ] Set environment variables in hosting platform:
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
-  - `VITE_GROQ_API_KEY`
+  - `GROQ_API_KEY` (Supabase Edge Function secret — not a client env var)
 
 ### Database Setup
 - [ ] Apply all migrations from `supabase/migrations/` in order
@@ -125,7 +125,11 @@ The codebase has been reviewed for deployment readiness. The application is **pr
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GROQ_API_KEY=your_groq_api_key_here
+```
+Groq API key is a Supabase server-side secret:
+```bash
+supabase secrets set GROQ_API_KEY=your_groq_api_key_here
+supabase functions deploy ai-proxy
 ```
 
 ### 3. Build Testing

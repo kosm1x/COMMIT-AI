@@ -62,7 +62,10 @@ src/
 ```
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GROQ_API_KEY=your_groq_api_key_here (optional)
+```
+Groq API key is stored as a Supabase Edge Function secret (server-side only):
+```bash
+supabase secrets set GROQ_API_KEY=your_groq_api_key_here
 ```
 
 **Configuration Handling:**

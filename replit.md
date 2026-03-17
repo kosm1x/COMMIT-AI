@@ -43,7 +43,7 @@ src/
 ## Required Environment Variables
 - `VITE_SUPABASE_URL` - Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
-- `VITE_GROQ_API_KEY` - Groq API key for AI features
+- `GROQ_API_KEY` - Groq API key for AI features (Supabase Edge Function secret, not a client env var)
 
 ## Recent Changes
 - January 21, 2026: Fixed session auto-sorting race condition
