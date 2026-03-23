@@ -56,6 +56,8 @@ Deno.serve(async (req: Request) => {
     top_p?: number;
     reasoning_effort?: string;
     language?: "en" | "es" | "zh";
+    function_name?: string;
+    input?: Record<string, unknown>;
   };
 
   try {
@@ -66,6 +68,63 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  // --- Jarvis-first routing ---
+  // If function_name is provided and Jarvis is configured, route through Jarvis
+  // for enriched AI responses (goals, memory, projects context).
+  // Falls back to Groq if Jarvis is unreachable or returns null content.
+  const jarvisUrl = Deno.env.get("JARVIS_API_URL");
+  const jarvisKey = Deno.env.get("JARVIS_API_KEY");
+
+  if (body.function_name && jarvisUrl && jarvisKey) {
+    try {
+      const jarvisResponse = await fetch(`${jarvisUrl}/api/commit-ai`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Api-Key": jarvisKey,
+        },
+        body: JSON.stringify({
+          function: body.function_name,
+          input: {
+            prompt: body.prompt,
+            ...(body.input ?? {}),
+          },
+          context: {
+            user_id: user.id,
+            language: body.language ?? "en",
+          },
+        }),
+        signal: AbortSignal.timeout(25_000),
+      });
+
+      if (jarvisResponse.ok) {
+        const data = await jarvisResponse.json();
+        if (data.content !== null && data.content !== undefined) {
+          console.log(
+            `[ai-proxy] Jarvis handled ${body.function_name} (enriched: ${data.enriched})`,
+          );
+          return new Response(JSON.stringify({ content: data.content }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        console.warn(
+          `[ai-proxy] Jarvis returned null content for ${body.function_name}, falling back to Groq`,
+        );
+      } else {
+        console.warn(
+          `[ai-proxy] Jarvis returned ${jarvisResponse.status} for ${body.function_name}, falling back to Groq`,
+        );
+      }
+    } catch (error) {
+      console.warn(
+        `[ai-proxy] Jarvis unreachable for ${body.function_name}, falling back to Groq:`,
+        error,
+      );
+    }
+  }
+  // --- End Jarvis-first routing ---
 
   if (!body.prompt || body.temperature == null || body.max_tokens == null) {
     return new Response(

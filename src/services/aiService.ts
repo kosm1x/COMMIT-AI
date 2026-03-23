@@ -60,6 +60,8 @@ async function callLLM(
   reasoning_effort?: "default" | "low" | "medium" | "high",
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
+  functionName?: string,
+  input?: Record<string, unknown>,
 ): Promise<string | null> {
   if (!aiRateLimiter.canProceed()) {
     return null;
@@ -96,6 +98,12 @@ async function callLLM(
 
     if (reasoning_effort) {
       body.reasoning_effort = reasoning_effort;
+    }
+    if (functionName) {
+      body.function_name = functionName;
+    }
+    if (input) {
+      body.input = input;
     }
 
     const response = await fetchWithRetry(
@@ -167,6 +175,8 @@ Return ONLY the JSON object, no additional text.`;
     "default",
     language,
     signal,
+    "analyzeJournalEntry",
+    { content },
   );
 
   if (!textResponse) {
@@ -385,6 +395,8 @@ Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
     undefined,
     language,
     signal,
+    "extractObjectivesFromJournal",
+    { content },
   );
 
   if (!textResponse) {
@@ -462,6 +474,8 @@ Return ONLY the JSON object with title and mermaidSyntax fields, no additional t
     "default",
     language,
     signal,
+    "generateMindMap",
+    { problemStatement, context },
   );
 
   if (!textResponse) {
@@ -571,6 +585,8 @@ Return ONLY the JSON object, no additional text.`;
     undefined,
     language,
     signal,
+    "completeIdea",
+    { initialInput },
   );
 
   if (!textResponse) {
@@ -746,6 +762,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
     "default",
     language,
     signal,
+    "findIdeaConnections",
   );
 
   if (!textResponse) {
@@ -1608,6 +1625,8 @@ Return ONLY the JSON array, no additional text.`;
     "default",
     language,
     signal,
+    "generateDivergentPaths",
+    { ideaTitle, ideaContent },
   );
 
   if (!textResponse) {
@@ -1764,6 +1783,8 @@ Return ONLY the JSON array, no additional text.`;
     undefined,
     language,
     signal,
+    "suggestNextSteps",
+    { ideaTitle, ideaContent },
   );
 
   if (!textResponse) {
@@ -1923,6 +1944,8 @@ Return ONLY the JSON object, no additional text.`;
     "default",
     language,
     signal,
+    "generateCriticalAnalysis",
+    { ideaTitle, ideaContent },
   );
 
   if (!textResponse) {
@@ -2061,6 +2084,8 @@ Return ONLY the JSON array, no additional text.`;
     "default",
     language,
     signal,
+    "generateRelatedConcepts",
+    { ideaTitle, ideaContent },
   );
 
   if (!textResponse) {
@@ -2220,6 +2245,8 @@ Return ONLY the JSON array, no additional text.`;
     "default",
     language,
     signal,
+    "suggestObjectivesForGoal",
+    { goalTitle, goalDescription },
   );
 
   if (!textResponse) {
@@ -2403,6 +2430,8 @@ RULES:
     undefined,
     language,
     signal,
+    "transformIdeaText",
+    { selectedText, mode },
   );
   if (!textResponse) {
     return selectedText;
@@ -2512,6 +2541,8 @@ Return ONLY the JSON array, no additional text.`;
     "default",
     language,
     signal,
+    "suggestTasksForObjective",
+    { objectiveTitle, objectiveDescription },
   );
 
   if (!textResponse) {
