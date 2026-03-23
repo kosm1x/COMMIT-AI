@@ -9,6 +9,18 @@ Phase 5 completed: 2026-03-17 | 17 root .md files → 3, consolidated deployment
 Lint cleanup: 2026-03-17 | All 35 lint errors eliminated (28 any, 4 case-decl, 2 unused-vars, 1 prefer-const)
 Task pruning: 2026-03-17 | Auto-delete completed non-recurring tasks after 15 days (pg_cron + client RPC)
 
+## v2.26 Unification (2026-03-23 — In Progress)
+
+COMMIT and Jarvis (agent-controller) are merging into a unified system.
+COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine.
+Full plan: `agent-controller/docs/v2.26-plan.md`
+
+| Session | COMMIT-side changes |
+|---------|---|
+| 1 | `modified_by` column on hierarchy tables, `agent_suggestions` table, `commit-events` webhook Edge Function |
+| 2 | `callLLM()` rewired to route through Jarvis API (Groq fallback), `jarvis-proxy` Edge Function |
+| 6 | Suggestions panel UI, "Jarvis Says" insight cards, activity feed |
+
 ## Executive Summary
 
 v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, graceful AI fallbacks, i18n). Three critical gaps block production readiness: exposed API key, zero tests, and a 1332-line monolithic state hook. This plan addresses them in priority order across 6 phases.
