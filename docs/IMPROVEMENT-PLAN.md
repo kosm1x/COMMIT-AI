@@ -15,11 +15,12 @@ COMMIT and Jarvis (agent-controller) are merging into a unified system.
 COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine.
 Full plan: `agent-controller/docs/v2.26-plan.md`
 
-| Session | COMMIT-side changes |
-|---------|---|
-| 1 | `modified_by` column on hierarchy tables, `agent_suggestions` table, `commit-events` webhook Edge Function |
-| 2 | `callLLM()` rewired to route through Jarvis API (Groq fallback), `jarvis-proxy` Edge Function |
-| 6 | Suggestions panel UI, "Jarvis Says" insight cards, activity feed |
+| Session | COMMIT-side changes | Status |
+|---------|---|---|
+| 1 | `modified_by` column, `agent_suggestions` table, `commit-events` Edge Function, pg_net triggers | **Done** |
+| 2 | ai-proxy Jarvis-first routing, `callLLM()` function_name threading (12 functions), Groq fallback | **Done** |
+| 3-5 | Project entity linking, strategic autonomy, reliability | Pending |
+| 6 | Suggestions panel UI, "Jarvis Says" insight cards, activity feed | Pending |
 
 ## Executive Summary
 
