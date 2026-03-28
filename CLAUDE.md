@@ -37,6 +37,7 @@ src/
     ideas/                       #   types.ts, SelectionMenu.tsx, ConnectionsSidebar.tsx
     journal/, objectives/,       #   cards/, columns/, modals/ subfolders
     map/, tracking/,             #   widgets/ subfolder
+    suggestions/                 #   SuggestionsPanel, SuggestionCard, SuggestionsBadge, ActivityFeed
     navigation/, layout/, ui/
   contexts/                      # AuthContext, ThemeContext, LanguageContext, NotificationContext
   hooks/                         # 11 custom hooks
@@ -46,9 +47,11 @@ src/
     useObjectivesCRUD.ts         # CRUD + toggles + conversions
     useIdeaEditor.ts             # Text selection + AI transforms
     useFocusTrap.ts              # Tab cycling + focus restore for modals
-  services/                      # 6 services
+    useAgentSuggestions.ts       # Jarvis suggestions state + accept/reject
+  services/                      # 7 services
     aiService.ts                 # 12 AI functions via callLLM(), Zod-validated, 30s timeout, AbortSignal
     objectivesService.ts         # CRUD for Vision/Goal/Objective/Task
+    suggestionsService.ts        # CRUD for agent_suggestions (Jarvis proposals)
   lib/
     supabase.ts                  # Typed client: createClient<Database>()
     database.types.ts            # Auto-generated from DB (npm run types:generate)
@@ -164,4 +167,4 @@ COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine. Full pl
 | 3       | Project entity + COMMIT linking (projects table/tools/credential resolution in Jarvis)        | **Done** |
 | 4       | Strategic autonomy (event reactor, proactive scanner, conversation→COMMIT, weekly review)     | **Done** |
 | 5       | Reliability (token budget, latency tracking, tool audit, response time, observability)        | **Done** |
-| 6       | Suggestions panel UI, "Jarvis Says" insight cards, activity feed                              | Pending  |
+| 6       | Suggestions panel UI, activity feed, Jarvis badge in TabBar                                   | **Done** |
