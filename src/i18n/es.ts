@@ -520,6 +520,18 @@ export const es = {
       refresh: "Actualizar",
     },
   },
+  // Password strength
+  password: {
+    minLength: "8+ caracteres",
+    uppercase: "Letra mayuscula",
+    lowercase: "Letra minuscula",
+    number: "Numero",
+    special: "Caracter especial",
+    weak: "Debil",
+    fair: "Regular",
+    good: "Buena",
+    strong: "Fuerte",
+  },
   // Suggestions
   suggestions: {
     title: "Sugerencias de Jarvis",

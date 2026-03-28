@@ -504,6 +504,18 @@ export const zh = {
       refresh: "刷新",
     },
   },
+  // Password strength
+  password: {
+    minLength: "8个以上字符",
+    uppercase: "大写字母",
+    lowercase: "小写字母",
+    number: "数字",
+    special: "特殊字符",
+    weak: "弱",
+    fair: "一般",
+    good: "好",
+    strong: "强",
+  },
   // Suggestions
   suggestions: {
     title: "Jarvis 建议",

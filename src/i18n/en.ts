@@ -513,6 +513,18 @@ export const en = {
       refresh: "Refresh",
     },
   },
+  // Password strength
+  password: {
+    minLength: "8+ characters",
+    uppercase: "Uppercase letter",
+    lowercase: "Lowercase letter",
+    number: "Number",
+    special: "Special character",
+    weak: "Weak",
+    fair: "Fair",
+    good: "Good",
+    strong: "Strong",
+  },
   // Suggestions
   suggestions: {
     title: "Jarvis Suggestions",
