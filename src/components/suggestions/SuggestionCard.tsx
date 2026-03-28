@@ -15,6 +15,7 @@ interface SuggestionCardProps {
   suggestion: AgentSuggestion;
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
+  disabled?: boolean;
 }
 
 const SOURCE_CONFIG: Record<
@@ -67,6 +68,7 @@ export default function SuggestionCard({
   suggestion,
   onAccept,
   onReject,
+  disabled = false,
 }: SuggestionCardProps) {
   const { t } = useLanguage();
   const source =
@@ -102,7 +104,8 @@ export default function SuggestionCard({
       <div className="flex items-center gap-2 pt-1">
         <button
           onClick={() => onAccept(suggestion.id)}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors"
+          disabled={disabled}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
           aria-label={t("suggestions.accept") || "Accept suggestion"}
         >
           <Check className="w-3.5 h-3.5" />
@@ -110,7 +113,8 @@ export default function SuggestionCard({
         </button>
         <button
           onClick={() => onReject(suggestion.id)}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg transition-colors"
+          disabled={disabled}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg transition-colors"
           aria-label={t("suggestions.dismiss") || "Dismiss suggestion"}
         >
           <X className="w-3.5 h-3.5" />

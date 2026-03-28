@@ -5,7 +5,7 @@
  * and tracks pending count for the badge.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -24,6 +24,7 @@ export interface UseAgentSuggestionsReturn {
   activity: JarvisActivity[];
   pendingCount: number;
   loading: boolean;
+  processingIds: Set<string>;
   accept: (id: string) => Promise<void>;
   reject: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -33,16 +34,20 @@ export function useAgentSuggestions(): UseAgentSuggestionsReturn {
   const { user } = useAuth();
   const { notify } = useNotification();
   const { t } = useLanguage();
+  const service = useMemo(
+    () => (user?.id ? createSuggestionsService(user.id) : null),
+    [user?.id],
+  );
   const [suggestions, setSuggestions] = useState<AgentSuggestion[]>([]);
   const [activity, setActivity] = useState<JarvisActivity[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   const refresh = useCallback(async () => {
-    if (!user?.id) return;
+    if (!service) return;
     setLoading(true);
     try {
-      const service = createSuggestionsService(user.id);
       const [pending, count, jarvisActivity] = await Promise.all([
         service.loadPending(),
         service.getPendingCount(),
@@ -56,7 +61,7 @@ export function useAgentSuggestions(): UseAgentSuggestionsReturn {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [service]);
 
   useEffect(() => {
     refresh();
@@ -64,46 +69,64 @@ export function useAgentSuggestions(): UseAgentSuggestionsReturn {
 
   const accept = useCallback(
     async (id: string) => {
-      if (!user?.id) return;
-      const service = createSuggestionsService(user.id);
-      const ok = await service.accept(id);
-      if (ok) {
-        notify({
-          type: "success",
-          message: t("suggestions.accepted") || "Suggestion accepted",
-        });
-        await refresh();
-      } else {
-        notify({
-          type: "error",
-          message:
-            t("suggestions.acceptFailed") || "Failed to accept suggestion",
+      if (!service || processingIds.has(id)) return;
+      setProcessingIds((prev) => new Set(prev).add(id));
+      try {
+        const ok = await service.accept(id);
+        if (ok) {
+          setSuggestions((prev) => prev.filter((s) => s.id !== id));
+          setPendingCount((prev) => Math.max(0, prev - 1));
+          notify({
+            type: "success",
+            message: t("suggestions.accepted") || "Suggestion accepted",
+          });
+        } else {
+          notify({
+            type: "error",
+            message:
+              t("suggestions.acceptFailed") || "Failed to accept suggestion",
+          });
+        }
+      } finally {
+        setProcessingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
         });
       }
     },
-    [user?.id, notify, t, refresh],
+    [service, processingIds, notify, t],
   );
 
   const reject = useCallback(
     async (id: string) => {
-      if (!user?.id) return;
-      const service = createSuggestionsService(user.id);
-      const ok = await service.reject(id);
-      if (ok) {
-        notify({
-          type: "info",
-          message: t("suggestions.rejected") || "Suggestion dismissed",
-        });
-        await refresh();
-      } else {
-        notify({
-          type: "error",
-          message:
-            t("suggestions.rejectFailed") || "Failed to dismiss suggestion",
+      if (!service || processingIds.has(id)) return;
+      setProcessingIds((prev) => new Set(prev).add(id));
+      try {
+        const ok = await service.reject(id);
+        if (ok) {
+          setSuggestions((prev) => prev.filter((s) => s.id !== id));
+          setPendingCount((prev) => Math.max(0, prev - 1));
+          notify({
+            type: "info",
+            message: t("suggestions.rejected") || "Suggestion dismissed",
+          });
+        } else {
+          notify({
+            type: "error",
+            message:
+              t("suggestions.rejectFailed") || "Failed to dismiss suggestion",
+          });
+        }
+      } finally {
+        setProcessingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
         });
       }
     },
-    [user?.id, notify, t, refresh],
+    [service, processingIds, notify, t],
   );
 
   return {
@@ -111,6 +134,7 @@ export function useAgentSuggestions(): UseAgentSuggestionsReturn {
     activity,
     pendingCount,
     loading,
+    processingIds,
     accept,
     reject,
     refresh,

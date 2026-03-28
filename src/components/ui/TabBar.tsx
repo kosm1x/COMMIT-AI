@@ -89,6 +89,7 @@ export default function TabBar({
         {onSettingsClick && (
           <button
             onClick={onSettingsClick}
+            aria-label={translations?.settings || "Settings"}
             className="flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[64px] rounded-xl transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
           >
             <div className="p-1.5 rounded-xl">

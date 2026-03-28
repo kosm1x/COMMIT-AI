@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Inbox } from "lucide-react";
 import { BottomSheet } from "../ui";
 import SuggestionCard from "./SuggestionCard";
@@ -19,6 +19,7 @@ interface SuggestionsPanelProps {
   suggestions: AgentSuggestion[];
   activity: ActivityItem[];
   loading: boolean;
+  processingIds: Set<string>;
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
 }
@@ -31,11 +32,17 @@ export default function SuggestionsPanel({
   suggestions,
   activity,
   loading,
+  processingIds,
   onAccept,
   onReject,
 }: SuggestionsPanelProps) {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>("pending");
+
+  // Reset to pending tab when panel opens so new suggestions are visible
+  useEffect(() => {
+    if (isOpen) setActiveTab("pending");
+  }, [isOpen]);
 
   return (
     <BottomSheet
@@ -49,6 +56,7 @@ export default function SuggestionsPanel({
         <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-4">
           <button
             onClick={() => setActiveTab("pending")}
+            aria-label={t("suggestions.pending") || "Pending"}
             className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg transition-colors ${
               activeTab === "pending"
                 ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
@@ -64,6 +72,7 @@ export default function SuggestionsPanel({
           </button>
           <button
             onClick={() => setActiveTab("activity")}
+            aria-label={t("suggestions.activity") || "Activity"}
             className={`flex-1 py-2 px-3 text-xs font-medium rounded-lg transition-colors ${
               activeTab === "activity"
                 ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
@@ -89,6 +98,7 @@ export default function SuggestionsPanel({
                     suggestion={s}
                     onAccept={onAccept}
                     onReject={onReject}
+                    disabled={processingIds.has(s.id)}
                   />
                 ))}
               </div>

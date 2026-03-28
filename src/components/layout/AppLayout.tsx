@@ -24,6 +24,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     activity,
     pendingCount,
     loading: suggestionsLoading,
+    processingIds,
     accept,
     reject,
     refresh: refreshSuggestions,
@@ -142,20 +143,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
           suggestions={suggestions}
           activity={activity}
           loading={suggestionsLoading}
+          processingIds={processingIds}
           onAccept={accept}
           onReject={reject}
         />
       </div>
     </>
   );
-}
-
-export function useSettingsSheet() {
-  const [isOpen, setIsOpen] = useState(false);
-  return {
-    isOpen,
-    open: () => setIsOpen(true),
-    close: () => setIsOpen(false),
-    toggle: () => setIsOpen((prev) => !prev),
-  };
 }

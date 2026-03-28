@@ -123,37 +123,31 @@ export class SuggestionsService {
     }>
   > {
     const tables = ["tasks", "goals", "objectives", "visions"] as const;
-    const results: Array<{
-      table: string;
-      id: string;
-      title: string;
-      modified_at: string;
-    }> = [];
 
-    for (const table of tables) {
-      // modified_by and last_edited_at are not in generated types (added post-generation)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from(table) as any)
-        .select("id, title, last_edited_at")
-        .eq("user_id", this.userId)
-        .eq("modified_by", "jarvis")
-        .order("last_edited_at", { ascending: false })
-        .limit(5);
+    // Parallel queries — each table is independent
+    const tableResults = await Promise.all(
+      tables.map(async (table) => {
+        // modified_by and last_edited_at are not in generated types (added post-generation)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (supabase.from(table) as any)
+          .select("id, title, last_edited_at")
+          .eq("user_id", this.userId)
+          .eq("modified_by", "jarvis")
+          .order("last_edited_at", { ascending: false })
+          .limit(5);
 
-      if (!error && data) {
-        for (const row of data) {
-          results.push({
-            table,
-            id: (row as Record<string, unknown>).id as string,
-            title: (row as Record<string, unknown>).title as string,
-            modified_at: (row as Record<string, unknown>)
-              .last_edited_at as string,
-          });
-        }
-      }
-    }
+        if (error || !data) return [];
+        return (data as Array<Record<string, unknown>>).map((row) => ({
+          table,
+          id: row.id as string,
+          title: row.title as string,
+          modified_at: row.last_edited_at as string,
+        }));
+      }),
+    );
 
-    return results
+    return tableResults
+      .flat()
       .sort(
         (a, b) =>
           new Date(b.modified_at).getTime() - new Date(a.modified_at).getTime(),
