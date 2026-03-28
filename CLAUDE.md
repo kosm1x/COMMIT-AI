@@ -40,8 +40,8 @@ src/
     map/, tracking/,             #   widgets/ subfolder
     suggestions/                 #   SuggestionsPanel, SuggestionCard, SuggestionsBadge, ActivityFeed
     navigation/, layout/, ui/
-  contexts/                      # AuthContext, ThemeContext, LanguageContext, NotificationContext
-  hooks/                         # 11 custom hooks
+  contexts/                      # AuthContext, ThemeContext, LanguageContext, NotificationContext, UndoContext
+  hooks/                         # 12 custom hooks
     useObjectivesState.ts        # Thin composer (split in Phase 2.1)
     useObjectivesData.ts         # Data loading + state
     useObjectivesSelection.ts    # Selection path + navigation
