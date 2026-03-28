@@ -10,9 +10,10 @@ npm run build        # Typecheck + Vite production build
 npm run typecheck    # tsc --noEmit -p tsconfig.app.json
 npm run lint         # ESLint
 npm run lint:fix     # ESLint with auto-fix
-npm run test         # Vitest (217 tests, 14 files)
+npm run test         # Vitest unit tests (217 tests, 14 files)
 npm run test:watch   # Vitest watch mode
 npm run test:coverage # Vitest with v8 coverage
+npm run test:e2e     # Playwright E2E tests (8 tests, 2 files)
 npm run types:generate # Regenerate Supabase types (requires local Supabase running)
 ```
 
@@ -60,7 +61,7 @@ src/
   i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
 supabase/
-  migrations/                    # 19 SQL migrations (additive only)
+  migrations/                    # 20 SQL migrations (additive only)
   functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
   functions/commit-events/       # Edge Function: DB webhook → Jarvis event bridge
   config.toml                    # Local Supabase config (for types:generate)

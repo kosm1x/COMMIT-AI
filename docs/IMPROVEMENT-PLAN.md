@@ -248,20 +248,17 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 
 ## Phase 6: Future Enhancements (Backlog)
 
-These are not immediate priorities but should be planned:
-
-| Enhancement            | Effort  | Impact     | Notes                                                                                                                               |
-| ---------------------- | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| PWA support (offline)  | Medium  | High       | Service worker + IndexedDB cache for offline reads                                                                                  |
-| Undo/redo for CRUD ops | Medium  | Medium     | Transaction queue with 10-item history                                                                                              |
-| ~~Soft deletes~~       | ~~Low~~ | ~~Medium~~ | Hard-delete pruning implemented (15-day retention). Soft deletes deferred — would require `WHERE deleted_at IS NULL` on all queries |
-| Virtual scrolling      | Low     | Medium     | react-window for objectives columns                                                                                                 |
-| Password validation UI | Low     | Low        | Client-side strength indicator on signup                                                                                            |
-| WebAuthn fallback      | Medium  | Low        | Biometric auth for web users                                                                                                        |
-| Storybook              | Medium  | Low        | Component library documentation                                                                                                     |
-| E2E tests (Playwright) | High    | High       | Critical user flows                                                                                                                 |
-| Push notifications     | Medium  | High       | Capacitor push plugin + Supabase webhook                                                                                            |
-| Composite DB indexes   | Low     | Medium     | `(user_id, status)`, `(user_id, due_date)`                                                                                          |
+| Enhancement                | Effort | Impact | Status                                                                                                |
+| -------------------------- | ------ | ------ | ----------------------------------------------------------------------------------------------------- |
+| ~~Composite DB indexes~~   | Low    | Medium | **Done** (2026-03-28) — `(user_id, status)` on tasks/goals/objectives, `(user_id, due_date)` on tasks |
+| ~~Password validation UI~~ | Low    | Low    | **Done** (2026-03-28) — strength bar + requirements checklist on signup                               |
+| ~~E2E tests (Playwright)~~ | High   | High   | **Done** (2026-03-28) — 8 tests (auth + navigation), CI integration                                   |
+| ~~Virtual scrolling~~      | Low    | Medium | **Skipped** — pagination (20/30 per page) already covers all long lists                               |
+| PWA support (offline)      | Medium | High   | Deferred — needs decision: web-first vs Capacitor-first. Meta tags ready in index.html                |
+| Push notifications         | Medium | High   | Deferred — needs Firebase project + backend push service                                              |
+| Undo/redo for CRUD ops     | Medium | Medium | Backlog                                                                                               |
+| WebAuthn fallback          | Medium | Low    | Backlog                                                                                               |
+| Storybook                  | Medium | Low    | Backlog                                                                                               |
 
 ---
 
