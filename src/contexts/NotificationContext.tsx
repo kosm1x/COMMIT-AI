@@ -190,6 +190,7 @@ export function NotificationProvider({
                       n.action!.onClick();
                       dismiss(n.id);
                     }}
+                    aria-label={n.action.label}
                     className="flex-shrink-0 px-2.5 py-1 text-xs font-semibold rounded-md bg-white/80 dark:bg-white/20 hover:bg-white dark:hover:bg-white/30 transition-colors"
                   >
                     {n.action.label}

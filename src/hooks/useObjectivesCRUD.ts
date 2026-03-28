@@ -283,6 +283,7 @@ export function useObjectivesCRUD(
       }
       return true;
     },
+
     [
       userId,
       visions,
@@ -291,6 +292,8 @@ export function useObjectivesCRUD(
       clearSelection,
       setVisions,
       setGoals,
+      pushUndo,
+      loadVisions,
     ],
   );
 
@@ -459,6 +462,7 @@ export function useObjectivesCRUD(
       }
       return true;
     },
+
     [
       userId,
       goals,
@@ -467,6 +471,8 @@ export function useObjectivesCRUD(
       setGoals,
       setObjectives,
       setSelectionPath,
+      pushUndo,
+      loadGoals,
     ],
   );
 
@@ -617,6 +623,7 @@ export function useObjectivesCRUD(
       }
       return true;
     },
+
     [
       userId,
       objectives,
@@ -626,6 +633,9 @@ export function useObjectivesCRUD(
       setTasks,
       setTaskCounts,
       setSelectionPath,
+      pushUndo,
+      loadObjectives,
+      loadTaskCounts,
     ],
   );
 
@@ -774,13 +784,18 @@ export function useObjectivesCRUD(
       }
       return true;
     },
+
     [
+      userId,
       tasks,
       taskCounts,
       selectionPath.taskId,
       setTasks,
       setTaskCounts,
       setSelectionPath,
+      pushUndo,
+      loadTasks,
+      loadTaskCounts,
     ],
   );
 

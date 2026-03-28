@@ -29,7 +29,7 @@ test.describe("Authentication", () => {
     await page.getByLabel(/password/i).fill("wrongpassword");
     await page.getByRole("button", { name: /sign in/i }).click();
     // Should show an error message (Supabase returns auth error)
-    await expect(page.locator('[class*="bg-red"]')).toBeVisible({
+    await expect(page.getByTestId("auth-error")).toBeVisible({
       timeout: 10_000,
     });
   });

@@ -11,6 +11,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import { useNotification } from "./NotificationContext";
 import { useLanguage } from "./LanguageContext";
@@ -35,11 +36,15 @@ let nextUndoId = 0;
 
 export function UndoProvider({ children }: { children: React.ReactNode }) {
   const [stack, setStack] = useState<UndoEntry[]>([]);
+  const stackRef = useRef(stack);
+  stackRef.current = stack;
   const { notify } = useNotification();
   const { t } = useLanguage();
 
+  // undo reads from ref to avoid stale closures in toast callbacks
   const undo = useCallback(async () => {
-    const entry = stack[stack.length - 1];
+    const current = stackRef.current;
+    const entry = current[current.length - 1];
     if (!entry) return;
 
     setStack((prev) => prev.slice(0, -1));
@@ -57,8 +62,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
         message: t("undo.failed") || "Undo failed",
       });
     }
-  }, [stack, notify, t]);
+  }, [notify, t]);
 
+  // pushUndo is now stable (doesn't depend on stack or undo identity)
   const pushUndo = useCallback(
     (label: string, undoFn: () => Promise<boolean>) => {
       const id = `undo-${++nextUndoId}`;
@@ -84,11 +90,10 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
-        // Don't intercept when user is typing in an input/textarea
         const tag = (e.target as HTMLElement)?.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA") return;
 
-        if (stack.length > 0) {
+        if (stackRef.current.length > 0) {
           e.preventDefault();
           undo();
         }
@@ -96,7 +101,7 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [stack, undo]);
+  }, [undo]);
 
   return (
     <UndoContext.Provider value={{ pushUndo, undo, canUndo: stack.length > 0 }}>

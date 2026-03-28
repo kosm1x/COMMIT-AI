@@ -479,7 +479,10 @@ export default function Login() {
 
 function ErrorMessage({ message }: { message: string }) {
   return (
-    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+    <div
+      data-testid="auth-error"
+      className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-600 dark:text-red-400 flex items-center gap-2"
+    >
       <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0" />
       {message}
     </div>
