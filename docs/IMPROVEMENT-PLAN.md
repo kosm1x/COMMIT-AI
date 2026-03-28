@@ -15,12 +15,13 @@ COMMIT and Jarvis (agent-controller) are merging into a unified system.
 COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine.
 Full plan: `agent-controller/docs/v2.26-plan.md`
 
-| Session | COMMIT-side changes | Status |
-|---------|---|---|
-| 1 | `modified_by` column, `agent_suggestions` table, `commit-events` Edge Function, pg_net triggers | **Done** |
-| 2 | ai-proxy Jarvis-first routing, `callLLM()` function_name threading (12 functions), Groq fallback | **Done** |
-| 3-5 | Project entity linking, strategic autonomy, reliability | Pending |
-| 6 | Suggestions panel UI, "Jarvis Says" insight cards, activity feed | Pending |
+| Session | COMMIT-side changes                                                                              | Status                                              |
+| ------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| 1       | `modified_by` column, `agent_suggestions` table, `commit-events` Edge Function, pg_net triggers  | **Done**                                            |
+| 2       | ai-proxy Jarvis-first routing, `callLLM()` function_name threading (12 functions), Groq fallback | **Done**                                            |
+| 3       | Project entity + COMMIT linking (projects table, tools, credential resolution, `commit_goal_id`) | **Done** (Jarvis-side; no COMMIT UI changes needed) |
+| 4-5     | Strategic autonomy (event reactor, proactive scanner, weekly review), reliability                | Pending                                             |
+| 6       | Suggestions panel UI, "Jarvis Says" insight cards, activity feed                                 | Pending                                             |
 
 ## Executive Summary
 
@@ -34,6 +35,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 **Status**: Completed 2026-03-13. All exit criteria met.
 
 ### 1.1 Move AI calls behind Supabase Edge Function — DONE
+
 - Created `supabase/functions/ai-proxy/index.ts` (~160 LOC) — CORS, JWT auth, request validation, language instruction, Groq proxy
 - `GROQ_API_KEY` now server-side only (Supabase Edge Function secret)
 - Client calls `${VITE_SUPABASE_URL}/functions/v1/ai-proxy` with session Bearer token
@@ -41,6 +43,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - Mock fallback preserved — null session or proxy error triggers mock data
 
 ### 1.2 Add Vitest + React Testing Library — DONE
+
 - Installed vitest, @testing-library/react, @testing-library/jest-dom, @testing-library/user-event, jsdom
 - Configured `test` block in `vite.config.ts` (globals, jsdom, v8 coverage)
 - Created `src/test/setup.ts` with jest-dom matchers
@@ -48,6 +51,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - Fixed package.json: name → `commit-ai`, version → `1.0.0`
 
 ### 1.3 First test wave — services & utils — DONE
+
 - `src/utils/security.test.ts` — 28 assertions: escapeHtml, stripHtmlTags, sanitizeInput, validateLength/Title/Description/Email, RateLimiter (fake timers), validateAIResponse, sanitizeAIContent
 - `src/utils/fetchWithRetry.test.ts` — 14 assertions: success, retry on 500/429, no retry on 4xx, network error, exhausted retries, AbortSignal, custom retryOn, createRetryFetch
 - `src/services/aiService.test.ts` — 15 assertions: analyzeJournalEntry, extractObjectives, generateMindMap, completeIdea (success + mock fallback), rate limiter integration
@@ -55,10 +59,12 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - **Actual**: 4 test files, 81 assertions (exceeded target of 40)
 
 ### 1.4 Consolidate duplicate fetchWithRetry — DONE
+
 - Deleted duplicate fetchWithRetry from `lib/supabase.ts` (no jitter, no AbortSignal, no custom retryOn)
 - Added `supabaseFetch` adapter wrapping canonical `utils/fetchWithRetry.ts`
 
 ### 1.5 Activate RateLimiter on AI calls — DONE
+
 - Instantiated `RateLimiter(10, 1)` in aiService.ts
 - Gates `callGroqAPI` — returns null when exhausted (triggers existing mock fallback)
 - Phase 2.3 will add proper "rate limited" UI messaging
@@ -73,6 +79,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 **Status**: Completed 2026-03-15. All exit criteria met.
 
 ### 2.1 Split useObjectivesState (1332 LOC → 4 files) — DONE
+
 - `useObjectivesData.ts` (~180 LOC) — state, data fetching, loading, auto-sort, task counts
 - `useObjectivesSelection.ts` (~340 LOC) — selection path, resolved selections, orphan lists, visibility, family tree
 - `useObjectivesCRUD.ts` (~530 LOC) — all CRUD, toggles, conversions, descendant counts (25+ functions)
@@ -80,6 +87,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - Zero changes required in `Objectives.tsx` consumer
 
 ### 2.2 Split IdeaDetail page (1009 LOC → 5 files) — DONE
+
 - `components/ideas/types.ts` (~20 LOC) — `Idea` and `Connection` interfaces
 - `hooks/useIdeaEditor.ts` (~280 LOC) — selection tracking, text manipulation, AI transform dispatch
 - `components/ideas/SelectionMenu.tsx` (~53 LOC) — positioned context menu overlay
@@ -87,6 +95,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - `IdeaDetail.tsx` reduced to ~810 LOC layout orchestrator
 
 ### 2.3 User-facing error handling — DONE
+
 - Created `contexts/NotificationContext.tsx` — toast system with auto-dismiss (5-10s by type), max 3 visible, dark mode, slide-up animation
 - `NotificationProvider` wraps app in `App.tsx` (inside AuthProvider, outside BrowserRouter)
 - Journal page: load/save/delete failures show error toasts via `useNotification()`
@@ -94,6 +103,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - Error translation keys added to all 3 i18n files (en/es/zh): `loadFailed`, `saveFailed`, `deleteFailed`, `createFailed`, `updateFailed`
 
 ### 2.4 Generate Supabase types — DONE
+
 - Local Supabase started via Docker, all 14 migrations applied
 - `npx supabase gen types typescript --local` → `src/lib/database.types.ts` (743 LOC, all 14 tables)
 - Removed 290 LOC manual `Database` type from `lib/supabase.ts`
@@ -103,6 +113,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - Added `npm run types:generate` script
 
 ### 2.5 Validate AI response schemas (Zod) — DONE
+
 - Added `zod` dependency (~13KB gzipped)
 - Created `src/lib/aiSchemas.ts` (~130 LOC) with 11 schemas + `safeParse()` helper
 - All 11 JSON-parsing AI functions now validate through Zod with `.catch()` defaults and `.passthrough()`
@@ -110,6 +121,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - On validation failure, falls back to mock generators (existing behavior preserved)
 
 ### 2.6 Vendor-agnostic LLM adapter — DONE
+
 - Renamed `callGroqAPI()` → `callLLM()` in `aiService.ts` (13 occurrences)
 - Edge Function (`ai-proxy/index.ts`) now reads `LLM_MODEL`, `LLM_ENDPOINT`, `LLM_API_KEY` env vars
 - Backward compatible: falls back to `GROQ_API_KEY` and Groq defaults when new vars absent
@@ -124,16 +136,19 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 **Status**: Completed 2026-03-17. All exit criteria met.
 
 ### 3.1 Memoize expensive components — DONE
+
 - Wrapped 4 card components (`VisionCard`, `GoalCard`, `ObjectiveCard`, `TaskCard`) in `React.memo`
 - `MindMapView` `renderMermaid` wrapped in `useCallback` with proper deps
 - Hooks already had good memoization (useObjectivesSelection: useMemo for lookups/maps; useObjectivesCRUD: useCallback for all CRUD ops)
 
 ### 3.2 Add pagination — DONE
+
 - Journal: cursor-based pagination (20 entries per page, "Load More" button in desktop sidebar + mobile BottomSheet)
 - Ideas: offset-based pagination (30 ideas per page, "Load More" in grid)
 - Added i18n key `common.loadMore` to en/es/zh
 
 ### 3.3 AbortController timeout on AI calls — DONE
+
 - `callLLM()` now accepts optional `signal?: AbortSignal` parameter
 - Internal 30s timeout via `AbortController` (auto-aborts stale requests)
 - External signal support (component unmount cancellation)
@@ -142,6 +157,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - 2 new test cases: external abort + mid-flight abort
 
 ### 3.4 Accessibility pass — DONE
+
 - Created `useFocusTrap` hook (Tab/Shift+Tab cycling, auto-focus, focus restore)
 - Modal: focus trap, `role="dialog"`, `aria-modal="true"`, `aria-label={title}`, close button labeled
 - BottomSheet: same pattern
@@ -150,6 +166,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - Icon-only buttons labeled in: 4 card components, Journal, Ideate, MindMapView
 
 ### 3.5 Clear preferences on logout — DONE
+
 - `signOut()` clears all 12 localStorage keys (6 global + 6 user-scoped with dynamic suffixes)
 - Cleanup runs before `supabase.auth.signOut()` while `user.id` is still available
 - Prevents preference leakage between users on shared devices
@@ -164,16 +181,19 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 **Status**: Completed 2026-03-17. All exit criteria met.
 
 ### 4.0 Shared test infrastructure — DONE
+
 - Created `src/test/helpers.ts` — `createChainMock` (extracted from objectivesService.test.ts), fixture factories (`makeVision`, `makeGoal`, `makeObjective`, `makeTask`)
 - Updated `objectivesService.test.ts` to import shared helpers
 
 ### 4.1 Hook tests — DONE
+
 - `useObjectivesSelection.test.ts` — 25 assertions: selection path, toggle, orphan lists, visibility, isInSelectedFamily, effectivePath
 - `useObjectivesData.test.ts` — 14 assertions: supabase queries, computedTaskCounts, error handling, loading transitions
 - `useObjectivesCRUD.test.ts` — 18 assertions: CRUD for all 4 levels, optimistic updates, revert on error, task count tracking, toggle status
 - **Actual**: 3 hook test files, ~57 assertions
 
 ### 4.2 Component tests — DONE
+
 - `ErrorBoundary.test.tsx` — 12 assertions: error catching, fallback UI, reset button, onError callback, withErrorBoundary HOC, MinimalErrorFallback
 - `Button.test.tsx` — 9 assertions: variants, sizes, loading spinner, disabled state, forwardRef
 - `Card.test.tsx` — 7 assertions: variants, padding, interactive, className merge, forwardRef
@@ -182,11 +202,13 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - **Actual**: 5 component test files, ~49 assertions
 
 ### 4.3 Utility tests — DONE
+
 - `autoSort.test.ts` — 10 assertions: sessionStorage, sortGoals/Objectives/Tasks by status, date, priority, title
 - `trackingStats.test.ts` — 12 assertions: status counts, completion percentage, date filters, format functions
 - **Actual**: 2 util test files, ~22 assertions
 
 ### 4.4 CI pipeline — DONE
+
 - GitHub Actions workflow: `.github/workflows/ci.yml` — typecheck, lint, test on PR to main
 - Coverage scope expanded in `vite.config.ts` to include hooks, components, pages
 
@@ -201,6 +223,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 **Status**: Completed 2026-03-17. All exit criteria met.
 
 ### 5.1 Consolidate docs — DONE
+
 - **Kept** at root: `README.md`, `CLAUDE.md`, `COMMIT_METHOD_GUIDE.md` (3 files)
 - **Merged** 3 deployment files → `docs/DEPLOYMENT.md` (145 LOC)
 - **Moved** `TECHNICAL_SPECIFICATION.md` → `docs/`
@@ -208,6 +231,7 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 - **Result**: 17 root .md files → 3
 
 ### 5.2 Update README — DONE
+
 - Removed stale `VITE_GROQ_API_KEY` references (now server-side Edge Function secret)
 - Updated AI Integration section to describe Edge Function proxy model
 - Updated Database Schema to 14 tables
@@ -225,18 +249,18 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 
 These are not immediate priorities but should be planned:
 
-| Enhancement | Effort | Impact | Notes |
-|---|---|---|---|
-| PWA support (offline) | Medium | High | Service worker + IndexedDB cache for offline reads |
-| Undo/redo for CRUD ops | Medium | Medium | Transaction queue with 10-item history |
-| ~~Soft deletes~~ | ~~Low~~ | ~~Medium~~ | Hard-delete pruning implemented (15-day retention). Soft deletes deferred — would require `WHERE deleted_at IS NULL` on all queries |
-| Virtual scrolling | Low | Medium | react-window for objectives columns |
-| Password validation UI | Low | Low | Client-side strength indicator on signup |
-| WebAuthn fallback | Medium | Low | Biometric auth for web users |
-| Storybook | Medium | Low | Component library documentation |
-| E2E tests (Playwright) | High | High | Critical user flows |
-| Push notifications | Medium | High | Capacitor push plugin + Supabase webhook |
-| Composite DB indexes | Low | Medium | `(user_id, status)`, `(user_id, due_date)` |
+| Enhancement            | Effort  | Impact     | Notes                                                                                                                               |
+| ---------------------- | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| PWA support (offline)  | Medium  | High       | Service worker + IndexedDB cache for offline reads                                                                                  |
+| Undo/redo for CRUD ops | Medium  | Medium     | Transaction queue with 10-item history                                                                                              |
+| ~~Soft deletes~~       | ~~Low~~ | ~~Medium~~ | Hard-delete pruning implemented (15-day retention). Soft deletes deferred — would require `WHERE deleted_at IS NULL` on all queries |
+| Virtual scrolling      | Low     | Medium     | react-window for objectives columns                                                                                                 |
+| Password validation UI | Low     | Low        | Client-side strength indicator on signup                                                                                            |
+| WebAuthn fallback      | Medium  | Low        | Biometric auth for web users                                                                                                        |
+| Storybook              | Medium  | Low        | Component library documentation                                                                                                     |
+| E2E tests (Playwright) | High    | High       | Critical user flows                                                                                                                 |
+| Push notifications     | Medium  | High       | Capacitor push plugin + Supabase webhook                                                                                            |
+| Composite DB indexes   | Low     | Medium     | `(user_id, status)`, `(user_id, due_date)`                                                                                          |
 
 ---
 
@@ -244,21 +268,21 @@ These are not immediate priorities but should be planned:
 
 Track these to measure improvement:
 
-| Metric | Pre-Phase 1 | Phase 1 Actual | Phase 2 Actual | Phase 3 Actual | Phase 4+ Actual |
-|---|---|---|---|---|---|
-| Test files | 0 | **4** | **4** | **4** | **14** |
-| Test assertions | 0 | **81** | **81** | **83** | **217** |
-| Line coverage | 0% | ~15% | ~15% | ~15% | ~45% |
-| Max file LOC | 1841 (aiService) | 1841 | 1841 | 1841 | <600 |
-| `any` / `@ts-ignore` | 71 | 71 | ~60 | ~60 | **0 lint errors** |
-| ARIA labels | 4 | 4 | 4 | **46** | 40+ |
-| Focus traps | 0 | 0 | 0 | **2 (Modal, BottomSheet)** | 2 |
-| Memoized cards | 0 | 0 | 0 | **4** | 4 |
-| Pagination | None | None | None | **Journal (20), Ideas (30)** | Done |
-| AI timeout | None | None | None | **30s hard limit** | Done |
-| localStorage leak | Yes | Yes | Yes | **Fixed** | Fixed |
-| Client-side secrets | 1 (Groq key) | **0** | **0** | **0** | 0 |
-| Duplicate code | fetchWithRetry x2 | **0** | **0** | **0** | 0 |
-| Manual DB types | 290 LOC / 8 tables | 290 LOC | **0 LOC / 14 tables auto-generated** | **0** | 0 |
-| AI response validation | None | None | **11 Zod schemas** | **11** | 11 |
-| Error toasts | None | None | **Journal (load/save/delete)** | **Journal** | All pages |
+| Metric                 | Pre-Phase 1        | Phase 1 Actual | Phase 2 Actual                       | Phase 3 Actual               | Phase 4+ Actual   |
+| ---------------------- | ------------------ | -------------- | ------------------------------------ | ---------------------------- | ----------------- |
+| Test files             | 0                  | **4**          | **4**                                | **4**                        | **14**            |
+| Test assertions        | 0                  | **81**         | **81**                               | **83**                       | **217**           |
+| Line coverage          | 0%                 | ~15%           | ~15%                                 | ~15%                         | ~45%              |
+| Max file LOC           | 1841 (aiService)   | 1841           | 1841                                 | 1841                         | <600              |
+| `any` / `@ts-ignore`   | 71                 | 71             | ~60                                  | ~60                          | **0 lint errors** |
+| ARIA labels            | 4                  | 4              | 4                                    | **46**                       | 40+               |
+| Focus traps            | 0                  | 0              | 0                                    | **2 (Modal, BottomSheet)**   | 2                 |
+| Memoized cards         | 0                  | 0              | 0                                    | **4**                        | 4                 |
+| Pagination             | None               | None           | None                                 | **Journal (20), Ideas (30)** | Done              |
+| AI timeout             | None               | None           | None                                 | **30s hard limit**           | Done              |
+| localStorage leak      | Yes                | Yes            | Yes                                  | **Fixed**                    | Fixed             |
+| Client-side secrets    | 1 (Groq key)       | **0**          | **0**                                | **0**                        | 0                 |
+| Duplicate code         | fetchWithRetry x2  | **0**          | **0**                                | **0**                        | 0                 |
+| Manual DB types        | 290 LOC / 8 tables | 290 LOC        | **0 LOC / 14 tables auto-generated** | **0**                        | 0                 |
+| AI response validation | None               | None           | **11 Zod schemas**                   | **11**                       | 11                |
+| Error toasts           | None               | None           | **Journal (load/save/delete)**       | **Journal**                  | All pages         |

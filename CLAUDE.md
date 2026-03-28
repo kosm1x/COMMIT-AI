@@ -130,15 +130,28 @@ Validated across agent-controller (190 tests) and crm-azteca (1143 tests):
 - **RLS is non-negotiable**: Every table must have user_id + RLS policy. Already done — don't regress
 - **Test discipline pays compound interest**: Start with services (mock fetch), then hooks (mock service), then components (mock context)
 - **Consolidate retry logic**: One `fetchWithRetry` with exponential backoff + jitter. Never duplicate
-- **Secrets never in VITE_ vars**: Anon key is fine (RLS protects), but Groq key gives full API access
+- **Secrets never in VITE\_ vars**: Anon key is fine (RLS protects), but Groq key gives full API access
 - **ACI over HCI**: Tool descriptions teach the LLM domain hierarchy. Write descriptions as if for a capable but literal junior dev
 
 ## Improvement Plan
 
 See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
+
 1. ~~Security & Foundation~~ — DONE (2026-03-13)
 2. ~~Architecture Refactor~~ — DONE (2026-03-15)
 3. ~~Performance & UX~~ — DONE (2026-03-17)
 4. ~~Testing Depth~~ — DONE (2026-03-17)
 5. ~~Documentation Cleanup~~ — DONE (2026-03-17)
 6. Future Enhancements (PWA, undo/redo, soft deletes, E2E) — BACKLOG
+
+### v2.26 Unification (COMMIT + Jarvis)
+
+COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine. Full plan: `mission-control/docs/v2.26-plan.md`.
+
+| Session | Scope                                                                                         | Status   |
+| ------- | --------------------------------------------------------------------------------------------- | -------- |
+| 1       | Unified data layer (`modified_by`, `agent_suggestions`, `commit-events`, pg_net triggers)     | **Done** |
+| 2       | One Brain (ai-proxy Jarvis-first routing, `callLLM()` function_name threading, Groq fallback) | **Done** |
+| 3       | Project entity + COMMIT linking (projects table/tools/credential resolution in Jarvis)        | **Done** |
+| 4-5     | Strategic autonomy (event reactor, proactive scanner, weekly review), reliability             | Pending  |
+| 6       | Suggestions panel UI, "Jarvis Says" insight cards, activity feed                              | Pending  |
