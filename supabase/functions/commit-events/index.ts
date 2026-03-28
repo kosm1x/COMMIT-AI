@@ -39,6 +39,16 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // F3: Validate caller is the database trigger (service role key)
+  const authHeader = req.headers.get("Authorization");
+  const expectedKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!authHeader || !expectedKey || authHeader !== `Bearer ${expectedKey}`) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const jarvisUrl = Deno.env.get("JARVIS_API_URL");
   const jarvisKey = Deno.env.get("JARVIS_API_KEY");
 
@@ -97,7 +107,7 @@ Deno.serve(async (req: Request) => {
         : record,
   };
 
-  // Forward to Jarvis
+  // Forward to Jarvis (F9: 10s timeout to avoid Edge Function hanging)
   try {
     const response = await fetch(`${jarvisUrl}/api/commit-events`, {
       method: "POST",
@@ -106,25 +116,27 @@ Deno.serve(async (req: Request) => {
         "X-Api-Key": jarvisKey,
       },
       body: JSON.stringify(eventPayload),
+      signal: AbortSignal.timeout(10_000),
     });
 
-    const result = await response.json();
     console.log(
       `[commit-events] Forwarded ${payload.type} ${payload.table}/${record.id} → Jarvis (${response.status})`,
     );
 
-    return new Response(
-      JSON.stringify({ status: "forwarded", jarvis: result }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    // F8: Don't leak raw Jarvis response
+    return new Response(JSON.stringify({ status: "forwarded" }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("[commit-events] Failed to forward to Jarvis:", error);
     // Don't fail the webhook — Jarvis being down shouldn't block COMMIT
+    // F8: Don't leak internal error details
     return new Response(
-      JSON.stringify({ status: "jarvis_unreachable", error: String(error) }),
+      JSON.stringify({
+        status: "jarvis_unreachable",
+        error: "Jarvis temporarily unavailable",
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
