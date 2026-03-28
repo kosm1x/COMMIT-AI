@@ -7,11 +7,6 @@
 
 import { supabase } from "../lib/supabase";
 
-// agent_suggestions is not in the auto-generated Database types (added after types:generate).
-// Use an untyped client reference for this table until types are regenerated.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const suggestionsTable = () => (supabase as any).from("agent_suggestions");
-
 export interface AgentSuggestion {
   id: string;
   user_id: string;
@@ -36,7 +31,8 @@ export class SuggestionsService {
 
   /** Load all pending suggestions, newest first. */
   async loadPending(): Promise<AgentSuggestion[]> {
-    const { data, error } = await suggestionsTable()
+    const { data, error } = await supabase
+      .from("agent_suggestions")
       .select("*")
       .eq("user_id", this.userId)
       .eq("status", "pending")
@@ -46,12 +42,13 @@ export class SuggestionsService {
       console.error("[suggestions] Failed to load pending:", error.message);
       return [];
     }
-    return (data ?? []) as unknown as AgentSuggestion[];
+    return (data ?? []) as AgentSuggestion[];
   }
 
   /** Load recently resolved suggestions (for history). */
   async loadRecent(limit = 20): Promise<AgentSuggestion[]> {
-    const { data, error } = await suggestionsTable()
+    const { data, error } = await supabase
+      .from("agent_suggestions")
       .select("*")
       .eq("user_id", this.userId)
       .neq("status", "pending")
@@ -62,12 +59,13 @@ export class SuggestionsService {
       console.error("[suggestions] Failed to load recent:", error.message);
       return [];
     }
-    return (data ?? []) as unknown as AgentSuggestion[];
+    return (data ?? []) as AgentSuggestion[];
   }
 
   /** Get count of pending suggestions. */
   async getPendingCount(): Promise<number> {
-    const { count, error } = await suggestionsTable()
+    const { count, error } = await supabase
+      .from("agent_suggestions")
       .select("*", { count: "exact", head: true })
       .eq("user_id", this.userId)
       .eq("status", "pending");
@@ -81,7 +79,8 @@ export class SuggestionsService {
 
   /** Mark a suggestion as accepted. */
   async accept(id: string): Promise<boolean> {
-    const { error } = await suggestionsTable()
+    const { error } = await supabase
+      .from("agent_suggestions")
       .update({
         status: "accepted",
         resolved_at: new Date().toISOString(),
@@ -98,7 +97,8 @@ export class SuggestionsService {
 
   /** Mark a suggestion as rejected. */
   async reject(id: string): Promise<boolean> {
-    const { error } = await suggestionsTable()
+    const { error } = await supabase
+      .from("agent_suggestions")
       .update({
         status: "rejected",
         resolved_at: new Date().toISOString(),
@@ -127,21 +127,20 @@ export class SuggestionsService {
     // Parallel queries — each table is independent
     const tableResults = await Promise.all(
       tables.map(async (table) => {
-        // modified_by and last_edited_at are not in generated types (added post-generation)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data, error } = await (supabase.from(table) as any)
-          .select("id, title, last_edited_at")
+        const { data, error } = await supabase
+          .from(table)
+          .select("id, title, last_edited_at, modified_by")
           .eq("user_id", this.userId)
           .eq("modified_by", "jarvis")
           .order("last_edited_at", { ascending: false })
           .limit(5);
 
         if (error || !data) return [];
-        return (data as Array<Record<string, unknown>>).map((row) => ({
+        return data.map((row) => ({
           table,
-          id: row.id as string,
-          title: row.title as string,
-          modified_at: row.last_edited_at as string,
+          id: row.id,
+          title: row.title,
+          modified_at: row.last_edited_at ?? "",
         }));
       }),
     );

@@ -130,10 +130,12 @@ export function useObjectivesData(
   // Initial load — prune stale completed tasks before fetching
   useEffect(() => {
     if (userId) {
-      supabase.rpc("prune_completed_tasks").then(({ error }) => {
-        if (error) console.warn("Task pruning skipped:", error.message);
-        reloadAll();
-      });
+      supabase
+        .rpc("prune_completed_tasks" as never)
+        .then(({ error }: { error: { message: string } | null }) => {
+          if (error) console.warn("Task pruning skipped:", error.message);
+          reloadAll();
+        });
     } else {
       setLoading(false);
     }
