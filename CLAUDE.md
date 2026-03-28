@@ -19,7 +19,7 @@ npm run types:generate # Regenerate Supabase types (requires local Supabase runn
 ## Stack
 
 - **Frontend**: React 18 + TypeScript 5.5 + Vite 5 + Tailwind 3
-- **Database**: Supabase (PostgreSQL + RLS on all 14 tables + Auth)
+- **Database**: Supabase (PostgreSQL + RLS on all 15 tables + Auth)
 - **AI**: Groq API (Qwen 3.2) via Supabase Edge Function (`ai-proxy`) — key is server-side, vendor-agnostic via `LLM_MODEL`/`LLM_ENDPOINT` env vars
 - **Validation**: Zod schemas for all 11 AI response types (`src/lib/aiSchemas.ts`)
 - **Mobile**: Capacitor 8 (iOS + Android)
@@ -57,8 +57,9 @@ src/
   i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
 supabase/
-  migrations/                    # 15 SQL migrations (additive only)
+  migrations/                    # 19 SQL migrations (additive only)
   functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
+  functions/commit-events/       # Edge Function: DB webhook → Jarvis event bridge
   config.toml                    # Local Supabase config (for types:generate)
 docs/                            # Improvement plan, deployment, tech spec
 ```
@@ -67,9 +68,9 @@ docs/                            # Improvement plan, deployment, tech spec
 
 Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent (orphaned items supported). Status: `not_started | in_progress | completed | on_hold`. Priority: `high | medium | low`. Completed non-recurring tasks are auto-pruned after 15 days via `prune_completed_tasks()` (pg_cron daily + client RPC on login).
 
-### Database tables (14)
+### Database tables (15)
 
-`journal_entries`, `ai_analysis`, `visions`, `goals`, `objectives`, `tasks`, `task_completions`, `ideas`, `idea_connections`, `idea_ai_suggestions`, `mind_maps`, `user_preferences`, `daily_planner`, `daily_plan_tasks`. All have `user_id` FK with CASCADE DELETE + RLS policies for SELECT/INSERT/UPDATE/DELETE.
+`journal_entries`, `ai_analysis`, `visions`, `goals`, `objectives`, `tasks`, `task_completions`, `ideas`, `idea_connections`, `idea_ai_suggestions`, `mind_maps`, `user_preferences`, `daily_planner`, `daily_plan_tasks`, `agent_suggestions`. All have `user_id` FK with CASCADE DELETE + RLS policies for SELECT/INSERT/UPDATE/DELETE. The 4 hierarchy tables + `journal_entries` have `modified_by` provenance tracking (`user`/`jarvis`/`system`).
 
 ### AI service (`src/services/aiService.ts`)
 
@@ -98,7 +99,14 @@ Supabase Auth (email/password). `AuthContext` manages session + syncs `user_pref
 ```
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
-# GROQ_API_KEY is server-side only (Supabase Edge Function secret)
+# --- Edge Function secrets (Supabase dashboard, not in client code) ---
+# GROQ_API_KEY          — Groq LLM fallback key
+# LLM_API_KEY           — Primary LLM provider key
+# LLM_ENDPOINT          — Primary LLM endpoint URL
+# LLM_MODEL             — Primary LLM model ID
+# JARVIS_API_URL        — Jarvis base URL (e.g. http://host:8080)
+# JARVIS_API_KEY        — Jarvis API authentication key
+# SUPABASE_SERVICE_ROLE_KEY — used by commit-events Edge Function auth
 ```
 
 ## Known Issues (prioritized)
@@ -118,6 +126,7 @@ VITE_SUPABASE_ANON_KEY=...
 13. ~~**LOW — Package.json metadata**~~: Fixed (Phase 1.2) — name=commit-ai, version=1.0.0
 14. ~~**LOW — RateLimiter unused**~~: Fixed (Phase 1.5) — activated on AI service calls
 15. ~~**LOW — localStorage not cleared on logout**~~: Fixed (Phase 3.5) — all 12 keys cleared on signout
+16. **LOW — Service role key in migration**: The `notify_jarvis()` trigger function hardcodes the service role JWT in `20260323000002_hardcode_trigger_config.sql` because `ALTER DATABASE SET` is not permitted on Supabase hosted. The repo is private and the key is validated by the `commit-events` Edge Function. Rotate the key periodically via the Supabase dashboard.
 
 ## Hard-Won Lessons (from sister projects)
 
