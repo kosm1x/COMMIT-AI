@@ -520,6 +520,21 @@ export const es = {
       refresh: "Actualizar",
     },
   },
+  // Suggestions
+  suggestions: {
+    title: "Sugerencias de Jarvis",
+    pending: "Pendientes",
+    activity: "Actividad",
+    accept: "Aceptar",
+    dismiss: "Descartar",
+    accepted: "Sugerencia aceptada",
+    rejected: "Sugerencia descartada",
+    acceptFailed: "Error al aceptar sugerencia",
+    rejectFailed: "Error al descartar sugerencia",
+    noPending: "Sin sugerencias pendientes",
+    noPendingHint: "Jarvis sugerirá acciones basadas en tu actividad",
+    noActivity: "Sin actividad reciente de Jarvis",
+  },
   // Errors
   errors: {
     somethingWentWrong: "Algo salió mal",

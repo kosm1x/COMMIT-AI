@@ -504,6 +504,21 @@ export const zh = {
       refresh: "刷新",
     },
   },
+  // Suggestions
+  suggestions: {
+    title: "Jarvis 建议",
+    pending: "待处理",
+    activity: "活动",
+    accept: "接受",
+    dismiss: "忽略",
+    accepted: "建议已接受",
+    rejected: "建议已忽略",
+    acceptFailed: "接受建议失败",
+    rejectFailed: "忽略建议失败",
+    noPending: "没有待处理的建议",
+    noPendingHint: "Jarvis 会根据你的活动提出建议",
+    noActivity: "没有最近的 Jarvis 活动",
+  },
   // Errors
   errors: {
     somethingWentWrong: "出了点问题",
