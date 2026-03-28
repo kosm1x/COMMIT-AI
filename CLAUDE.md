@@ -163,5 +163,5 @@ COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine. Full pl
 | 2       | One Brain (ai-proxy Jarvis-first routing, `callLLM()` function_name threading, Groq fallback) | **Done** |
 | 3       | Project entity + COMMIT linking (projects table/tools/credential resolution in Jarvis)        | **Done** |
 | 4       | Strategic autonomy (event reactor, proactive scanner, conversation→COMMIT, weekly review)     | **Done** |
-| 5       | Reliability (token budget, latency tracking, tool audit, response time, observability)        | Pending  |
+| 5       | Reliability (token budget, latency tracking, tool audit, response time, observability)        | **Done** |
 | 6       | Suggestions panel UI, "Jarvis Says" insight cards, activity feed                              | Pending  |

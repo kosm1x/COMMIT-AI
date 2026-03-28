@@ -15,14 +15,14 @@ COMMIT and Jarvis (agent-controller) are merging into a unified system.
 COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine.
 Full plan: `agent-controller/docs/v2.26-plan.md`
 
-| Session | COMMIT-side changes                                                                                                                      | Status                                              |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| 1       | `modified_by` column, `agent_suggestions` table, `commit-events` Edge Function, pg_net triggers                                          | **Done**                                            |
-| 2       | ai-proxy Jarvis-first routing, `callLLM()` function_name threading (12 functions), Groq fallback                                         | **Done**                                            |
-| 3       | Project entity + COMMIT linking (projects table, tools, credential resolution, `commit_goal_id`)                                         | **Done** (Jarvis-side; no COMMIT UI changes needed) |
-| 4       | Strategic autonomy: event reactor (6 handlers), proactive scanner, conversation→COMMIT pipeline, weekly review, required tool validation | **Done** (Jarvis-side)                              |
-| 5       | Reliability: token budget, latency tracking, tool audit, response time, observability                                                    | Pending                                             |
-| 6       | Suggestions panel UI, "Jarvis Says" insight cards, activity feed                                                                         | Pending                                             |
+| Session | COMMIT-side changes                                                                                                                       | Status                                              |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 1       | `modified_by` column, `agent_suggestions` table, `commit-events` Edge Function, pg_net triggers                                           | **Done**                                            |
+| 2       | ai-proxy Jarvis-first routing, `callLLM()` function_name threading (12 functions), Groq fallback                                          | **Done**                                            |
+| 3       | Project entity + COMMIT linking (projects table, tools, credential resolution, `commit_goal_id`)                                          | **Done** (Jarvis-side; no COMMIT UI changes needed) |
+| 4       | Strategic autonomy: event reactor (6 handlers), proactive scanner, conversation→COMMIT pipeline, weekly review, required tool validation  | **Done** (Jarvis-side)                              |
+| 5       | Reliability: per-tool metrics, event latency tracking, health endpoint, ACI enhancement (token budget + latency tracking already existed) | **Done** (Jarvis-side)                              |
+| 6       | Suggestions panel UI, "Jarvis Says" insight cards, activity feed                                                                          | Pending                                             |
 
 ## Executive Summary
 
