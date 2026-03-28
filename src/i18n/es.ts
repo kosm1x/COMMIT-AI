@@ -520,6 +520,12 @@ export const es = {
       refresh: "Actualizar",
     },
   },
+  // Undo
+  undo: {
+    undo: "Deshacer",
+    undone: "Accion deshecha",
+    failed: "Error al deshacer",
+  },
   // Password strength
   password: {
     minLength: "8+ caracteres",

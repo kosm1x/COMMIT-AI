@@ -248,17 +248,17 @@ v1.0.0 is functional with good architecture fundamentals (RLS, lazy loading, gra
 
 ## Phase 6: Future Enhancements (Backlog)
 
-| Enhancement                | Effort | Impact | Status                                                                                                |
-| -------------------------- | ------ | ------ | ----------------------------------------------------------------------------------------------------- |
-| ~~Composite DB indexes~~   | Low    | Medium | **Done** (2026-03-28) — `(user_id, status)` on tasks/goals/objectives, `(user_id, due_date)` on tasks |
-| ~~Password validation UI~~ | Low    | Low    | **Done** (2026-03-28) — strength bar + requirements checklist on signup                               |
-| ~~E2E tests (Playwright)~~ | High   | High   | **Done** (2026-03-28) — 8 tests (auth + navigation), CI integration                                   |
-| ~~Virtual scrolling~~      | Low    | Medium | **Skipped** — pagination (20/30 per page) already covers all long lists                               |
-| PWA support (offline)      | Medium | High   | Deferred — needs decision: web-first vs Capacitor-first. Meta tags ready in index.html                |
-| Push notifications         | Medium | High   | Deferred — needs Firebase project + backend push service                                              |
-| Undo/redo for CRUD ops     | Medium | Medium | Backlog                                                                                               |
-| WebAuthn fallback          | Medium | Low    | Backlog                                                                                               |
-| Storybook                  | Medium | Low    | Backlog                                                                                               |
+| Enhancement                | Effort | Impact | Status                                                                                                                                        |
+| -------------------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~Composite DB indexes~~   | Low    | Medium | **Done** (2026-03-28) — `(user_id, status)` on tasks/goals/objectives, `(user_id, due_date)` on tasks                                         |
+| ~~Password validation UI~~ | Low    | Low    | **Done** (2026-03-28) — strength bar + requirements checklist on signup                                                                       |
+| ~~E2E tests (Playwright)~~ | High   | High   | **Done** (2026-03-28) — 8 tests (auth + navigation), CI integration                                                                           |
+| ~~Virtual scrolling~~      | Low    | Medium | **Skipped** — pagination (20/30 per page) already covers all long lists                                                                       |
+| PWA support (offline)      | Medium | High   | Deferred — needs decision: web-first vs Capacitor-first. Meta tags ready in index.html                                                        |
+| Push notifications         | Medium | High   | Deferred — needs Firebase project + backend push service                                                                                      |
+| ~~Undo/redo for CRUD ops~~ | Medium | Medium | **Done** (2026-03-28) — UndoContext with 10-item stack, Ctrl+Z, toast action buttons. Covers delete/create for visions/goals/objectives/tasks |
+| WebAuthn fallback          | Medium | Low    | Backlog                                                                                                                                       |
+| Storybook                  | Medium | Low    | Backlog                                                                                                                                       |
 
 ---
 

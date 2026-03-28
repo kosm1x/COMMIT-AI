@@ -504,6 +504,12 @@ export const zh = {
       refresh: "刷新",
     },
   },
+  // Undo
+  undo: {
+    undo: "撤销",
+    undone: "操作已撤销",
+    failed: "撤销失败",
+  },
   // Password strength
   password: {
     minLength: "8个以上字符",

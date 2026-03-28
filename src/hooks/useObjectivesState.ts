@@ -1,6 +1,7 @@
 import { useObjectivesData } from "./useObjectivesData";
 import { useObjectivesSelection } from "./useObjectivesSelection";
 import { useObjectivesCRUD } from "./useObjectivesCRUD";
+import { useUndo } from "../contexts/UndoContext";
 import type {
   Vision,
   Goal,
@@ -159,7 +160,8 @@ export function useObjectivesState(
     data.objectives,
     data.tasks,
   );
-  const crud = useObjectivesCRUD(userId, data, selection);
+  const { pushUndo } = useUndo();
+  const crud = useObjectivesCRUD(userId, data, selection, pushUndo);
 
   return {
     // Data

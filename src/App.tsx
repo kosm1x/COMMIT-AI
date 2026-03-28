@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { UndoProvider } from "./contexts/UndoContext";
 import Login from "./pages/Login";
 import { AppLayout } from "./components/layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -202,9 +203,11 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <NotificationProvider>
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
+            <UndoProvider>
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </UndoProvider>
           </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>

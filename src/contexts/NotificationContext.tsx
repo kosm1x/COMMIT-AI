@@ -10,11 +10,17 @@ import { AlertTriangle, AlertCircle, CheckCircle, Info, X } from "lucide-react";
 
 type NotificationType = "error" | "warning" | "success" | "info";
 
+interface NotificationAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Notification {
   id: string;
   type: NotificationType;
   message: string;
   detail?: string;
+  action?: NotificationAction;
   duration: number;
 }
 
@@ -23,6 +29,7 @@ interface NotificationContextType {
     type: NotificationType;
     message: string;
     detail?: string;
+    action?: NotificationAction;
     duration?: number;
   }) => string;
   dismiss: (id: string) => void;
@@ -90,11 +97,13 @@ export function NotificationProvider({
       type,
       message,
       detail,
+      action,
       duration,
     }: {
       type: NotificationType;
       message: string;
       detail?: string;
+      action?: NotificationAction;
       duration?: number;
     }) => {
       const id = `notif-${++nextId}`;
@@ -105,6 +114,7 @@ export function NotificationProvider({
         type,
         message,
         detail,
+        action,
         duration: dur,
       };
 
@@ -174,9 +184,21 @@ export function NotificationProvider({
                     </p>
                   )}
                 </div>
+                {n.action && (
+                  <button
+                    onClick={() => {
+                      n.action!.onClick();
+                      dismiss(n.id);
+                    }}
+                    className="flex-shrink-0 px-2.5 py-1 text-xs font-semibold rounded-md bg-white/80 dark:bg-white/20 hover:bg-white dark:hover:bg-white/30 transition-colors"
+                  >
+                    {n.action.label}
+                  </button>
+                )}
                 <button
                   onClick={() => dismiss(n.id)}
                   className="flex-shrink-0 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  aria-label="Dismiss notification"
                 >
                   <X className="w-4 h-4" />
                 </button>

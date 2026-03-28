@@ -513,6 +513,12 @@ export const en = {
       refresh: "Refresh",
     },
   },
+  // Undo
+  undo: {
+    undo: "Undo",
+    undone: "Action undone",
+    failed: "Undo failed",
+  },
   // Password strength
   password: {
     minLength: "8+ characters",

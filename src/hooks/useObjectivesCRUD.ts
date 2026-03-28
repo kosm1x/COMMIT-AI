@@ -94,6 +94,7 @@ export function useObjectivesCRUD(
   userId: string | undefined,
   data: ObjectivesDataState,
   selection: SelectionDeps,
+  pushUndo?: (label: string, undoFn: () => Promise<boolean>) => void,
 ): ObjectivesCRUDOps {
   const {
     visions,
@@ -261,6 +262,25 @@ export function useObjectivesCRUD(
       if (selectionPath.visionId === id) {
         clearSelection();
       }
+
+      const deleted = previousVisions.find((v) => v.id === id);
+      if (deleted && pushUndo) {
+        pushUndo(`Deleted: ${deleted.title}`, async () => {
+          const { error: reinsertErr } = await supabase
+            .from("visions")
+            .insert({
+              user_id: userId!,
+              title: deleted.title,
+              description: deleted.description,
+              target_date: deleted.target_date,
+              status: deleted.status,
+            })
+            .select();
+          if (reinsertErr) return false;
+          await loadVisions();
+          return true;
+        });
+      }
       return true;
     },
     [
@@ -417,6 +437,26 @@ export function useObjectivesCRUD(
           taskId: null,
         }));
       }
+
+      const deleted = previousGoals.find((g) => g.id === id);
+      if (deleted && pushUndo) {
+        pushUndo(`Deleted: ${deleted.title}`, async () => {
+          const { error: reinsertErr } = await supabase
+            .from("goals")
+            .insert({
+              user_id: userId!,
+              title: deleted.title,
+              description: deleted.description,
+              vision_id: deleted.vision_id,
+              target_date: deleted.target_date,
+              status: deleted.status,
+            })
+            .select();
+          if (reinsertErr) return false;
+          await loadGoals();
+          return true;
+        });
+      }
       return true;
     },
     [
@@ -553,6 +593,28 @@ export function useObjectivesCRUD(
           taskId: null,
         }));
       }
+
+      const deleted = previousObjectives.find((o) => o.id === id);
+      if (deleted && pushUndo) {
+        pushUndo(`Deleted: ${deleted.title}`, async () => {
+          const { error: reinsertErr } = await supabase
+            .from("objectives")
+            .insert({
+              user_id: userId!,
+              title: deleted.title,
+              description: deleted.description,
+              goal_id: deleted.goal_id,
+              priority: deleted.priority,
+              target_date: deleted.target_date,
+              status: deleted.status,
+            })
+            .select();
+          if (reinsertErr) return false;
+          await loadObjectives();
+          await loadTaskCounts();
+          return true;
+        });
+      }
       return true;
     },
     [
@@ -686,6 +748,29 @@ export function useObjectivesCRUD(
 
       if (selectionPath.taskId === id) {
         setSelectionPath((prev) => ({ ...prev, taskId: null }));
+      }
+
+      if (taskToDelete && pushUndo) {
+        pushUndo(`Deleted: ${taskToDelete.title}`, async () => {
+          const { error: reinsertErr } = await supabase
+            .from("tasks")
+            .insert({
+              user_id: userId!,
+              title: taskToDelete.title,
+              description: taskToDelete.description,
+              objective_id: taskToDelete.objective_id,
+              priority: taskToDelete.priority,
+              due_date: taskToDelete.due_date,
+              status: taskToDelete.status,
+              is_recurring: taskToDelete.is_recurring,
+              notes: taskToDelete.notes,
+            })
+            .select();
+          if (reinsertErr) return false;
+          await loadTasks();
+          await loadTaskCounts();
+          return true;
+        });
       }
       return true;
     },
