@@ -9,11 +9,11 @@ Phase 5 completed: 2026-03-17 | 17 root .md files → 3, consolidated deployment
 Lint cleanup: 2026-03-17 | All 35 lint errors eliminated (28 any, 4 case-decl, 2 unused-vars, 1 prefer-const)
 Task pruning: 2026-03-17 | Auto-delete completed non-recurring tasks after 15 days (pg_cron + client RPC)
 
-## v2.26 Unification (2026-03-23 — In Progress)
+## v2.26 Unification (2026-03-23 — Complete)
 
-COMMIT and Jarvis (agent-controller) are merging into a unified system.
-COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine.
-Full plan: `agent-controller/docs/v2.26-plan.md`
+COMMIT and Jarvis (agent-controller) merged into a unified system.
+COMMIT is the strategic UI. Jarvis is the intelligence engine.
+Full plan: `mission-control/docs/v2.26-plan.md`
 
 | Session | COMMIT-side changes                                                                                                                                                     | Status                                              |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |

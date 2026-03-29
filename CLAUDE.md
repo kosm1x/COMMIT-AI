@@ -155,11 +155,11 @@ See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
 3. ~~Performance & UX~~ — DONE (2026-03-17)
 4. ~~Testing Depth~~ — DONE (2026-03-17)
 5. ~~Documentation Cleanup~~ — DONE (2026-03-17)
-6. Future Enhancements (PWA, undo/redo, soft deletes, E2E) — BACKLOG
+6. ~~Future Enhancements~~ — 4 done (indexes, password UI, E2E, undo/redo), 1 skipped (virtual scrolling), 4 remaining (PWA, push, WebAuthn, Storybook)
 
-### v2.26 Unification (COMMIT + Jarvis)
+### v2.26 Unification (COMMIT + Jarvis) — COMPLETE
 
-COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine. Full plan: `mission-control/docs/v2.26-plan.md`.
+COMMIT = strategic UI. Jarvis = intelligence engine. Full plan: `mission-control/docs/v2.26-plan.md`.
 
 | Session | Scope                                                                                         | Status   |
 | ------- | --------------------------------------------------------------------------------------------- | -------- |
@@ -169,3 +169,7 @@ COMMIT becomes the strategic UI. Jarvis becomes the intelligence engine. Full pl
 | 4       | Strategic autonomy (event reactor, proactive scanner, conversation→COMMIT, weekly review)     | **Done** |
 | 5       | Reliability (token budget, latency tracking, tool audit, response time, observability)        | **Done** |
 | 6       | Suggestions panel UI, activity feed, Jarvis badge in TabBar                                   | **Done** |
+
+### v3.0 Production Hardening (Jarvis) — COMPLETE
+
+Structured logging (Pino), guardrails (3-layer tool confirmation), systemd hardening, 8-model LLM benchmark, provider rotation. See `mission-control/docs/PROJECT-STATUS.md`.
