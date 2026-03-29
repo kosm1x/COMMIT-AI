@@ -90,25 +90,46 @@ export function createIsInSelectedFamily(
     );
     if (!visionId && !goalId && !objectiveId && !taskId) return false;
 
+    // Determine the deepest level the user actually selected (from original path,
+    // not the auto-resolved effectivePath). This controls filtering strictness.
+    const selectedLevel = selectionPath.taskId
+      ? "task"
+      : selectionPath.objectiveId
+        ? "objective"
+        : selectionPath.goalId
+          ? "goal"
+          : selectionPath.visionId
+            ? "vision"
+            : null;
+
     switch (type) {
       case "vision": {
         return id === visionId;
       }
       case "goal": {
         if (id === goalId) return true;
-        const goal = goals.find((g) => g.id === id);
-        if (!goal) return false;
-        return visionId !== null && goal.vision_id === visionId;
+        // Show sibling goals only when a vision is selected
+        if (selectedLevel === "vision") {
+          const goal = goals.find((g) => g.id === id);
+          if (!goal) return false;
+          return visionId !== null && goal.vision_id === visionId;
+        }
+        return false;
       }
       case "objective": {
         if (id === objectiveId) return true;
         const obj = objectives.find((o) => o.id === id);
         if (!obj) return false;
-        if (goalId !== null && obj.goal_id === goalId) return true;
-        // Vision only selected (no goal selected): all objectives under any goal of that vision
-        if (visionId !== null && goalId === null && obj.goal_id) {
-          const g = goals.find((gr) => gr.id === obj.goal_id);
-          if (g?.vision_id === visionId) return true;
+        // Show sibling objectives only at goal level or above
+        if (selectedLevel === "goal") {
+          return goalId !== null && obj.goal_id === goalId;
+        }
+        if (selectedLevel === "vision") {
+          if (goalId !== null && obj.goal_id === goalId) return true;
+          if (visionId !== null && obj.goal_id) {
+            const g = goals.find((gr) => gr.id === obj.goal_id);
+            if (g?.vision_id === visionId) return true;
+          }
         }
         return false;
       }
@@ -116,15 +137,16 @@ export function createIsInSelectedFamily(
         if (id === taskId) return true;
         const task = tasks.find((t) => t.id === id);
         if (!task?.objective_id) return false;
-        if (objectiveId !== null && task.objective_id === objectiveId)
-          return true;
-        // Goal selected: all tasks under that goal (more specific - takes precedence)
-        if (goalId !== null) {
-          const obj = objectives.find((o) => o.id === task.objective_id);
-          if (obj?.goal_id === goalId) return true;
+        // Show sibling tasks only at objective level or above
+        if (selectedLevel === "task") return false;
+        if (selectedLevel === "objective") {
+          return objectiveId !== null && task.objective_id === objectiveId;
         }
-        // Vision selected (but no goal selected): all tasks under that vision
-        if (visionId !== null && goalId === null) {
+        if (selectedLevel === "goal") {
+          const obj = objectives.find((o) => o.id === task.objective_id);
+          return goalId !== null && obj?.goal_id === goalId;
+        }
+        if (selectedLevel === "vision") {
           const obj = objectives.find((o) => o.id === task.objective_id);
           if (obj?.goal_id) {
             const g = goals.find((gr) => gr.id === obj.goal_id);
