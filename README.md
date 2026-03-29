@@ -1,247 +1,177 @@
-# COMMIT Journal - Personal Growth Companion
+# COMMIT - Personal Growth Companion
 
-A beautiful, minimal journaling application based on the COMMIT framework (Context, Objectives, MindMap, Ideate, Track) designed to promote emotional clarity, goal achievement, and personal development.
+A personal growth companion implementing the COMMIT framework (Context, Objectives, MindMap, Ideate, Track). React SPA with Supabase backend, Jarvis AI intelligence engine, and mobile support via Capacitor.
 
 ## Features
 
-### Complete COMMIT Framework Implementation
+### COMMIT Framework
 
-#### Journal Section (Context) ✅
-- Distraction-free writing interface
-- Auto-save functionality (3-second debounce)
+#### Context (Journal)
+
+- Distraction-free writing with auto-save
 - Calendar view of entries
-- **AI-Powered Analysis** - Analyze journal entries on-demand to get:
-  - Emotion detection with intensity scores
-  - Pattern recognition across entries
-  - Personalized coping strategies
-- Beautiful visualizations of emotional insights
-- Primary emotion tracking
+- **AI-Powered Analysis** — emotion detection, pattern recognition, coping strategies
+- Primary emotion tracking with visualizations
+- Pagination (20 entries per page)
 
-#### Objectives Section ✅
-- Complete Vision → Goal → Objective → Task hierarchy
-- Four-column layout for easy management
-- Priority assignment (High, Medium, Low)
-- Status tracking (Not Started, In Progress, Completed, On Hold)
-- Due date management for tasks
-- **Recurring Tasks** - Mark tasks as recurring for daily habits
-  - "Mark Completed Today" button for recurring tasks
-  - Separate tracking via task_completions table
-  - Perfect for building consistent habits
-- Progress visualization with task counts
-- Quick-add forms for each level
-- Orphaned items support (items without parents)
-- Clickable titles to create mind maps or ideas
-- Inline editing for all items
+#### Objectives (Vision → Goal → Objective → Task)
 
-#### MindMap Section ✅
-- **AI-Generated Mind Maps** - Enter a problem statement, get a visual mind map
-- **Kanban Boards** - Visual boards for Visions, Goals, Objectives, and Tasks
-  - Drag-and-drop status management
-  - Status columns with color coding
-  - Recurring task indicators
-- Saved mind maps history
-- Fullscreen mode for detailed exploration
-- Create Goals, Objectives, or Tasks directly from mind map nodes
-- Theme-aware Mermaid diagram rendering
+- Four-level hierarchy with four-column kanban layout
+- Priority assignment (High/Medium/Low) and status tracking
+- Due dates, recurring tasks, task completion streaks
+- Inline editing, orphaned items, drag-and-drop reordering
+- **Undo/redo** — delete actions can be undone via toast button or Ctrl+Z
+- Daily planner with time-slot assignment
 
-#### Ideate Section ✅
-- **AI-Powered Idea Expansion** - Start with a simple thought, get a full concept
-- Idea library with search and filtering
-- Category and tag management
+#### MindMap
+
+- AI-generated mind maps from problem statements
+- Kanban boards for all hierarchy levels
+- Saved mind map history with fullscreen mode
+
+#### Ideate
+
+- AI-powered idea expansion from rough thoughts
+- Idea library with search, filtering, and pagination (30 per page)
 - Connection detection between ideas
-- AI suggestions for idea enhancement
-- Detailed idea editor with AI assistant panel
-- Export ideas (TXT, Markdown, JSON)
+- Export (TXT, Markdown, JSON)
 
-#### Track Section ✅
-- **Daily View** - Today's tasks, completion tracking, recurring task management
-- **Weekly View** - Week overview with daily breakdown and completion rates
-- **Monthly View** - Activity heatmap, monthly summaries, progress metrics
-- **Kanban Overview** - Status distribution across all items
-- Streak tracking (consecutive days with completions)
-- Completion rate calculations
-- Upcoming deadlines tracking
-- Active goals counter
+#### Track
+
+- Daily/Weekly/Monthly views with activity heatmaps
+- Streak tracking, completion rates, upcoming deadlines
+- Draggable widget dashboard layout
+
+### Jarvis Integration (v2.26)
+
+- **Suggestions Panel** — Jarvis proposes tasks, goals, and improvements as actionable cards
+- **Activity Feed** — see what Jarvis changed and why
+- **Jarvis Badge** — pending suggestion count in the navigation bar
+- AI functions route through Jarvis for full context (memory, calendar, projects)
+- Event-driven: database changes trigger Jarvis reactions in real-time
+- Graceful fallback to Groq when Jarvis is unavailable
 
 ## Technology Stack
 
-- **Frontend**: React 18.3.1 + TypeScript 5.5.3
-- **Styling**: Tailwind CSS 3.4.1 with custom dark mode support
-- **Icons**: Lucide React 0.344.0
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth (Email/Password)
-- **AI**: Groq Qwen 3.2 (via Groq API)
-- **Visualization**: Mermaid 11.12.1 (for mind maps)
-- **Build Tool**: Vite 5.4.21
-- **Routing**: React Router DOM 7.9.6
+- **Frontend**: React 18 + TypeScript 5.5 + Vite 5 + Tailwind 3
+- **Database**: Supabase (PostgreSQL + RLS on all 15 tables + Auth)
+- **AI**: Jarvis-first routing via Supabase Edge Function (`ai-proxy`), Groq fallback
+- **Validation**: Zod schemas for all 11 AI response types
+- **Testing**: Vitest (217 unit tests) + Playwright (8 E2E tests)
+- **Mobile**: Capacitor 8 (iOS + Android)
+- **Diagrams**: Mermaid 11 (mind maps)
+- **Icons**: Lucide React
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 18+
 - A Supabase account
-- (Optional) Groq API key for AI features
 
 ### Installation
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-3. Set up environment variables in `.env`:
-   ```
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+### Environment Variables
 
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-5. Build for production:
-   ```bash
-   npm run build
-   ```
+Edge Function secrets (configured in Supabase dashboard):
 
-## Database Schema
+- `GROQ_API_KEY` — Groq LLM fallback key
+- `LLM_API_KEY` / `LLM_ENDPOINT` / `LLM_MODEL` — Primary LLM provider
+- `JARVIS_API_URL` / `JARVIS_API_KEY` — Jarvis intelligence engine
+- `SUPABASE_SERVICE_ROLE_KEY` — used by commit-events Edge Function auth
 
-The application uses 14 tables:
+### Commands
 
-- **journal_entries** - Stores all user journal entries
-- **ai_analysis** - Stores AI-generated emotional analysis
-- **visions** - Long-term aspirations
-- **goals** - Major milestones linked to visions
-- **objectives** - Specific targets linked to goals
-- **tasks** - Concrete actions linked to objectives
-  - Includes `is_recurring` flag for habit tracking
-- **task_completions** - Daily completion tracking for recurring tasks
-- **ideas** - Captured and expanded ideas
-- **idea_connections** - Relationships between ideas
-- **idea_ai_suggestions** - AI-generated idea enhancements
-- **mind_maps** - Saved mind map visualizations
-- **user_preferences** - User settings and preferences
-- **daily_planner** - Daily planning entries
-- **daily_plan_tasks** - Tasks within daily plans
+```bash
+npm run dev          # Vite dev server on :5000
+npm run build        # Typecheck + production build
+npm run typecheck    # tsc --noEmit
+npm run lint         # ESLint
+npm run test         # Vitest (217 tests, 14 files)
+npm run test:e2e     # Playwright E2E (8 tests, 2 files)
+npm run test:coverage # Vitest with v8 coverage
+npm run types:generate # Regenerate Supabase types
+```
 
-All tables have Row Level Security (RLS) enabled to ensure data privacy. Completed non-recurring tasks are automatically pruned after 15 days.
+## Database Schema (15 tables)
+
+| Table                                | Purpose                                           |
+| ------------------------------------ | ------------------------------------------------- |
+| `journal_entries`                    | User journal entries                              |
+| `ai_analysis`                        | AI-generated emotional analysis                   |
+| `visions`                            | Long-term life directions                         |
+| `goals`                              | Measurable outcomes linked to visions             |
+| `objectives`                         | Milestones linked to goals                        |
+| `tasks`                              | Actions linked to objectives (supports recurring) |
+| `task_completions`                   | Daily completion tracking for recurring tasks     |
+| `ideas`                              | Captured and expanded ideas                       |
+| `idea_connections`                   | Relationships between ideas                       |
+| `idea_ai_suggestions`                | AI-generated idea enhancements                    |
+| `mind_maps`                          | Saved mind map visualizations                     |
+| `user_preferences`                   | User settings                                     |
+| `daily_planner` / `daily_plan_tasks` | Daily planning                                    |
+| `agent_suggestions`                  | Jarvis-proposed changes (accept/reject)           |
+
+All tables have Row Level Security (RLS) enabled. The hierarchy tables + journal have `modified_by` provenance tracking (`user`/`jarvis`/`system`). Completed non-recurring tasks are auto-pruned after 15 days.
 
 ## AI Integration
 
-### Edge Function Proxy
+AI calls route through a Supabase Edge Function (`ai-proxy`) that tries Jarvis first (full context: memory, goals, calendar, projects) and falls back to Groq if unavailable.
 
-AI calls go through a Supabase Edge Function (`ai-proxy`). The API key is stored server-side as a Supabase Edge Function secret — no client-side API key is needed.
+A second Edge Function (`commit-events`) forwards database changes to Jarvis via pg_net triggers, enabling real-time reactions (suggest objective completion, celebrate streaks, analyze journal entries).
 
-The Edge Function is vendor-agnostic, configured via server-side env vars:
-- `LLM_API_KEY` — API key (required)
-- `LLM_MODEL` — model name (defaults to Groq Qwen 3.2)
-- `LLM_ENDPOINT` — API endpoint (defaults to Groq)
+12 AI functions: `analyzeJournalEntry`, `extractObjectivesFromJournal`, `generateMindMap`, `completeIdea`, `findIdeaConnections`, `generateDivergentPaths`, `suggestNextSteps`, `generateCriticalAnalysis`, `generateRelatedConcepts`, `suggestObjectivesForGoal`, `suggestTasksForObjective`, `transformIdeaText`.
 
-AI capabilities include:
-- Journal entry emotion analysis and pattern recognition
-- Coping strategy suggestions
-- Goal extraction from journal entries
-- Mind map and idea expansion generation
-- Critical analysis and related concepts
+All validated through Zod schemas. All return mock data when API is unavailable.
 
-### Fallback Mode
-
-If the Edge Function is unreachable or unconfigured, the app uses intelligent mock analysis based on keyword detection to demonstrate the UI without requiring API access.
-
-## Design Philosophy
-
-- **Minimal & Beautiful** - Clean interface using professional blues, greens, and warm neutrals
-- **High-Contrast Dark Mode** - Pure black backgrounds with white text for maximum readability
-- **Theme Toggle** - Seamless switching between light and dark modes
-- **Distraction-Free** - Focus on content, not formatting
-- **Natural Language** - Write naturally without special tags or syntax
-- **AI That Adapts** - Invisible AI that enhances without interrupting
-- **Mobile-First** - Responsive design that works everywhere
-- **Glassmorphic Design** - Modern glass-effect cards with backdrop blur
-
-## Security
-
-- All user data is protected with Row Level Security on all 14 tables
-- Authentication handled by Supabase Auth
-- API keys are server-side only (Supabase Edge Function secrets)
-- Input sanitization via `src/utils/security.ts`
-- Secure session management
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 src/
-├── components/       # 70+ components in domain folders (ui/, objectives/, journal/, etc.)
-├── contexts/         # AuthContext, ThemeContext, LanguageContext, NotificationContext
-├── hooks/            # 11 custom hooks (objectives data/selection/CRUD, focusTrap, etc.)
-├── services/         # AI service (12 functions), objectives service
-├── lib/              # Supabase client, auto-generated types, Zod schemas
-├── utils/            # fetchWithRetry, security, trackingStats, autoSort
-├── i18n/             # en, es, zh translations
-├── test/             # Shared test helpers
-└── pages/            # 8 lazy-loaded route components
+  components/              # 60+ components in domain folders
+    suggestions/           #   SuggestionsPanel, SuggestionCard, SuggestionsBadge, ActivityFeed
+    objectives/            #   cards/, columns/, modals/
+    journal/, map/, tracking/, ideas/, navigation/, layout/, ui/
+  contexts/                # Auth, Theme, Language, Notification, Undo
+  hooks/                   # 12 custom hooks
+  services/                # 7 services (AI, objectives, suggestions, etc.)
+  lib/                     # Supabase client, auto-generated types, Zod schemas
+  utils/                   # fetchWithRetry, security, trackingStats, autoSort
+  i18n/                    # en, es, zh translations
+  pages/                   # 8 lazy-loaded route components
+supabase/
+  migrations/              # 20 SQL migrations (additive only)
+  functions/ai-proxy/      # Edge Function: Jarvis-first LLM proxy
+  functions/commit-events/ # Edge Function: DB webhook → Jarvis event bridge
+e2e/                       # Playwright E2E tests
 ```
 
-### Key Commands
+## Security
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production (includes typecheck)
-- `npm run test` - Run 217 tests
-- `npm run typecheck` - Type check with TypeScript
-- `npm run lint` - Run ESLint
-- `npm run test:coverage` - Run tests with coverage report
+- Row Level Security on all 15 tables
+- Authentication via Supabase Auth (email/password + biometric on native)
+- API keys are server-side only (Supabase Edge Function secrets)
+- Input sanitization via `src/utils/security.ts`
+- Password strength indicator on signup
+- Edge Function auth validation on webhook endpoint
+- `modified_by` CHECK constraints prevent invalid provenance values
 
-## Contributing
+## Documentation
 
-The COMMIT framework is now fully implemented with all five phases:
-- ✅ Context (Journal)
-- ✅ Objectives (Vision → Goals → Objectives → Tasks)
-- ✅ MindMap (AI-generated mind maps and Kanban boards)
-- ✅ Ideate (AI-powered idea expansion)
-- ✅ Track (Daily, Weekly, Monthly progress tracking)
-
-Future enhancements may include:
-- Advanced analytics and insights
-- Export and sharing features
-- Mobile app (PWA)
-- Collaborative features
+- **[COMMIT_METHOD_GUIDE.md](./COMMIT_METHOD_GUIDE.md)** — Non-technical user guide
+- **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** — Deployment guide and troubleshooting
+- **[docs/IMPROVEMENT-PLAN.md](./docs/IMPROVEMENT-PLAN.md)** — Improvement roadmap
+- **[docs/TECHNICAL_SPECIFICATION.md](./docs/TECHNICAL_SPECIFICATION.md)** — Technical architecture
 
 ## License
 
 MIT
-
-## Key Features Highlights
-
-### Recurring Tasks
-Perfect for building daily habits! Mark any task as recurring, and you can complete it each day without it disappearing. Track your consistency and build momentum.
-
-### Dark Mode
-High-contrast dark theme for comfortable use in any lighting condition. Your preference is automatically saved and persists across sessions.
-
-### AI Integration
-- **Journal Analysis**: Discover emotional patterns and coping strategies
-- **Mind Map Generation**: Transform problems into visual solutions
-- **Idea Expansion**: Turn rough thoughts into fully-formed concepts
-- **Connection Detection**: Find relationships between your ideas
-
-### Visual Progress Tracking
-- Activity heatmaps show your consistency
-- Completion rates help you adjust your approach
-- Streak counters keep you motivated
-- Status overviews show where everything stands
-
-## Documentation
-
-- **[COMMIT_METHOD_GUIDE.md](./COMMIT_METHOD_GUIDE.md)** - Non-technical user guide to the COMMIT method
-- **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - Deployment guide, checklist, and troubleshooting
-- **[docs/IMPROVEMENT-PLAN.md](./docs/IMPROVEMENT-PLAN.md)** - 6-phase improvement roadmap
-- **[docs/TECHNICAL_SPECIFICATION.md](./docs/TECHNICAL_SPECIFICATION.md)** - Technical architecture details
-
-## Acknowledgments
-
-Based on the COMMIT Journaling Method 3.0 framework for AI-enhanced personal growth and development.
