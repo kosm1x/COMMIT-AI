@@ -173,24 +173,50 @@ export function useObjectivesSelection(
       const { visionId, goalId, objectiveId, taskId } = effectivePath;
       if (!visionId && !goalId && !objectiveId && !taskId) return false;
 
+      // Determine the "deepest" selected level from the original selectionPath
+      // (not effectivePath which auto-fills parents). This tells us what the
+      // user actually clicked — filtering behavior differs based on this.
+      const selectedLevel = selectionPath.taskId
+        ? "task"
+        : selectionPath.objectiveId
+          ? "objective"
+          : selectionPath.goalId
+            ? "goal"
+            : selectionPath.visionId
+              ? "vision"
+              : null;
+
       switch (type) {
         case "vision": {
           return id === visionId;
         }
         case "goal": {
           if (id === goalId) return true;
-          const goal = goalsById.get(id);
-          if (!goal) return false;
-          return visionId !== null && goal.vision_id === visionId;
+          // Only show sibling goals (same vision) if the user selected
+          // at the vision level. If they selected deeper (objective/task),
+          // only the exact parent goal should match.
+          if (selectedLevel === "vision") {
+            const goal = goalsById.get(id);
+            if (!goal) return false;
+            return visionId !== null && goal.vision_id === visionId;
+          }
+          return false;
         }
         case "objective": {
           if (id === objectiveId) return true;
           const obj = objectivesById.get(id);
           if (!obj) return false;
-          if (goalId !== null && obj.goal_id === goalId) return true;
-          if (visionId !== null && goalId === null && obj.goal_id) {
-            const g = goalsById.get(obj.goal_id);
-            if (g?.vision_id === visionId) return true;
+          // Show sibling objectives (same goal) only if user selected
+          // at goal level. If deeper (task), only exact parent matches.
+          if (selectedLevel === "goal") {
+            return goalId !== null && obj.goal_id === goalId;
+          }
+          if (selectedLevel === "vision") {
+            if (goalId !== null && obj.goal_id === goalId) return true;
+            if (visionId !== null && obj.goal_id) {
+              const g = goalsById.get(obj.goal_id);
+              if (g?.vision_id === visionId) return true;
+            }
           }
           return false;
         }
@@ -198,13 +224,18 @@ export function useObjectivesSelection(
           if (id === taskId) return true;
           const task = tasksById.get(id);
           if (!task?.objective_id) return false;
-          if (objectiveId !== null && task.objective_id === objectiveId)
-            return true;
-          if (goalId !== null) {
-            const obj = objectivesById.get(task.objective_id);
-            if (obj?.goal_id === goalId) return true;
+          // Show sibling tasks (same objective) only if user selected
+          // at objective level or higher. If a specific task is selected,
+          // only that exact task matches.
+          if (selectedLevel === "task") return false;
+          if (selectedLevel === "objective") {
+            return objectiveId !== null && task.objective_id === objectiveId;
           }
-          if (visionId !== null && goalId === null) {
+          if (selectedLevel === "goal") {
+            const obj = objectivesById.get(task.objective_id);
+            return goalId !== null && obj?.goal_id === goalId;
+          }
+          if (selectedLevel === "vision") {
             const obj = objectivesById.get(task.objective_id);
             if (obj?.goal_id) {
               const g = goalsById.get(obj.goal_id);
@@ -217,7 +248,7 @@ export function useObjectivesSelection(
           return false;
       }
     },
-    [effectivePath, goalsById, objectivesById, tasksById],
+    [effectivePath, selectionPath, goalsById, objectivesById, tasksById],
   );
 
   // ===== SELECTION ACTIONS =====

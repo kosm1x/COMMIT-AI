@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { supabase } from '../../../lib/supabase';
-import { Task, Objective } from '../types';
-import { TaskCard } from '../cards';
+import { useState, useEffect, useRef } from "react";
+import { Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { supabase } from "../../../lib/supabase";
+import { Task, Objective } from "../types";
+import { TaskCard } from "../cards";
 
 interface TaskColumnProps {
   tasks: Task[];
@@ -12,7 +12,10 @@ interface TaskColumnProps {
   selectedObjectiveId: string | null;
   selectedTaskId: string | null;
   hasAnySelection: boolean; // True if any item at any level is selected
-  isInSelectedFamily: (type: 'vision' | 'goal' | 'objective' | 'task', id: string) => boolean;
+  isInSelectedFamily: (
+    type: "vision" | "goal" | "objective" | "task",
+    id: string,
+  ) => boolean;
   editingTaskId: string | null;
   setEditingTaskId: (id: string | null) => void;
   onSelectTask: (task: Task | null) => void;
@@ -21,15 +24,22 @@ interface TaskColumnProps {
   onDeleteTask: (id: string) => Promise<boolean>;
   onToggleTaskStatus: (task: Task) => Promise<void>;
   onMarkRecurringCompletedToday: (taskId: string) => Promise<void>;
-  onTitleClick: (type: 'vision' | 'goal' | 'objective' | 'task', title: string, description: string, e: React.MouseEvent) => void;
-  onConvertToObjective?: (task: Task, targetGoalId: string | null) => Promise<void>;
+  onTitleClick: (
+    type: "vision" | "goal" | "objective" | "task",
+    title: string,
+    description: string,
+    e: React.MouseEvent,
+  ) => void;
+  onConvertToObjective?: (
+    task: Task,
+    targetGoalId: string | null,
+  ) => Promise<void>;
   selectedObjective: Objective | null;
 }
 
 export function TaskColumn({
   tasks,
   objectives,
-  selectedObjectiveId,
   selectedTaskId,
   hasAnySelection,
   isInSelectedFamily,
@@ -48,34 +58,31 @@ export function TaskColumn({
   const { user } = useAuth();
   const { t } = useLanguage();
   const [showOrphaned, setShowOrphaned] = useState(true);
-  const [recurringCompletedToday, setRecurringCompletedToday] = useState<Record<string, boolean>>({});
+  const [recurringCompletedToday, setRecurringCompletedToday] = useState<
+    Record<string, boolean>
+  >({});
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Split tasks into objective-attached and orphaned
   // When filtering by family, we need to show all tasks (not pre-filtered by selectedObjectiveId)
   // because isInSelectedFamily will correctly identify family members
-  const allObjectiveTasks = tasks.filter(t => t.objective_id !== null);
-  const orphanedTasks = tasks.filter(t => t.objective_id === null);
+  const allObjectiveTasks = tasks.filter((t) => t.objective_id !== null);
+  const orphanedTasks = tasks.filter((t) => t.objective_id === null);
 
   // Filter: if something is selected, only show family members; otherwise show all
-  // When a vision/goal/objective/task is selected, show only tasks in that family
-  const visibleObjectiveTasks = hasAnySelection
-    ? allObjectiveTasks.filter(t => isInSelectedFamily('task', t.id))
+  const displayObjectiveTasks = hasAnySelection
+    ? allObjectiveTasks.filter((t) => isInSelectedFamily("task", t.id))
     : allObjectiveTasks;
   const visibleOrphanedTasks = hasAnySelection
-    ? orphanedTasks.filter(t => isInSelectedFamily('task', t.id))
+    ? orphanedTasks.filter((t) => isInSelectedFamily("task", t.id))
     : orphanedTasks;
 
-  // For display purposes, if an objective is selected, show only tasks attached to that objective
-  // Otherwise, show all objective-attached tasks
-  const displayObjectiveTasks = selectedObjectiveId
-    ? visibleObjectiveTasks.filter(t => t.objective_id === selectedObjectiveId)
-    : visibleObjectiveTasks;
-
-  const totalCount = displayObjectiveTasks.length + (showOrphaned ? visibleOrphanedTasks.length : 0);
+  const totalCount =
+    displayObjectiveTasks.length +
+    (showOrphaned ? visibleOrphanedTasks.length : 0);
 
   const handleDelete = async (id: string) => {
-    if (confirm(t('objectives.deleteTaskConfirm'))) {
+    if (confirm(t("objectives.deleteTaskConfirm"))) {
       await onDeleteTask(id);
     }
   };
@@ -87,22 +94,22 @@ export function TaskColumn({
 
       const allTasks = [...allObjectiveTasks, ...orphanedTasks];
       const recurringTaskIds = allTasks
-        .filter(t => t.is_recurring)
-        .map(t => t.id);
+        .filter((t) => t.is_recurring)
+        .map((t) => t.id);
 
       if (recurringTaskIds.length === 0) return;
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const { data } = await supabase
-        .from('task_completions')
-        .select('task_id')
-        .in('task_id', recurringTaskIds)
-        .eq('completion_date', today)
-        .eq('user_id', user.id);
+        .from("task_completions")
+        .select("task_id")
+        .in("task_id", recurringTaskIds)
+        .eq("completion_date", today)
+        .eq("user_id", user.id);
 
       const completedMap: Record<string, boolean> = {};
-      recurringTaskIds.forEach(id => {
-        completedMap[id] = (data || []).some(c => c.task_id === id);
+      recurringTaskIds.forEach((id) => {
+        completedMap[id] = (data || []).some((c) => c.task_id === id);
       });
       setRecurringCompletedToday(completedMap);
     };
@@ -113,44 +120,49 @@ export function TaskColumn({
   // Scroll to editing card when editingTaskId changes - robust scroll mechanism
   useEffect(() => {
     if (!editingTaskId) return;
-    
+
     let isCancelled = false;
     const timeoutIds: NodeJS.Timeout[] = [];
-    
+
     const scrollToEditingCard = () => {
       if (isCancelled) return;
       const cardElement = cardRefs.current[editingTaskId];
       if (cardElement) {
         requestAnimationFrame(() => {
           if (isCancelled) return;
-          cardRefs.current[editingTaskId]?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'center'
+          cardRefs.current[editingTaskId]?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "center",
           });
         });
       }
     };
-    
+
     // Multiple scroll attempts with increasing delays
     const delays = [100, 300, 600, 1000];
-    delays.forEach(delay => {
+    delays.forEach((delay) => {
       timeoutIds.push(setTimeout(scrollToEditingCard, delay));
     });
-    
+
     return () => {
       isCancelled = true;
-      timeoutIds.forEach(id => clearTimeout(id));
+      timeoutIds.forEach((id) => clearTimeout(id));
     };
   }, [editingTaskId]);
 
   const renderTaskCard = (task: Task) => (
-    <div key={task.id} ref={(el) => { cardRefs.current[task.id] = el; }}>
+    <div
+      key={task.id}
+      ref={(el) => {
+        cardRefs.current[task.id] = el;
+      }}
+    >
       <TaskCard
         task={task}
         objectives={objectives}
         isSelected={selectedTaskId === task.id}
-        isInFamily={isInSelectedFamily('task', task.id)}
+        isInFamily={isInSelectedFamily("task", task.id)}
         isEditing={editingTaskId === task.id}
         onSelect={() => onSelectTask(task)}
         onStartEdit={() => setEditingTaskId(task.id)}
@@ -160,11 +172,19 @@ export function TaskColumn({
           setEditingTaskId(null);
         }}
         onDelete={() => handleDelete(task.id)}
-        onTitleClick={(e) => onTitleClick('task', task.title, task.description || '', e)}
+        onTitleClick={(e) =>
+          onTitleClick("task", task.title, task.description || "", e)
+        }
         onToggleStatus={() => onToggleTaskStatus(task)}
-        onMarkRecurringCompletedToday={() => onMarkRecurringCompletedToday(task.id)}
+        onMarkRecurringCompletedToday={() =>
+          onMarkRecurringCompletedToday(task.id)
+        }
         isRecurringCompletedToday={recurringCompletedToday[task.id] || false}
-        onConvertToObjective={onConvertToObjective ? (targetGoalId) => onConvertToObjective(task, targetGoalId) : undefined}
+        onConvertToObjective={
+          onConvertToObjective
+            ? (targetGoalId) => onConvertToObjective(task, targetGoalId)
+            : undefined
+        }
       />
     </div>
   );
@@ -174,10 +194,14 @@ export function TaskColumn({
       <div className="p-4 border-b border-border-secondary/50 bg-white/30 dark:bg-white/5 backdrop-blur-sm relative overflow-visible z-10">
         <div className="flex items-center justify-between mb-3">
           <div className="group relative z-20">
-            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">{t('objectives.tasks')}</h2>
+            <h2 className="font-heading font-bold text-lg text-text-primary cursor-help">
+              {t("objectives.tasks")}
+            </h2>
             <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] pointer-events-none whitespace-normal">
-              <div className="font-semibold mb-1 text-purple-400">{t('objectives.bestUse')}</div>
-              <p className="leading-relaxed">{t('objectives.taskBestUse')}</p>
+              <div className="font-semibold mb-1 text-purple-400">
+                {t("objectives.bestUse")}
+              </div>
+              <p className="leading-relaxed">{t("objectives.taskBestUse")}</p>
               <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45"></div>
             </div>
           </div>
@@ -190,7 +214,7 @@ export function TaskColumn({
           className="btn-primary w-full shadow-lg shadow-purple-500/20 bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
         >
           <Plus className="w-4 h-4 flex-shrink-0" />
-          <span>{t('objectives.addTask')}</span>
+          <span>{t("objectives.addTask")}</span>
         </button>
       </div>
 
@@ -203,8 +227,12 @@ export function TaskColumn({
                 onClick={() => setShowOrphaned(!showOrphaned)}
                 className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-wider mb-3 px-1 hover:text-text-secondary transition-colors"
               >
-                {showOrphaned ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                {t('objectives.orphanedTasks')} ({visibleOrphanedTasks.length})
+                {showOrphaned ? (
+                  <ChevronDown className="w-3 h-3" />
+                ) : (
+                  <ChevronRight className="w-3 h-3" />
+                )}
+                {t("objectives.orphanedTasks")} ({visibleOrphanedTasks.length})
               </button>
               {showOrphaned && (
                 <div className="space-y-3">
@@ -225,7 +253,7 @@ export function TaskColumn({
                   displayObjectiveTasks.map(renderTaskCard)
                 ) : (
                   <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
-                    {t('objectives.noTasksYet')}
+                    {t("objectives.noTasksYet")}
                   </div>
                 )}
               </div>
@@ -236,7 +264,7 @@ export function TaskColumn({
                 displayObjectiveTasks.map(renderTaskCard)
               ) : visibleOrphanedTasks.length === 0 ? (
                 <div className="text-center text-text-tertiary py-8 bg-white/30 dark:bg-white/5 rounded-xl border border-dashed border-border-secondary">
-                  {t('objectives.selectObjectiveToSeeTasks')}
+                  {t("objectives.selectObjectiveToSeeTasks")}
                 </div>
               ) : null}
             </div>
@@ -246,4 +274,3 @@ export function TaskColumn({
     </div>
   );
 }
-

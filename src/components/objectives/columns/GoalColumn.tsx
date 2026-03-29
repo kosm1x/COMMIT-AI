@@ -86,20 +86,12 @@ export function GoalColumn({
   const orphanedGoals = goals.filter((g) => g.vision_id === null);
 
   // Filter: if something is selected, only show family members; otherwise show all
-  // When a vision is selected, show all goals in that vision's family
-  // When a goal/objective/task is selected, show only goals in that family
-  const visibleVisionGoals = hasAnySelection
+  const displayVisionGoals = hasAnySelection
     ? allVisionGoals.filter((g) => isInSelectedFamily("goal", g.id))
     : allVisionGoals;
   const visibleOrphanedGoals = hasAnySelection
     ? orphanedGoals.filter((g) => isInSelectedFamily("goal", g.id))
     : orphanedGoals;
-
-  // For display purposes, if a vision is selected, show only goals attached to that vision
-  // Otherwise, show all vision-attached goals
-  const displayVisionGoals = selectedVisionId
-    ? visibleVisionGoals.filter((g) => g.vision_id === selectedVisionId)
-    : visibleVisionGoals;
 
   const handleDelete = async (id: string) => {
     // Check for descendants
