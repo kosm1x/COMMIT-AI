@@ -88,7 +88,7 @@ export default function SuggestionCard({
             <SourceIcon className="w-3 h-3" />
             {source.label}
           </span>
-          <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5">
+          <span className="text-[10px] text-gray-500 dark:text-gray-500 flex items-center gap-0.5">
             <Clock className="w-3 h-3" />
             {timeAgo(suggestion.created_at, t)}
           </span>
