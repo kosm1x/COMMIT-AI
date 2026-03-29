@@ -31,8 +31,8 @@ npm run types:generate # Regenerate Supabase types (requires local Supabase runn
 
 ```
 src/
-  App.tsx                        # Router + context providers (Language > Theme > Auth > Notification > BrowserRouter)
-  pages/                         # 8 lazy-loaded route components
+  App.tsx                        # Router + context providers (Language > Theme > Auth > Notification > Undo > BrowserRouter)
+  pages/                         # 6 lazy-loaded route components + Login (direct import)
     IdeaDetail.tsx               # Layout orchestrator (split in Phase 2.2)
   components/                    # 60+ components in domain folders:
     ideas/                       #   types.ts, SelectionMenu.tsx, ConnectionsSidebar.tsx
@@ -74,7 +74,7 @@ Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent
 
 ### Database tables (15)
 
-`journal_entries`, `ai_analysis`, `visions`, `goals`, `objectives`, `tasks`, `task_completions`, `ideas`, `idea_connections`, `idea_ai_suggestions`, `mind_maps`, `user_preferences`, `daily_planner`, `daily_plan_tasks`, `agent_suggestions`. All have `user_id` FK with CASCADE DELETE + RLS policies for SELECT/INSERT/UPDATE/DELETE. The 4 hierarchy tables + `journal_entries` have `modified_by` provenance tracking (`user`/`jarvis`/`system`).
+`journal_entries`, `ai_analysis`, `visions`, `goals`, `objectives`, `tasks`, `task_completions`, `ideas`, `idea_connections`, `idea_ai_suggestions`, `mind_maps`, `user_preferences`, `daily_plans`, `daily_plan_tasks`, `agent_suggestions`. All have `user_id` FK with CASCADE DELETE + RLS policies for SELECT/INSERT/UPDATE/DELETE. The 4 hierarchy tables + `journal_entries` have `modified_by` provenance tracking (`user`/`jarvis`/`system`).
 
 ### AI service (`src/services/aiService.ts`)
 

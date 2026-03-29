@@ -104,22 +104,22 @@ npm run types:generate # Regenerate Supabase types
 
 ## Database Schema (15 tables)
 
-| Table                                | Purpose                                           |
-| ------------------------------------ | ------------------------------------------------- |
-| `journal_entries`                    | User journal entries                              |
-| `ai_analysis`                        | AI-generated emotional analysis                   |
-| `visions`                            | Long-term life directions                         |
-| `goals`                              | Measurable outcomes linked to visions             |
-| `objectives`                         | Milestones linked to goals                        |
-| `tasks`                              | Actions linked to objectives (supports recurring) |
-| `task_completions`                   | Daily completion tracking for recurring tasks     |
-| `ideas`                              | Captured and expanded ideas                       |
-| `idea_connections`                   | Relationships between ideas                       |
-| `idea_ai_suggestions`                | AI-generated idea enhancements                    |
-| `mind_maps`                          | Saved mind map visualizations                     |
-| `user_preferences`                   | User settings                                     |
-| `daily_planner` / `daily_plan_tasks` | Daily planning                                    |
-| `agent_suggestions`                  | Jarvis-proposed changes (accept/reject)           |
+| Table                              | Purpose                                           |
+| ---------------------------------- | ------------------------------------------------- |
+| `journal_entries`                  | User journal entries                              |
+| `ai_analysis`                      | AI-generated emotional analysis                   |
+| `visions`                          | Long-term life directions                         |
+| `goals`                            | Measurable outcomes linked to visions             |
+| `objectives`                       | Milestones linked to goals                        |
+| `tasks`                            | Actions linked to objectives (supports recurring) |
+| `task_completions`                 | Daily completion tracking for recurring tasks     |
+| `ideas`                            | Captured and expanded ideas                       |
+| `idea_connections`                 | Relationships between ideas                       |
+| `idea_ai_suggestions`              | AI-generated idea enhancements                    |
+| `mind_maps`                        | Saved mind map visualizations                     |
+| `user_preferences`                 | User settings                                     |
+| `daily_plans` / `daily_plan_tasks` | Daily planning                                    |
+| `agent_suggestions`                | Jarvis-proposed changes (accept/reject)           |
 
 All tables have Row Level Security (RLS) enabled. The hierarchy tables + journal have `modified_by` provenance tracking (`user`/`jarvis`/`system`). Completed non-recurring tasks are auto-pruned after 15 days.
 

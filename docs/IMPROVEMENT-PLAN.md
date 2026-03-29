@@ -1,6 +1,6 @@
 # COMMIT-AI Improvement Plan
 
-Audit date: 2026-03-13 | Codebase: 103 TS files, 24.5 KLOC, 14 DB tables
+Audit date: 2026-03-13 | Codebase: 103 TS files, 24.5 KLOC, 15 DB tables (updated 2026-03-29)
 Phase 1 completed: 2026-03-13 | 81 tests, 4 test files, API key secured
 Phase 2 completed: 2026-03-15 | Monoliths split, Zod validation, auto-generated types, error toasts
 Phase 3 completed: 2026-03-17 | Memoization, pagination, AbortController, accessibility (46 labels), localStorage cleanup
@@ -271,9 +271,9 @@ Track these to measure improvement:
 | Test files             | 0                  | **4**          | **4**                                | **4**                        | **14**            |
 | Test assertions        | 0                  | **81**         | **81**                               | **83**                       | **217**           |
 | Line coverage          | 0%                 | ~15%           | ~15%                                 | ~15%                         | ~45%              |
-| Max file LOC           | 1841 (aiService)   | 1841           | 1841                                 | 1841                         | <600              |
+| Max file LOC           | 1841 (aiService)   | 1841           | 1841                                 | 1841                         | 2647 (aiService)  |
 | `any` / `@ts-ignore`   | 71                 | 71             | ~60                                  | ~60                          | **0 lint errors** |
-| ARIA labels            | 4                  | 4              | 4                                    | **46**                       | 40+               |
+| ARIA labels            | 4                  | 4              | 4                                    | **46**                       | 33                |
 | Focus traps            | 0                  | 0              | 0                                    | **2 (Modal, BottomSheet)**   | 2                 |
 | Memoized cards         | 0                  | 0              | 0                                    | **4**                        | 4                 |
 | Pagination             | None               | None           | None                                 | **Journal (20), Ideas (30)** | Done              |
@@ -281,6 +281,6 @@ Track these to measure improvement:
 | localStorage leak      | Yes                | Yes            | Yes                                  | **Fixed**                    | Fixed             |
 | Client-side secrets    | 1 (Groq key)       | **0**          | **0**                                | **0**                        | 0                 |
 | Duplicate code         | fetchWithRetry x2  | **0**          | **0**                                | **0**                        | 0                 |
-| Manual DB types        | 290 LOC / 8 tables | 290 LOC        | **0 LOC / 14 tables auto-generated** | **0**                        | 0                 |
+| Manual DB types        | 290 LOC / 8 tables | 290 LOC        | **0 LOC / 14 tables auto-generated** | **0**                        | 0 (15 tables)     |
 | AI response validation | None               | None           | **11 Zod schemas**                   | **11**                       | 11                |
 | Error toasts           | None               | None           | **Journal (load/save/delete)**       | **Journal**                  | All pages         |

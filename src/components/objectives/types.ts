@@ -1,6 +1,5 @@
 // Shared types for Objectives components
 // Aligned with auto-generated database.types.ts (nullable fields match DB schema)
-
 export interface Vision {
   id: string;
   title: string;
@@ -42,6 +41,8 @@ export interface Task {
   due_date: string | null;
   completed_at: string | null;
   notes: string | null;
+  // JSON column from DB — typed as any at the boundary since it passes through
+  // Supabase (expects Json) and components (expect {url, label}[])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   document_links: any;
   last_edited_at: string;
