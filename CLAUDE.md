@@ -50,7 +50,8 @@ src/
     useFocusTrap.ts              # Tab cycling + focus restore for modals
     useAgentSuggestions.ts       # Jarvis suggestions state + accept/reject
   services/                      # 7 services
-    aiService.ts                 # 12 AI functions via callLLM(), Zod-validated, 30s timeout, AbortSignal
+    aiService.ts                 # Barrel re-export for 12 AI functions (split into ai/ modules)
+    ai/                          #   callLLM, journal, mindmap, ideas, strategic, analysis, objectives
     objectivesService.ts         # CRUD for Vision/Goal/Objective/Task
     suggestionsService.ts        # CRUD for agent_suggestions (Jarvis proposals)
   lib/
