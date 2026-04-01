@@ -82,7 +82,7 @@ interface AIUnavailableProps {
 - Add test: DEV mode still returns `{ status: 'ok', data: mockData }` (development experience preserved)
 - Re-export `AIResult` type from `src/services/aiService.ts` barrel file
 
-### 1B. Contextual AI Engine
+### 1B. Contextual AI Engine — DONE (2768944)
 
 **New file:** `src/services/ai/userContext.ts` (~120 LOC)
 
@@ -171,7 +171,7 @@ Use this context to personalize your responses. Reference the user's goals, emot
 
 **Tests:** New `src/services/ai/userContext.test.ts` — mock Supabase queries, assert context shape, assert 1-hour cache, assert invalidation, assert system prompt formatting.
 
-### 1C. AI feedback tracking
+### 1C. AI feedback tracking — DONE (ef79876)
 
 **Migration:** `supabase/migrations/20260401000001_ai_feedback.sql`
 
@@ -197,6 +197,8 @@ ALTER TABLE user_preferences ADD COLUMN ai_feedback jsonb DEFAULT '{}';
 **Tests:** Test `updateAIFeedback` increments correctly, test round-trip.
 
 **Dependencies:** None. Session 1 is self-contained.
+
+> **Session 1 complete.** 3 commits, ~930 insertions across 28 files + 1 migration. All verification passes.
 
 ---
 
