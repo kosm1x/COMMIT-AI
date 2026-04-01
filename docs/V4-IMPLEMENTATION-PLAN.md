@@ -202,7 +202,9 @@ ALTER TABLE user_preferences ADD COLUMN ai_feedback jsonb DEFAULT '{}';
 
 ---
 
-## Session 2: Guided Onboarding
+## Session 2: Guided Onboarding — DONE (a0617f7)
+
+> 15 files, 909 insertions. Migration, useOnboarding hook, OnboardingBanner, WelcomeModal update, empty states on 4 pages, progressive disclosure in Objectives, Settings page (/settings), i18n in 3 languages. QA audit passed.
 
 **Goal:** 7-day time-gated onboarding that builds a daily habit while teaching the full COMMIT framework. One step per day — unlocked by time, completed by action. Empty states on every page. Progressive disclosure of hierarchy.
 
