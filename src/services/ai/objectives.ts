@@ -3,8 +3,9 @@ import {
   SuggestedObjectivesArraySchema,
   SuggestedTasksArraySchema,
 } from "../../lib/aiSchemas";
-import { callLLM } from "./callLLM";
-import { logger } from '../../utils/logger';
+import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import type { AIResult } from "./callLLM";
+import { logger } from "../../utils/logger";
 
 export interface SuggestedObjective {
   title: string;
@@ -18,7 +19,7 @@ export async function suggestObjectivesForGoal(
   goalDescription: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<SuggestedObjective[]> {
+): Promise<AIResult<SuggestedObjective[]>> {
   const prompt = `You are analyzing a goal to break it down into actionable objectives. Consider BOTH the title and the full description to understand the complete context and intent.
 
 GOAL ANALYSIS:
@@ -60,7 +61,9 @@ Return ONLY the JSON array, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockObjectives(goalTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockObjectives(goalTitle, language));
+    return aiUnavailable;
   }
 
   try {
@@ -68,13 +71,21 @@ Return ONLY the JSON array, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsed = safeParse(SuggestedObjectivesArraySchema, raw, null);
-      if (!parsed) return generateMockObjectives(goalTitle, language);
-      return parsed as SuggestedObjective[];
+      if (!parsed) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockObjectives(goalTitle, language));
+        return aiUnavailable;
+      }
+      return aiOk(parsed as SuggestedObjective[]);
     }
-    return generateMockObjectives(goalTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockObjectives(goalTitle, language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error generating objectives:", error);
-    return generateMockObjectives(goalTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockObjectives(goalTitle, language));
+    return aiUnavailable;
   }
 }
 
@@ -171,7 +182,7 @@ export async function suggestTasksForObjective(
   objectiveDescription: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<SuggestedTask[]> {
+): Promise<AIResult<SuggestedTask[]>> {
   const prompt = `You are analyzing an objective to break it down into actionable tasks. Consider BOTH the title and the full description to understand the complete context and intent.
 
 OBJECTIVE ANALYSIS:
@@ -213,7 +224,9 @@ Return ONLY the JSON array, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockTasks(objectiveTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockTasks(objectiveTitle, language));
+    return aiUnavailable;
   }
 
   try {
@@ -221,13 +234,21 @@ Return ONLY the JSON array, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsed = safeParse(SuggestedTasksArraySchema, raw, null);
-      if (!parsed) return generateMockTasks(objectiveTitle, language);
-      return parsed as SuggestedTask[];
+      if (!parsed) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockTasks(objectiveTitle, language));
+        return aiUnavailable;
+      }
+      return aiOk(parsed as SuggestedTask[]);
     }
-    return generateMockTasks(objectiveTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockTasks(objectiveTitle, language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error generating tasks:", error);
-    return generateMockTasks(objectiveTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockTasks(objectiveTitle, language));
+    return aiUnavailable;
   }
 }
 

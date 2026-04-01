@@ -612,4 +612,10 @@ export const es = {
     markdown: "Markdown (.md)",
     json: "JSON (.json)",
   },
+  ai: {
+    unavailable: "Análisis de IA no disponible",
+    unavailableDetail:
+      "El servicio de IA no está disponible temporalmente. Tus datos están seguros.",
+    retry: "Reintentar",
+  },
 };

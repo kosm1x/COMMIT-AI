@@ -3,12 +3,13 @@ import {
   CompleteIdeaSchema,
   IdeaConnectionsArraySchema,
 } from "../../lib/aiSchemas";
-import { callLLM } from "./callLLM";
+import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import type { AIResult } from "./callLLM";
 import { findSimilarIdeasFallback } from "./textAnalysis";
 import type { IdeaConnection } from "./textAnalysis";
-import { logger } from '../../utils/logger';
+import { logger } from "../../utils/logger";
 
-interface IdeaCompletionResult {
+export interface IdeaCompletionResult {
   title: string;
   expandedContent: string;
   category: string;
@@ -20,7 +21,7 @@ export async function completeIdea(
   initialInput: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<IdeaCompletionResult> {
+): Promise<AIResult<IdeaCompletionResult>> {
   const prompt = `You are a creative assistant helping expand on a minimal idea. Take this initial idea input and help complete it. Return your response in JSON format with the following structure:
 {
   "title": "A clear, concise title for this idea (5-8 words)",
@@ -55,7 +56,9 @@ Return ONLY the JSON object, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockIdeaCompletion(initialInput, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockIdeaCompletion(initialInput, language));
+    return aiUnavailable;
   }
 
   try {
@@ -63,26 +66,33 @@ Return ONLY the JSON object, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsedResult = safeParse(CompleteIdeaSchema, raw, null);
-      if (!parsedResult)
-        return generateMockIdeaCompletion(initialInput, language);
+      if (!parsedResult) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockIdeaCompletion(initialInput, language));
+        return aiUnavailable;
+      }
       const defaultTitles: Record<"en" | "es" | "zh", string> = {
         en: "New Idea",
         es: "Nueva Idea",
         zh: "新想法",
       };
-      return {
+      return aiOk({
         title: parsedResult.title || defaultTitles[language],
         expandedContent: parsedResult.expandedContent || initialInput,
         category: parsedResult.category || "general",
         tags: parsedResult.tags || [],
         suggestions: parsedResult.suggestions || [],
-      };
+      });
     }
 
-    return generateMockIdeaCompletion(initialInput, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockIdeaCompletion(initialInput, language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error completing idea:", error);
-    return generateMockIdeaCompletion(initialInput, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockIdeaCompletion(initialInput, language));
+    return aiUnavailable;
   }
 }
 

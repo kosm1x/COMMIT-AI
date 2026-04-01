@@ -605,4 +605,10 @@ export const en = {
     markdown: "Markdown (.md)",
     json: "JSON (.json)",
   },
+  ai: {
+    unavailable: "AI analysis unavailable",
+    unavailableDetail:
+      "The AI service is temporarily unreachable. Your data is safe.",
+    retry: "Retry",
+  },
 };

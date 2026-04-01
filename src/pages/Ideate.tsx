@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useNotification } from "../contexts/NotificationContext";
 import { supabase } from "../lib/supabase";
 import { completeIdea, findIdeaConnections } from "../services/aiService";
 import { Header, Card, Button, BottomSheet } from "../components/ui";
@@ -19,7 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 interface Idea {
   id: string;
@@ -42,6 +43,7 @@ interface IdeaSuggestion {
 export default function Ideate() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const { notify } = useNotification();
   const location = useLocation();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,25 +117,32 @@ export default function Ideate() {
 
     try {
       const result = await completeIdea(initialInput, language);
-      setGeneratedTitle(result.title);
-      setGeneratedContent(result.expandedContent);
-      setGeneratedCategory(result.category);
-      setGeneratedTags(result.tags);
+
+      if (result.status !== "ok") {
+        notify({ type: "error", message: t("ai.unavailable") });
+        return;
+      }
+
+      const data = result.data;
+      setGeneratedTitle(data.title);
+      setGeneratedContent(data.expandedContent);
+      setGeneratedCategory(data.category);
+      setGeneratedTags(data.tags);
       setSuggestions(
-        result.suggestions.map((s) => ({ type: "suggestion", content: s })),
+        data.suggestions.map((s) => ({ type: "suggestion", content: s })),
       );
       setLibraryCollapsed(true);
 
       if (ideas.length > 0) {
         const connections = await findIdeaConnections(
-          `${result.title}\n${result.expandedContent}`,
+          `${data.title}\n${data.expandedContent}`,
           ideas.map((idea) => ({
             id: idea.id,
             title: idea.title,
             content: idea.content,
             tags: idea.tags || [],
           })),
-          { title: result.title, tags: result.tags || [] },
+          { title: data.title, tags: data.tags || [] },
           language,
         );
         if (connections.length > 0) {

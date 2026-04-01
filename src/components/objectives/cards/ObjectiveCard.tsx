@@ -18,6 +18,7 @@ import { formatLastEdited, getPriorityColor } from "../utils";
 import { formatShortDate } from "../../../utils/trackingStats";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { suggestTasksForObjective } from "../../../services/aiService";
+import type { SuggestedTask } from "../../../services/aiService";
 import TaskSuggestionsModal from "../modals/TaskSuggestionsModal";
 
 interface ObjectiveCardProps {
@@ -90,9 +91,7 @@ export const ObjectiveCard = memo(function ObjectiveCard({
   );
   const [showConvertMenu, setShowConvertMenu] = useState(false);
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
-  const [suggestions, setSuggestions] = useState<
-    Awaited<ReturnType<typeof suggestTasksForObjective>>
-  >([]);
+  const [suggestions, setSuggestions] = useState<SuggestedTask[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
 
@@ -102,12 +101,16 @@ export const ObjectiveCard = memo(function ObjectiveCard({
     setShowSuggestionsModal(true);
 
     try {
-      const generated = await suggestTasksForObjective(
+      const result = await suggestTasksForObjective(
         objective.title,
         objective.description || "",
         language,
       );
-      setSuggestions(generated);
+      if (result.status === "ok") {
+        setSuggestions(result.data);
+      } else {
+        setSuggestionsError(t("ai.unavailable"));
+      }
     } catch {
       setSuggestionsError("Failed to generate suggestions. Please try again.");
     } finally {
@@ -115,9 +118,7 @@ export const ObjectiveCard = memo(function ObjectiveCard({
     }
   };
 
-  const handleCreateTasks = async (
-    selectedTasks: Awaited<ReturnType<typeof suggestTasksForObjective>>,
-  ) => {
+  const handleCreateTasks = async (selectedTasks: SuggestedTask[]) => {
     for (const task of selectedTasks) {
       await onCreateTask?.(task.title, task.description, task.priority);
     }

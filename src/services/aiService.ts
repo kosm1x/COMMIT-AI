@@ -1,6 +1,10 @@
 // Barrel re-export — all consumers continue importing from this path
-export { callLLM } from "./ai/callLLM";
-export type { EmotionResult, AnalysisResult } from "./ai/callLLM";
+export { callLLM, aiUnavailable, aiOk } from "./ai/callLLM";
+export type { EmotionResult, AnalysisResult, AIResult } from "./ai/callLLM";
+export type { MindMapResult } from "./ai/mindmap";
+export type { IdeaCompletionResult } from "./ai/ideas";
+export type { DivergentPath, NextStep } from "./ai/strategic";
+export type { CriticalAnalysis, RelatedConcept } from "./ai/analysis";
 
 export {
   analyzeJournalEntry,

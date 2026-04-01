@@ -23,7 +23,9 @@ import {
   generateCriticalAnalysis,
   generateRelatedConcepts,
 } from "../services/aiService";
-import { logger } from '../utils/logger';
+import type { AIResult } from "../services/aiService";
+import AIUnavailable from "./ui/AIUnavailable";
+import { logger } from "../utils/logger";
 
 interface AICache {
   divergentPaths?: DivergentPath[];
@@ -107,6 +109,9 @@ export default function AIAssistantPanel({
     cache?.relatedConcepts || [],
   );
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [unavailableTools, setUnavailableTools] = useState<Set<ToolType>>(
+    new Set(),
+  );
   const [selectionMenu, setSelectionMenu] = useState<SelectionMenu | null>(
     null,
   );
@@ -121,6 +126,7 @@ export default function AIAssistantPanel({
     setRelatedConcepts([]);
     setActiveTool(null);
     setExpandedItems(new Set());
+    setUnavailableTools(new Set());
   }, [ideaTitle, ideaContent]);
 
   // Sync state with cache when cache prop changes (only populate if local state is empty)
@@ -149,6 +155,28 @@ export default function AIAssistantPanel({
     onCacheUpdate?.(newCache);
   };
 
+  const markUnavailable = (tool: ToolType) => {
+    setUnavailableTools((prev) => new Set(prev).add(tool));
+  };
+
+  const clearUnavailable = (tool: ToolType) => {
+    setUnavailableTools((prev) => {
+      const next = new Set(prev);
+      next.delete(tool);
+      return next;
+    });
+  };
+
+  /** Unwrap AIResult: returns data on success, marks tool unavailable otherwise. */
+  function handleAIResult<T>(result: AIResult<T>, tool: ToolType): T | null {
+    if (result.status === "ok") {
+      clearUnavailable(tool);
+      return result.data;
+    }
+    markUnavailable(tool);
+    return null;
+  }
+
   const handleToolClick = async (tool: ToolType) => {
     if (activeTool === tool) {
       setActiveTool(null);
@@ -162,39 +190,48 @@ export default function AIAssistantPanel({
       switch (tool) {
         case "divergent":
           if (divergentPaths.length === 0 && !cache?.divergentPaths) {
-            const paths = await generateDivergentPaths(
+            const result = await generateDivergentPaths(
               ideaTitle,
               ideaContent,
               language,
             );
-            setDivergentPaths(paths);
-            updateCache({ divergentPaths: paths });
+            const paths = handleAIResult(result, tool);
+            if (paths) {
+              setDivergentPaths(paths);
+              updateCache({ divergentPaths: paths });
+            }
           } else if (cache?.divergentPaths && divergentPaths.length === 0) {
             setDivergentPaths(cache.divergentPaths);
           }
           break;
         case "nextSteps":
           if (nextSteps.length === 0 && !cache?.nextSteps) {
-            const steps = await suggestNextSteps(
+            const result = await suggestNextSteps(
               ideaTitle,
               ideaContent,
               language,
             );
-            setNextSteps(steps);
-            updateCache({ nextSteps: steps });
+            const steps = handleAIResult(result, tool);
+            if (steps) {
+              setNextSteps(steps);
+              updateCache({ nextSteps: steps });
+            }
           } else if (cache?.nextSteps && nextSteps.length === 0) {
             setNextSteps(cache.nextSteps);
           }
           break;
         case "critical":
           if (!criticalAnalysis && cache?.criticalAnalysis === undefined) {
-            const analysis = await generateCriticalAnalysis(
+            const result = await generateCriticalAnalysis(
               ideaTitle,
               ideaContent,
               language,
             );
-            setCriticalAnalysis(analysis);
-            updateCache({ criticalAnalysis: analysis });
+            const analysis = handleAIResult(result, tool);
+            if (analysis) {
+              setCriticalAnalysis(analysis);
+              updateCache({ criticalAnalysis: analysis });
+            }
           } else if (
             cache?.criticalAnalysis !== undefined &&
             criticalAnalysis === null
@@ -204,13 +241,16 @@ export default function AIAssistantPanel({
           break;
         case "concepts":
           if (relatedConcepts.length === 0 && !cache?.relatedConcepts) {
-            const concepts = await generateRelatedConcepts(
+            const result = await generateRelatedConcepts(
               ideaTitle,
               ideaContent,
               language,
             );
-            setRelatedConcepts(concepts);
-            updateCache({ relatedConcepts: concepts });
+            const concepts = handleAIResult(result, tool);
+            if (concepts) {
+              setRelatedConcepts(concepts);
+              updateCache({ relatedConcepts: concepts });
+            }
           } else if (cache?.relatedConcepts && relatedConcepts.length === 0) {
             setRelatedConcepts(cache.relatedConcepts);
           }
@@ -229,43 +269,55 @@ export default function AIAssistantPanel({
     try {
       switch (tool) {
         case "divergent": {
-          const paths = await generateDivergentPaths(
+          const result = await generateDivergentPaths(
             ideaTitle,
             ideaContent,
             language,
           );
-          setDivergentPaths(paths);
-          updateCache({ divergentPaths: paths });
+          const paths = handleAIResult(result, tool);
+          if (paths) {
+            setDivergentPaths(paths);
+            updateCache({ divergentPaths: paths });
+          }
           break;
         }
         case "nextSteps": {
-          const steps = await suggestNextSteps(
+          const result = await suggestNextSteps(
             ideaTitle,
             ideaContent,
             language,
           );
-          setNextSteps(steps);
-          updateCache({ nextSteps: steps });
+          const steps = handleAIResult(result, tool);
+          if (steps) {
+            setNextSteps(steps);
+            updateCache({ nextSteps: steps });
+          }
           break;
         }
         case "critical": {
-          const analysis = await generateCriticalAnalysis(
+          const result = await generateCriticalAnalysis(
             ideaTitle,
             ideaContent,
             language,
           );
-          setCriticalAnalysis(analysis);
-          updateCache({ criticalAnalysis: analysis });
+          const analysis = handleAIResult(result, tool);
+          if (analysis) {
+            setCriticalAnalysis(analysis);
+            updateCache({ criticalAnalysis: analysis });
+          }
           break;
         }
         case "concepts": {
-          const concepts = await generateRelatedConcepts(
+          const result = await generateRelatedConcepts(
             ideaTitle,
             ideaContent,
             language,
           );
-          setRelatedConcepts(concepts);
-          updateCache({ relatedConcepts: concepts });
+          const concepts = handleAIResult(result, tool);
+          if (concepts) {
+            setRelatedConcepts(concepts);
+            updateCache({ relatedConcepts: concepts });
+          }
           break;
         }
       }
@@ -469,6 +521,12 @@ export default function AIAssistantPanel({
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
                 </div>
+              ) : unavailableTools.has("divergent") &&
+                divergentPaths.length === 0 ? (
+                <AIUnavailable
+                  compact
+                  onRetry={() => handleRefresh("divergent")}
+                />
               ) : (
                 divergentPaths.map((path, index) => (
                   <div
@@ -563,6 +621,8 @@ export default function AIAssistantPanel({
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
+            ) : unavailableTools.has("nextSteps") && nextSteps.length === 0 ? (
+              <AIUnavailable compact onRetry={() => handleRefresh("nextSteps")} />
             ) : (
               nextSteps.map((step, index) => (
                 <div
@@ -674,6 +734,8 @@ export default function AIAssistantPanel({
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
+            ) : unavailableTools.has("critical") && !criticalAnalysis ? (
+              <AIUnavailable compact onRetry={() => handleRefresh("critical")} />
             ) : criticalAnalysis ? (
               <>
                 <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3 select-text">
@@ -799,6 +861,8 @@ export default function AIAssistantPanel({
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
+            ) : unavailableTools.has("concepts") && relatedConcepts.length === 0 ? (
+              <AIUnavailable compact onRetry={() => handleRefresh("concepts")} />
             ) : (
               relatedConcepts.map((concept, index) => (
                 <div

@@ -595,4 +595,9 @@ export const zh = {
     markdown: "Markdown (.md)",
     json: "JSON (.json)",
   },
+  ai: {
+    unavailable: "AI分析不可用",
+    unavailableDetail: "AI服务暂时无法访问。您的数据是安全的。",
+    retry: "重试",
+  },
 };

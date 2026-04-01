@@ -5,6 +5,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { supabase } from "../../lib/supabase";
 import { generateMindMap } from "../../services/aiService";
+import AIUnavailable from "../ui/AIUnavailable";
 import { formatShortDate } from "../../utils/trackingStats";
 import type { MermaidConfig } from "mermaid";
 import {
@@ -27,7 +28,7 @@ import {
   Image,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { logger } from '../../utils/logger';
+import { logger } from "../../utils/logger";
 
 interface MindMap {
   id: string;
@@ -71,6 +72,7 @@ export default function MindMapView() {
     [],
   );
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [aiUnavailableState, setAiUnavailableState] = useState(false);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [contextChain, setContextChain] = useState<string>("");
   const diagramRef = useRef<HTMLDivElement>(null);
@@ -204,6 +206,7 @@ export default function MindMapView() {
     if (!currentMindMap) return;
 
     setGenerating(true);
+    setAiUnavailableState(false);
     try {
       // Build context from current tree and previous context
       const newContext = contextChain
@@ -212,13 +215,18 @@ export default function MindMapView() {
 
       const result = await generateMindMap(cleanText, newContext, language);
 
+      if (result.status !== "ok") {
+        setAiUnavailableState(true);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("mind_maps")
         .insert({
           user_id: user!.id,
-          title: result.title,
+          title: result.data.title,
           problem_statement: cleanText,
-          mermaid_syntax: result.mermaidSyntax,
+          mermaid_syntax: result.data.mermaidSyntax,
         })
         .select()
         .single();
@@ -264,6 +272,7 @@ export default function MindMapView() {
     if (!problemStatement.trim()) return;
 
     setGenerating(true);
+    setAiUnavailableState(false);
     try {
       const result = await generateMindMap(
         problemStatement,
@@ -271,13 +280,18 @@ export default function MindMapView() {
         language,
       );
 
+      if (result.status !== "ok") {
+        setAiUnavailableState(true);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("mind_maps")
         .insert({
           user_id: user!.id,
-          title: result.title,
+          title: result.data.title,
           problem_statement: problemStatement,
-          mermaid_syntax: result.mermaidSyntax,
+          mermaid_syntax: result.data.mermaidSyntax,
         })
         .select()
         .single();
@@ -829,7 +843,13 @@ export default function MindMapView() {
           </div>
         )}
 
-        {!currentMindMap && !generating && (
+        {!currentMindMap && !generating && aiUnavailableState && (
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <AIUnavailable onRetry={handleGenerate} />
+          </div>
+        )}
+
+        {!currentMindMap && !generating && !aiUnavailableState && (
           <div className="flex-1 flex items-center justify-center text-gray-400 min-h-0">
             <div className="text-center px-4">
               <Sparkles className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 opacity-50" />

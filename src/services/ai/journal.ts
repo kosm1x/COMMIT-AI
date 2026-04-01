@@ -3,10 +3,10 @@ import {
   AnalysisResultSchema,
   ObjectivesArraySchema,
 } from "../../lib/aiSchemas";
-import { callLLM } from "./callLLM";
-import type { EmotionResult, AnalysisResult } from "./callLLM";
+import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import type { EmotionResult, AnalysisResult, AIResult } from "./callLLM";
 import { emotionColors } from "./callLLM";
-import { logger } from '../../utils/logger';
+import { logger } from "../../utils/logger";
 
 export type { AnalysisResult };
 
@@ -14,7 +14,7 @@ export async function analyzeJournalEntry(
   content: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<AnalysisResult> {
+): Promise<AIResult<AnalysisResult>> {
   const prompt = `Analyze this journal entry and provide emotional insights, patterns, and coping strategies. Return your response in JSON format with the following structure:
 {
   "emotions": [{"name": "emotion name", "intensity": 0-100}],
@@ -47,7 +47,9 @@ Return ONLY the JSON object, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockAnalysis(content, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockAnalysis(content, language));
+    return aiUnavailable;
   }
 
   try {
@@ -55,7 +57,11 @@ Return ONLY the JSON object, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsedResult = safeParse(AnalysisResultSchema, raw, null);
-      if (!parsedResult) return generateMockAnalysis(content, language);
+      if (!parsedResult) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockAnalysis(content, language));
+        return aiUnavailable;
+      }
 
       interface ParsedEmotion {
         name: string;
@@ -67,19 +73,23 @@ Return ONLY the JSON object, no additional text.`;
         color: getEmotionColor(emotion.name),
       }));
 
-      return {
+      return aiOk({
         emotions,
         patterns: parsedResult.patterns || [],
         coping_strategies: parsedResult.coping_strategies || [],
         primary_emotion:
           parsedResult.primary_emotion || emotions[0]?.name || "neutral",
-      };
+      });
     }
 
-    return generateMockAnalysis(content, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockAnalysis(content, language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error analyzing journal entry:", error);
-    return generateMockAnalysis(content, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockAnalysis(content, language));
+    return aiUnavailable;
   }
 }
 

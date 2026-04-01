@@ -4,6 +4,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useNotification } from "../contexts/NotificationContext";
 import { supabase } from "../lib/supabase";
 import { analyzeJournalEntry } from "../services/aiService";
+import AIUnavailable from "../components/ui/AIUnavailable";
 import { formatShortDate } from "../utils/trackingStats";
 import { Card, Button, IconButton, BottomSheet } from "../components/ui";
 import { Header } from "../components/ui";
@@ -196,6 +197,8 @@ export default function Journal() {
     }
   };
 
+  const [aiUnavailableState, setAiUnavailableState] = useState(false);
+
   const handleAnalyze = async () => {
     if (!content.trim()) return;
     if (!selectedEntry) {
@@ -205,13 +208,20 @@ export default function Journal() {
     if (content !== selectedEntry.content) await handleSave();
 
     setAnalyzing(true);
+    setAiUnavailableState(false);
     try {
       const result = await analyzeJournalEntry(content, language);
+
+      if (result.status !== "ok") {
+        setAiUnavailableState(true);
+        return;
+      }
+
       const analysisData: AIAnalysis = {
         id: "temp",
-        emotions: result.emotions,
-        patterns: result.patterns,
-        coping_strategies: result.coping_strategies,
+        emotions: result.data.emotions,
+        patterns: result.data.patterns,
+        coping_strategies: result.data.coping_strategies,
       };
 
       const { error } = await supabase.from("ai_analysis").upsert(
@@ -229,11 +239,11 @@ export default function Journal() {
         setAnalysis(analysisData);
         await supabase
           .from("journal_entries")
-          .update({ primary_emotion: result.primary_emotion })
+          .update({ primary_emotion: result.data.primary_emotion })
           .eq("id", selectedEntry.id);
         setSelectedEntry({
           ...selectedEntry,
-          primary_emotion: result.primary_emotion,
+          primary_emotion: result.data.primary_emotion,
         });
         loadEntries();
         setShowAnalysis(true);
@@ -494,6 +504,13 @@ export default function Journal() {
               />
             </div>
           )}
+          {!analysis && !analyzing && aiUnavailableState && (
+            <div className="hidden lg:block w-80 shrink-0">
+              <Card padding="md">
+                <AIUnavailable onRetry={handleAnalyze} />
+              </Card>
+            </div>
+          )}
         </div>
       )}
 
@@ -568,13 +585,15 @@ export default function Journal() {
             title={t("journal.aiInsights")}
             height="auto"
           >
-            {analysis && (
+            {analysis ? (
               <AnalysisPanel
                 analysis={analysis}
                 getEmotionIcon={getEmotionIcon}
                 t={t}
               />
-            )}
+            ) : aiUnavailableState ? (
+              <AIUnavailable onRetry={handleAnalyze} />
+            ) : null}
           </BottomSheet>
         </>
       )}

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { suggestObjectivesForGoal } from "../../../services/aiService";
+import type { SuggestedObjective } from "../../../services/aiService";
 import ObjectiveSuggestionsModal from "../modals/ObjectiveSuggestionsModal";
 import { Goal, Vision, Objective } from "../types";
 import { formatLastEdited } from "../utils";
@@ -86,9 +87,7 @@ export const GoalCard = memo(function GoalCard({
   );
   const [showConvertMenu, setShowConvertMenu] = useState(false);
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
-  const [suggestions, setSuggestions] = useState<
-    Awaited<ReturnType<typeof suggestObjectivesForGoal>>
-  >([]);
+  const [suggestions, setSuggestions] = useState<SuggestedObjective[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
 
@@ -98,12 +97,16 @@ export const GoalCard = memo(function GoalCard({
     setShowSuggestionsModal(true);
 
     try {
-      const generated = await suggestObjectivesForGoal(
+      const result = await suggestObjectivesForGoal(
         goal.title,
         goal.description || "",
         language,
       );
-      setSuggestions(generated);
+      if (result.status === "ok") {
+        setSuggestions(result.data);
+      } else {
+        setSuggestionsError(t("ai.unavailable"));
+      }
     } catch {
       setSuggestionsError("Failed to generate suggestions. Please try again.");
     } finally {
@@ -112,7 +115,7 @@ export const GoalCard = memo(function GoalCard({
   };
 
   const handleCreateObjectives = async (
-    selectedObjectives: Awaited<ReturnType<typeof suggestObjectivesForGoal>>,
+    selectedObjectives: SuggestedObjective[],
   ) => {
     for (const obj of selectedObjectives) {
       await onCreateObjective?.(obj.title, obj.description, obj.priority);

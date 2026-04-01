@@ -1,7 +1,7 @@
 import { fetchWithRetry } from "../../utils/fetchWithRetry";
 import { supabase } from "../../lib/supabase";
 import { RateLimiter } from "../../utils/security";
-import { logger } from '../../utils/logger';
+import { logger } from "../../utils/logger";
 
 export const aiRateLimiter = new RateLimiter(10, 1);
 
@@ -33,11 +33,18 @@ export const emotionColors: { [key: string]: string } = {
   confused: "bg-gray-500",
 };
 
+/** Discriminated union for AI function returns. Callers pattern-match on status. */
+export type AIResult<T> = { status: "ok"; data: T } | { status: "unavailable" };
+export const aiUnavailable: AIResult<never> = { status: "unavailable" };
+export function aiOk<T>(data: T): AIResult<T> {
+  return { status: "ok", data };
+}
+
 /**
  * Call AI via Supabase Edge Function proxy (ai-proxy)
  * The Edge Function holds the Groq API key server-side, appends language
  * instructions, and forwards to Groq. Requires authenticated session.
- * @returns The text response, or null on any failure (triggers mock fallback)
+ * @returns The text response, or null on any failure
  */
 export async function callLLM(
   prompt: string,

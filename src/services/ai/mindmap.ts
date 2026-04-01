@@ -1,8 +1,9 @@
 import { safeParse, MindMapSchema } from "../../lib/aiSchemas";
-import { callLLM } from "./callLLM";
-import { logger } from '../../utils/logger';
+import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import type { AIResult } from "./callLLM";
+import { logger } from "../../utils/logger";
 
-interface MindMapResult {
+export interface MindMapResult {
   mermaidSyntax: string;
   title: string;
 }
@@ -12,7 +13,7 @@ export async function generateMindMap(
   context?: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<MindMapResult> {
+): Promise<AIResult<MindMapResult>> {
   const contextPrompt = context
     ? `\n\nPrevious Context (from earlier mind maps in this exploration):
 ${context}
@@ -62,7 +63,9 @@ Return ONLY the JSON object with title and mermaidSyntax fields, no additional t
   );
 
   if (!textResponse) {
-    return generateMockMindMap(problemStatement, context, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockMindMap(problemStatement, context, language));
+    return aiUnavailable;
   }
 
   try {
@@ -70,23 +73,30 @@ Return ONLY the JSON object with title and mermaidSyntax fields, no additional t
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsedResult = safeParse(MindMapSchema, raw, null);
-      if (!parsedResult)
-        return generateMockMindMap(problemStatement, context, language);
+      if (!parsedResult) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockMindMap(problemStatement, context, language));
+        return aiUnavailable;
+      }
       const defaultTitles: Record<"en" | "es" | "zh", string> = {
         en: "Mind Map",
         es: "Mapa Mental",
         zh: "思维导图",
       };
-      return {
+      return aiOk({
         title: parsedResult.title || defaultTitles[language],
         mermaidSyntax: parsedResult.mermaidSyntax || "",
-      };
+      });
     }
 
-    return generateMockMindMap(problemStatement, context, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockMindMap(problemStatement, context, language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error generating mind map:", error);
-    return generateMockMindMap(problemStatement, context, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockMindMap(problemStatement, context, language));
+    return aiUnavailable;
   }
 }
 

@@ -110,12 +110,15 @@ describe("analyzeJournalEntry", () => {
 
     const result = await analyzeJournalEntry("I feel great today!");
 
-    expect(result.emotions).toHaveLength(1);
-    expect(result.emotions[0].name).toBe("Happy");
-    expect(result.emotions[0].color).toBeDefined();
-    expect(result.patterns).toEqual(["Positive outlook"]);
-    expect(result.coping_strategies).toEqual(["Exercise"]);
-    expect(result.primary_emotion).toBe("Happy");
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.emotions).toHaveLength(1);
+      expect(result.data.emotions[0].name).toBe("Happy");
+      expect(result.data.emotions[0].color).toBeDefined();
+      expect(result.data.patterns).toEqual(["Positive outlook"]);
+      expect(result.data.coping_strategies).toEqual(["Exercise"]);
+      expect(result.data.primary_emotion).toBe("Happy");
+    }
   });
 
   it("returns mock analysis when API fails", async () => {
@@ -125,10 +128,13 @@ describe("analyzeJournalEntry", () => {
     const result = await analyzeJournalEntry("test entry");
 
     // Mock analysis should have standard structure
-    expect(result.emotions.length).toBeGreaterThan(0);
-    expect(result.patterns.length).toBeGreaterThan(0);
-    expect(result.coping_strategies.length).toBeGreaterThan(0);
-    expect(result.primary_emotion).toBeDefined();
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.emotions.length).toBeGreaterThan(0);
+      expect(result.data.patterns.length).toBeGreaterThan(0);
+      expect(result.data.coping_strategies.length).toBeGreaterThan(0);
+      expect(result.data.primary_emotion).toBeDefined();
+    }
   });
 
   it("returns mock analysis when no session", async () => {
@@ -136,18 +142,27 @@ describe("analyzeJournalEntry", () => {
 
     const result = await analyzeJournalEntry("test entry");
 
-    expect(result.emotions.length).toBeGreaterThan(0);
-    expect(result.primary_emotion).toBeDefined();
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.emotions.length).toBeGreaterThan(0);
+      expect(result.data.primary_emotion).toBeDefined();
+    }
   });
 
   it("returns language-aware mock analysis", async () => {
     mockNoSession();
 
     const esResult = await analyzeJournalEntry("test", "es");
-    expect(esResult.emotions[0].name).not.toBe("Determined");
+    expect(esResult.status).toBe("ok");
+    if (esResult.status === "ok") {
+      expect(esResult.data.emotions[0].name).not.toBe("Determined");
+    }
 
     const zhResult = await analyzeJournalEntry("test", "zh");
-    expect(zhResult.emotions[0].name).not.toBe("Determined");
+    expect(zhResult.status).toBe("ok");
+    if (zhResult.status === "ok") {
+      expect(zhResult.data.emotions[0].name).not.toBe("Determined");
+    }
   });
 });
 
@@ -180,16 +195,22 @@ describe("generateMindMap", () => {
     mockFetch.mockResolvedValueOnce(proxyResponse(JSON.stringify(mindMap)));
 
     const result = await generateMindMap("How to improve productivity");
-    expect(result.title).toBe("Problem Analysis");
-    expect(result.mermaidSyntax).toContain("mindmap");
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.title).toBe("Problem Analysis");
+      expect(result.data.mermaidSyntax).toContain("mindmap");
+    }
   });
 
   it("returns mock mind map on failure", async () => {
     mockNoSession();
 
     const result = await generateMindMap("test problem");
-    expect(result.title).toBeDefined();
-    expect(result.mermaidSyntax).toContain("mindmap");
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.title).toBeDefined();
+      expect(result.data.mermaidSyntax).toContain("mindmap");
+    }
   });
 });
 
@@ -206,21 +227,27 @@ describe("completeIdea", () => {
     mockFetch.mockResolvedValueOnce(proxyResponse(JSON.stringify(ideaResult)));
 
     const result = await completeIdea("An app for...");
-    expect(result.title).toBe("Great Idea");
-    expect(result.category).toBe("technology");
-    expect(result.tags).toHaveLength(2);
-    expect(result.suggestions).toHaveLength(2);
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.title).toBe("Great Idea");
+      expect(result.data.category).toBe("technology");
+      expect(result.data.tags).toHaveLength(2);
+      expect(result.data.suggestions).toHaveLength(2);
+    }
   });
 
   it("returns mock completion on failure", async () => {
     mockNoSession();
 
     const result = await completeIdea("test idea");
-    expect(result.title).toBeDefined();
-    expect(result.expandedContent).toContain("test idea");
-    expect(result.category).toBe("general");
-    expect(result.tags.length).toBeGreaterThan(0);
-    expect(result.suggestions.length).toBeGreaterThan(0);
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.title).toBeDefined();
+      expect(result.data.expandedContent).toContain("test idea");
+      expect(result.data.category).toBe("general");
+      expect(result.data.tags.length).toBeGreaterThan(0);
+      expect(result.data.suggestions.length).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -237,8 +264,11 @@ describe("AbortController integration", () => {
     );
 
     // Should return mock data (not throw)
-    expect(result.emotions.length).toBeGreaterThan(0);
-    expect(result.primary_emotion).toBeDefined();
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.emotions.length).toBeGreaterThan(0);
+      expect(result.data.primary_emotion).toBeDefined();
+    }
     // fetchWithRetry should not have been called (abort happens before or during fetch)
     // The internal controller aborts immediately due to external signal
   });
@@ -258,8 +288,11 @@ describe("AbortController integration", () => {
       controller.signal,
     );
 
-    expect(result.emotions.length).toBeGreaterThan(0);
-    expect(result.primary_emotion).toBeDefined();
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.emotions.length).toBeGreaterThan(0);
+      expect(result.data.primary_emotion).toBeDefined();
+    }
   });
 });
 
@@ -270,7 +303,10 @@ describe("rate limiter integration", () => {
 
     const result = await analyzeJournalEntry("test");
     // Should return mock data (not throw)
-    expect(result.emotions.length).toBeGreaterThan(0);
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.data.emotions.length).toBeGreaterThan(0);
+    }
 
     // Restore for other tests
     mockCanProceed.mockReturnValue(true);

@@ -3,10 +3,11 @@ import {
   DivergentPathsArraySchema,
   NextStepsArraySchema,
 } from "../../lib/aiSchemas";
-import { callLLM } from "./callLLM";
-import { logger } from '../../utils/logger';
+import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import type { AIResult } from "./callLLM";
+import { logger } from "../../utils/logger";
 
-interface DivergentPath {
+export interface DivergentPath {
   title: string;
   description: string;
   approach: string;
@@ -18,7 +19,7 @@ export async function generateDivergentPaths(
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<DivergentPath[]> {
+): Promise<AIResult<DivergentPath[]>> {
   const prompt = `Analyze this idea and generate 3-4 divergent paths or alternative approaches to explore it. Each path should offer a different angle, perspective, or methodology. Return a JSON array with this structure:
 
 [
@@ -56,7 +57,9 @@ Return ONLY the JSON array, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockDivergentPaths(ideaTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockDivergentPaths(ideaTitle, language));
+    return aiUnavailable;
   }
 
   try {
@@ -64,14 +67,22 @@ Return ONLY the JSON array, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsed = safeParse(DivergentPathsArraySchema, raw, null);
-      if (!parsed) return generateMockDivergentPaths(ideaTitle, language);
-      return parsed;
+      if (!parsed) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockDivergentPaths(ideaTitle, language));
+        return aiUnavailable;
+      }
+      return aiOk(parsed);
     }
 
-    return generateMockDivergentPaths(ideaTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockDivergentPaths(ideaTitle, language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error generating divergent paths:", error);
-    return generateMockDivergentPaths(ideaTitle, language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockDivergentPaths(ideaTitle, language));
+    return aiUnavailable;
   }
 }
 
@@ -165,7 +176,7 @@ function generateMockDivergentPaths(
   return mockData[language];
 }
 
-interface NextStep {
+export interface NextStep {
   step: string;
   description: string;
   timeEstimate: string;
@@ -177,7 +188,7 @@ export async function suggestNextSteps(
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<NextStep[]> {
+): Promise<AIResult<NextStep[]>> {
   const prompt = `Based on this idea, suggest 4-6 specific, actionable next steps. Return a JSON array:
 
 [
@@ -214,7 +225,8 @@ Return ONLY the JSON array, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockNextSteps(language);
+    if (import.meta.env.DEV) return aiOk(generateMockNextSteps(language));
+    return aiUnavailable;
   }
 
   try {
@@ -222,14 +234,19 @@ Return ONLY the JSON array, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsed = safeParse(NextStepsArraySchema, raw, null);
-      if (!parsed) return generateMockNextSteps(language);
-      return parsed as NextStep[];
+      if (!parsed) {
+        if (import.meta.env.DEV) return aiOk(generateMockNextSteps(language));
+        return aiUnavailable;
+      }
+      return aiOk(parsed as NextStep[]);
     }
 
-    return generateMockNextSteps(language);
+    if (import.meta.env.DEV) return aiOk(generateMockNextSteps(language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error suggesting next steps:", error);
-    return generateMockNextSteps(language);
+    if (import.meta.env.DEV) return aiOk(generateMockNextSteps(language));
+    return aiUnavailable;
   }
 }
 

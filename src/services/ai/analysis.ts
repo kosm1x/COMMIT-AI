@@ -3,10 +3,11 @@ import {
   CriticalAnalysisSchema,
   RelatedConceptsArraySchema,
 } from "../../lib/aiSchemas";
-import { callLLM } from "./callLLM";
-import { logger } from '../../utils/logger';
+import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import type { AIResult } from "./callLLM";
+import { logger } from "../../utils/logger";
 
-interface CriticalAnalysis {
+export interface CriticalAnalysis {
   strengths: string[];
   challenges: string[];
   assumptions: string[];
@@ -18,7 +19,7 @@ export async function generateCriticalAnalysis(
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<CriticalAnalysis> {
+): Promise<AIResult<CriticalAnalysis>> {
   const prompt = `Provide a balanced critical analysis of this idea. Return JSON:
 
 {
@@ -55,7 +56,9 @@ Return ONLY the JSON object, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockCriticalAnalysis(language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockCriticalAnalysis(language));
+    return aiUnavailable;
   }
 
   try {
@@ -63,14 +66,22 @@ Return ONLY the JSON object, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsed = safeParse(CriticalAnalysisSchema, raw, null);
-      if (!parsed) return generateMockCriticalAnalysis(language);
-      return parsed;
+      if (!parsed) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockCriticalAnalysis(language));
+        return aiUnavailable;
+      }
+      return aiOk(parsed);
     }
 
-    return generateMockCriticalAnalysis(language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockCriticalAnalysis(language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error generating critical analysis:", error);
-    return generateMockCriticalAnalysis(language);
+    if (import.meta.env.DEV)
+      return aiOk(generateMockCriticalAnalysis(language));
+    return aiUnavailable;
   }
 }
 
@@ -146,7 +157,7 @@ function generateMockCriticalAnalysis(
   return mockData[language];
 }
 
-interface RelatedConcept {
+export interface RelatedConcept {
   concept: string;
   description: string;
   relevance: string;
@@ -158,7 +169,7 @@ export async function generateRelatedConcepts(
   ideaContent: string,
   language: "en" | "es" | "zh" = "en",
   signal?: AbortSignal,
-): Promise<RelatedConcept[]> {
+): Promise<AIResult<RelatedConcept[]>> {
   const prompt = `Identify 3-4 related concepts, frameworks, or methodologies that connect to this idea. Return JSON array:
 
 [
@@ -195,7 +206,8 @@ Return ONLY the JSON array, no additional text.`;
   );
 
   if (!textResponse) {
-    return generateMockRelatedConcepts(language);
+    if (import.meta.env.DEV) return aiOk(generateMockRelatedConcepts(language));
+    return aiUnavailable;
   }
 
   try {
@@ -203,14 +215,20 @@ Return ONLY the JSON array, no additional text.`;
     if (jsonMatch) {
       const raw = JSON.parse(jsonMatch[0]);
       const parsed = safeParse(RelatedConceptsArraySchema, raw, null);
-      if (!parsed) return generateMockRelatedConcepts(language);
-      return parsed;
+      if (!parsed) {
+        if (import.meta.env.DEV)
+          return aiOk(generateMockRelatedConcepts(language));
+        return aiUnavailable;
+      }
+      return aiOk(parsed);
     }
 
-    return generateMockRelatedConcepts(language);
+    if (import.meta.env.DEV) return aiOk(generateMockRelatedConcepts(language));
+    return aiUnavailable;
   } catch (error) {
     logger.error("Error generating related concepts:", error);
-    return generateMockRelatedConcepts(language);
+    if (import.meta.env.DEV) return aiOk(generateMockRelatedConcepts(language));
+    return aiUnavailable;
   }
 }
 
