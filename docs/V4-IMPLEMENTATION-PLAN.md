@@ -19,7 +19,9 @@ COMMIT-AI has shipped all core features (Phases 1-6) and Jarvis integration (v2.
 
 **Goal:** Production AI calls return discriminated union on failure (not fake data). AI prompts include user context. Accept/reject feedback is tracked.
 
-### 1A. Discriminated union return type + gate mock fallbacks
+### 1A. Discriminated union return type + gate mock fallbacks — DONE (03ccae4)
+
+> 19 files, 492 insertions. AIResult<T> type, 8 functions wrapped, AIUnavailable component, all consumers + tests updated. QA audit passed.
 
 **New shared type** in `src/services/ai/callLLM.ts`:
 
