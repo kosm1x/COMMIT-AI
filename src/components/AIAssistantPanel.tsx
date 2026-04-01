@@ -25,6 +25,8 @@ import {
 } from "../services/aiService";
 import type { AIResult } from "../services/aiService";
 import AIUnavailable from "./ui/AIUnavailable";
+import { useAuth } from "../contexts/AuthContext";
+import { updateAIFeedback } from "../services/userPreferencesService";
 import { logger } from "../utils/logger";
 
 interface AICache {
@@ -95,6 +97,12 @@ export default function AIAssistantPanel({
 }: AIAssistantPanelProps) {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const { user } = useAuth();
+
+  const trackFeedback = (fnType: string, accepted: boolean) => {
+    if (user?.id) updateAIFeedback(user.id, fnType, accepted);
+  };
+
   const [activeTool, setActiveTool] = useState<ToolType>(null);
   const [loading, setLoading] = useState(false);
   const [divergentPaths, setDivergentPaths] = useState<DivergentPath[]>(
@@ -538,12 +546,13 @@ export default function AIAssistantPanel({
                         {path.title}
                       </h4>
                       <button
-                        onClick={() =>
+                        onClick={() => {
                           onSaveAsNewIdea(
                             path.title,
                             `${path.description}\n\n**Approach:**\n${path.approach}\n\n**Potential Outcome:**\n${path.potentialOutcome}`,
-                          )
-                        }
+                          );
+                          trackFeedback("divergent_paths", true);
+                        }}
                         className="p-1 hover:bg-blue-100 dark:hover:bg-blue-950/30 rounded transition-colors flex-shrink-0"
                         title="Save as new idea"
                       >
@@ -622,7 +631,10 @@ export default function AIAssistantPanel({
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
             ) : unavailableTools.has("nextSteps") && nextSteps.length === 0 ? (
-              <AIUnavailable compact onRetry={() => handleRefresh("nextSteps")} />
+              <AIUnavailable
+                compact
+                onRetry={() => handleRefresh("nextSteps")}
+              />
             ) : (
               nextSteps.map((step, index) => (
                 <div
@@ -662,6 +674,7 @@ export default function AIAssistantPanel({
                                   step.description,
                                   step.priority,
                                 );
+                                trackFeedback("next_steps", true);
                               }}
                               className="p-1 hover:bg-green-100 dark:hover:bg-green-950/30 rounded transition-colors"
                               title="Convert to task"
@@ -735,7 +748,10 @@ export default function AIAssistantPanel({
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
             ) : unavailableTools.has("critical") && !criticalAnalysis ? (
-              <AIUnavailable compact onRetry={() => handleRefresh("critical")} />
+              <AIUnavailable
+                compact
+                onRetry={() => handleRefresh("critical")}
+              />
             ) : criticalAnalysis ? (
               <>
                 <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3 select-text">
@@ -861,8 +877,12 @@ export default function AIAssistantPanel({
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
-            ) : unavailableTools.has("concepts") && relatedConcepts.length === 0 ? (
-              <AIUnavailable compact onRetry={() => handleRefresh("concepts")} />
+            ) : unavailableTools.has("concepts") &&
+              relatedConcepts.length === 0 ? (
+              <AIUnavailable
+                compact
+                onRetry={() => handleRefresh("concepts")}
+              />
             ) : (
               relatedConcepts.map((concept, index) => (
                 <div

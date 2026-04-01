@@ -15,6 +15,10 @@ export interface UserAIContext {
   };
   streakDays: number;
   preferredLanguage: string;
+  aiFeedback?: {
+    accepted_types?: Record<string, number>;
+    rejected_types?: Record<string, number>;
+  };
 }
 
 interface CacheEntry {
@@ -51,6 +55,7 @@ export async function buildUserContext(
       goalsResult,
       tasksCompletedResult,
       tasksPendingResult,
+      prefsResult,
     ] = await Promise.all([
       // 1. Last 7 days of journal entries + primary emotion
       supabase
@@ -84,6 +89,13 @@ export async function buildUserContext(
         .select("id", { count: "exact" })
         .eq("user_id", userId)
         .neq("status", "completed"),
+
+      // 5. AI feedback from preferences
+      supabase
+        .from("user_preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .single(),
     ]);
 
     // Build journal entries
@@ -151,6 +163,12 @@ export async function buildUserContext(
       }
     }
 
+    // Extract ai_feedback from preferences (column added in migration 20260401000001)
+    const prefsRaw = prefsResult.data as Record<string, unknown> | null;
+    const aiFeedback = prefsRaw?.ai_feedback as
+      | UserAIContext["aiFeedback"]
+      | undefined;
+
     const context: UserAIContext = {
       recentJournalEntries,
       activeObjectives,
@@ -162,6 +180,7 @@ export async function buildUserContext(
       },
       streakDays,
       preferredLanguage: "en",
+      aiFeedback: aiFeedback ?? undefined,
     };
 
     contextCache.set(userId, { context, timestamp: Date.now() });
