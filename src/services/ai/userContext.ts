@@ -98,8 +98,9 @@ export async function buildUserContext(
         .single(),
     ]);
 
-    // Build journal entries
-    const recentJournalEntries = (journalResult.data ?? []).map((e) => ({
+    // Build journal entries (keep ISO date for streak calc, formatted date for display)
+    const journalRows = journalResult.data ?? [];
+    const recentJournalEntries = journalRows.map((e) => ({
       content:
         typeof e.content === "string"
           ? e.content.slice(0, 200)
@@ -111,20 +112,23 @@ export async function buildUserContext(
       primaryEmotion: e.primary_emotion ?? undefined,
     }));
 
-    // Build active goals with task progress
+    // Build active goals with task progress (parallel per-goal queries)
     const activeObjectives = await Promise.all(
       (goalsResult.data ?? []).map(async (goal) => {
-        const { count: totalTasks } = await supabase
-          .from("tasks")
-          .select("id", { count: "exact" })
-          .eq("user_id", userId)
-          .eq("goal_id", goal.id);
-        const { count: completedTasks } = await supabase
-          .from("tasks")
-          .select("id", { count: "exact" })
-          .eq("user_id", userId)
-          .eq("goal_id", goal.id)
-          .eq("status", "completed");
+        const [{ count: totalTasks }, { count: completedTasks }] =
+          await Promise.all([
+            supabase
+              .from("tasks")
+              .select("id", { count: "exact" })
+              .eq("user_id", userId)
+              .eq("goal_id", goal.id),
+            supabase
+              .from("tasks")
+              .select("id", { count: "exact" })
+              .eq("user_id", userId)
+              .eq("goal_id", goal.id)
+              .eq("status", "completed"),
+          ]);
         const total = totalTasks ?? 0;
         const completed = completedTasks ?? 0;
         return {
@@ -135,31 +139,39 @@ export async function buildUserContext(
       }),
     );
 
-    // Calculate streak (consecutive days with journal entries or task completions)
+    // Calculate streak — single batch query instead of 30 sequential calls
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const { data: completedTaskDates } = await supabase
+      .from("tasks")
+      .select("completed_at")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .gte("completed_at", thirtyDaysAgo.toISOString())
+      .order("completed_at", { ascending: false });
+
+    // Build set of active days (YYYY-MM-DD) from journal entries + completed tasks
+    const activeDays = new Set<string>();
+    for (const row of journalRows) {
+      activeDays.add(new Date(row.created_at).toISOString().slice(0, 10));
+    }
+    for (const row of completedTaskDates ?? []) {
+      if (row.completed_at) {
+        activeDays.add(new Date(row.completed_at).toISOString().slice(0, 10));
+      }
+    }
+
+    // Count consecutive days backwards from today
     let streakDays = 0;
-    const today = new Date();
+    const today = new Date(now);
     today.setHours(0, 0, 0, 0);
     for (let i = 0; i < 30; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() - i);
-      const nextDay = new Date(checkDate);
-      nextDay.setDate(checkDate.getDate() + 1);
-      const hasEntry = recentJournalEntries.some((e) => {
-        const entryDate = new Date(e.date);
-        return entryDate >= checkDate && entryDate < nextDay;
-      });
-      // Also check tasks completed on that day
-      const { count: tasksOnDay } = await supabase
-        .from("tasks")
-        .select("id", { count: "exact" })
-        .eq("user_id", userId)
-        .eq("status", "completed")
-        .gte("completed_at", checkDate.toISOString())
-        .lt("completed_at", nextDay.toISOString());
-      if (hasEntry || (tasksOnDay ?? 0) > 0) {
+      const dateKey = checkDate.toISOString().slice(0, 10);
+      if (activeDays.has(dateKey)) {
         streakDays++;
       } else if (i > 0) {
-        break; // Streak broken
+        break;
       }
     }
 
