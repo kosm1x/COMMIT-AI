@@ -141,7 +141,7 @@ ALTER TABLE user_preferences ADD COLUMN ai_feedback jsonb DEFAULT '{}';
 
 ## Session 2: Guided Onboarding
 
-**Goal:** 7-step progressive onboarding that teaches COMMIT by doing it. Empty states on every page. Progressive disclosure of hierarchy.
+**Goal:** 9-step progressive onboarding that teaches the full COMMIT loop by doing it. Follows the acronym order: **C**ontext → **O**bjectives → **M**indMap → **I**deate → **T**rack. Empty states on every page. Progressive disclosure of hierarchy.
 
 ### 2A. Onboarding state machine
 
@@ -156,38 +156,46 @@ ALTER TABLE user_preferences ADD COLUMN onboarding_completed_at timestamptz;
 
 ```typescript
 interface UseOnboardingReturn {
-  step: number; // 0-7
-  isActive: boolean; // step < 7 && !completed_at
+  step: number; // 0-8
+  isActive: boolean; // step < 8 && !completed_at
   advance: () => Promise<void>; // increment step, save to DB
   dismiss: () => Promise<void>; // set completed_at, never show again
   stepConfig: OnboardingStepConfig; // current step's text, CTA, target page
 }
 ```
 
-Step definitions (constant array):
+Step definitions follow the COMMIT acronym — each pillar gets at least one step:
 
-| Step | Page        | Trigger             | Banner text                                           |
-| ---- | ----------- | ------------------- | ----------------------------------------------------- |
-| 0    | any         | Account created     | "Welcome! Let's start your growth journey."           |
-| 1    | /journal    | Journal entry saved | "Write your first journal entry."                     |
-| 2    | /journal    | AI analysis viewed  | "See what the AI noticed about your entry."           |
-| 3    | /objectives | Vision created      | "Create your first vision — where do you want to be?" |
-| 4    | /objectives | Goal created        | "Break your vision into a goal."                      |
-| 5    | /objectives | Task created        | "Add a task you can do this week."                    |
-| 6    | /objectives | Task completed      | "Check off your first task!"                          |
-| 7    | /tracking   | Tracking visited    | "See your progress. You're on your way."              |
+| Step | Pillar         | Page        | Trigger             | Banner text                                           |
+| ---- | -------------- | ----------- | ------------------- | ----------------------------------------------------- |
+| 0    | —              | any         | Account created     | "Welcome! Let's walk through the COMMIT method."      |
+| 1    | **C**ontext    | /journal    | Journal entry saved | "Write your first journal entry — even 2 sentences."  |
+| 2    | **C**ontext    | /journal    | AI analysis viewed  | "See what the AI noticed about your entry."           |
+| 3    | **O**bjectives | /objectives | Goal created        | "Set your first goal — what do you want to achieve?"  |
+| 4    | **M**indMap    | /map        | Mind map generated  | "Map out your goal — let AI visualize your approach." |
+| 5    | **I**deate     | /ideate     | Idea created        | "The map sparked something? Capture that idea."       |
+| 6    | **O**bjectives | /objectives | Task created        | "Back to action — add a task to your goal."           |
+| 7    | **O**bjectives | /objectives | Task completed      | "Check off your first task!"                          |
+| 8    | **T**rack      | /tracking   | Tracking visited    | "See your progress. The COMMIT loop is complete."     |
+
+The flow is intentional: after setting a goal (step 3), the user is guided to the MindMap page to visualize their approach (step 4). The map naturally sparks ideas, so step 5 guides them to Ideate. Then back to Objectives to create and complete a concrete task (steps 6-7), and finally to Track to see everything come together (step 8). This mirrors the actual COMMIT loop users should internalize.
+
+Note: step 3 creates a Goal directly (not Vision → Goal → Objective → Task). Progressive disclosure hides Vision/Objective columns during onboarding. Users discover the full 4-level hierarchy after completing onboarding.
 
 Auto-advancement: hook listens to relevant data changes via custom events. On advance, fires a success toast: "Step complete! Next: [next step description]."
 
 - Step 1: `journal_entries` insert detected → advance + toast
 - Step 2: AI analysis result rendered → advance + toast
-- Step 3-6: `useObjectivesCRUD` operations dispatch `onboardingEvent` custom events → advance + toast
-- Step 7: page visit to `/tracking` detected via `useLastPageTracking` → advance + celebration toast ("You're all set!")
+- Step 3: `useObjectivesCRUD` goal creation dispatches `onboardingEvent` → advance + toast, banner CTA links to /map
+- Step 4: `generateMindMap()` returns `{ status: 'ok' }` → advance + toast, banner CTA links to /ideate
+- Step 5: Idea saved in Ideate page → advance + toast, banner CTA links to /objectives
+- Step 6-7: Task creation / completion dispatches `onboardingEvent` → advance + toast
+- Step 8: Page visit to `/tracking` → advance + celebration toast ("You've completed the COMMIT loop!")
 
 **New file:** `src/components/onboarding/OnboardingBanner.tsx` (~80 LOC)
 
 - Non-blocking banner at top of page (not a modal)
-- Shows: step number (1/7), instruction text, CTA button linking to target page
+- Shows: step number (1/8), current COMMIT pillar badge (C/O/M/I/T), instruction text, CTA button linking to target page
 - Dismiss button ("I know what I'm doing")
 - Subtle animation (slide-down on mount)
 - Uses i18n for all text
@@ -205,7 +213,7 @@ Auto-advancement: hook listens to relevant data changes via custom events. On ad
 
 **Modify WelcomeModal:** Keep for step 0 (first login only). Remove the language-change re-trigger (currently re-shows on language switch). When user clicks "Get Started," call `advance()` to move to step 1. After first login, modal only appears on-demand (e.g., help menu link "Show COMMIT Guide"). Change localStorage check: only `commit_welcome_modal_seen_${userId}`, drop the `_language_` key.
 
-**i18n:** Add `onboarding.step1` through `onboarding.step7`, `onboarding.dismiss`, `onboarding.progress` to all 3 language files.
+**i18n:** Add `onboarding.step1` through `onboarding.step8`, `onboarding.dismiss`, `onboarding.progress`, `onboarding.loopComplete` to all 3 language files.
 
 **Tests:** `src/hooks/useOnboarding.test.ts` — test advance/dismiss, test auto-advance triggers, test completed_at gates.
 
@@ -231,7 +239,7 @@ Pattern: `{items.length === 0 && <div className="text-center py-12 text-text-ter
 **Modify:** `src/pages/Objectives.tsx`
 
 - Import `useOnboarding`
-- If `step < 7` (onboarding active): show only Goals + Tasks columns (hide Vision, Objective)
+- If `step < 8` (onboarding active): show only Goals + Tasks columns (hide Vision, Objective)
 - Add toggle: "Show all levels" that sets a preference and reveals full 4-column view
 - After onboarding complete: always show full 4 columns
 
