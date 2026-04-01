@@ -4,6 +4,7 @@ import {
   RelatedConceptsArraySchema,
 } from "../../lib/aiSchemas";
 import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import { getSystemPromptForCurrentUser } from "./userContext";
 import type { AIResult } from "./callLLM";
 import { logger } from "../../utils/logger";
 
@@ -43,6 +44,8 @@ Be constructive but honest. Help strengthen the idea through critical thinking.
 
 Return ONLY the JSON object, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.6,
@@ -53,6 +56,7 @@ Return ONLY the JSON object, no additional text.`;
     signal,
     "generateCriticalAnalysis",
     { ideaTitle, ideaContent },
+    systemPrompt,
   );
 
   if (!textResponse) {
@@ -193,6 +197,8 @@ Suggest concepts that:
 
 Return ONLY the JSON array, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.7,
@@ -203,6 +209,7 @@ Return ONLY the JSON array, no additional text.`;
     signal,
     "generateRelatedConcepts",
     { ideaTitle, ideaContent },
+    systemPrompt,
   );
 
   if (!textResponse) {

@@ -56,6 +56,7 @@ export async function callLLM(
   signal?: AbortSignal,
   functionName?: string,
   input?: Record<string, unknown>,
+  systemPrompt?: string,
 ): Promise<string | null> {
   if (!aiRateLimiter.canProceed()) {
     return null;
@@ -98,6 +99,9 @@ export async function callLLM(
     }
     if (input) {
       body.input = input;
+    }
+    if (systemPrompt) {
+      body.system_prompt = systemPrompt;
     }
 
     const response = await fetchWithRetry(

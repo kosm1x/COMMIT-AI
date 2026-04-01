@@ -4,6 +4,7 @@ import {
   IdeaConnectionsArraySchema,
 } from "../../lib/aiSchemas";
 import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import { getSystemPromptForCurrentUser } from "./userContext";
 import type { AIResult } from "./callLLM";
 import { findSimilarIdeasFallback } from "./textAnalysis";
 import type { IdeaConnection } from "./textAnalysis";
@@ -43,6 +44,8 @@ Instructions:
 
 Return ONLY the JSON object, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.8,
@@ -53,6 +56,7 @@ Return ONLY the JSON object, no additional text.`;
     signal,
     "completeIdea",
     { initialInput },
+    systemPrompt,
   );
 
   if (!textResponse) {
@@ -221,6 +225,8 @@ IMPORTANT:
 
 Return ONLY a JSON array of connection objects with strength >= 70. Return empty array [] if no close connections exist.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.5,
@@ -230,6 +236,8 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
     language,
     signal,
     "findIdeaConnections",
+    undefined,
+    systemPrompt,
   );
 
   if (!textResponse) {
@@ -449,6 +457,8 @@ RULES:
 - Ensure the text is complete (do not cut off mid-sentence)`;
   }
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   // Use 600 tokens to ensure we get complete text even if there's some overhead
   const textResponse = await callLLM(
     prompt,
@@ -460,6 +470,7 @@ RULES:
     signal,
     "transformIdeaText",
     { selectedText, mode },
+    systemPrompt,
   );
   if (!textResponse) {
     return selectedText;

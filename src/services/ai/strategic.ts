@@ -4,6 +4,7 @@ import {
   NextStepsArraySchema,
 } from "../../lib/aiSchemas";
 import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import { getSystemPromptForCurrentUser } from "./userContext";
 import type { AIResult } from "./callLLM";
 import { logger } from "../../utils/logger";
 
@@ -44,6 +45,8 @@ Make each path distinctly different - consider variations in:
 
 Return ONLY the JSON array, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.9,
@@ -54,6 +57,7 @@ Return ONLY the JSON array, no additional text.`;
     signal,
     "generateDivergentPaths",
     { ideaTitle, ideaContent },
+    systemPrompt,
   );
 
   if (!textResponse) {
@@ -212,6 +216,8 @@ Make steps:
 
 Return ONLY the JSON array, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.7,
@@ -222,6 +228,7 @@ Return ONLY the JSON array, no additional text.`;
     signal,
     "suggestNextSteps",
     { ideaTitle, ideaContent },
+    systemPrompt,
   );
 
   if (!textResponse) {

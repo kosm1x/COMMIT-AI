@@ -93,6 +93,7 @@ Deno.serve(async (req: Request) => {
           context: {
             user_id: user.id,
             language: body.language ?? "en",
+            system_prompt: body.system_prompt ?? null,
           },
         }),
         signal: AbortSignal.timeout(25_000),
@@ -167,9 +168,15 @@ Deno.serve(async (req: Request) => {
   const fullPrompt = `${body.prompt}\n\n${languagePrompt}`;
 
   // Build LLM request
+  const messages: { role: string; content: string }[] = [];
+  if (body.system_prompt) {
+    messages.push({ role: "system", content: body.system_prompt });
+  }
+  messages.push({ role: "user", content: fullPrompt });
+
   const requestBody: Record<string, unknown> = {
     model: llmModel,
-    messages: [{ role: "user", content: fullPrompt }],
+    messages,
     temperature: body.temperature,
     max_tokens: body.max_tokens,
     top_p: body.top_p ?? 0.95,

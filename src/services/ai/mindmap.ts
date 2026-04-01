@@ -1,5 +1,6 @@
 import { safeParse, MindMapSchema } from "../../lib/aiSchemas";
 import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import { getSystemPromptForCurrentUser } from "./userContext";
 import type { AIResult } from "./callLLM";
 import { logger } from "../../utils/logger";
 
@@ -50,6 +51,8 @@ mindmap
 
 Return ONLY the JSON object with title and mermaidSyntax fields, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.7,
@@ -60,6 +63,7 @@ Return ONLY the JSON object with title and mermaidSyntax fields, no additional t
     signal,
     "generateMindMap",
     { problemStatement, context },
+    systemPrompt,
   );
 
   if (!textResponse) {

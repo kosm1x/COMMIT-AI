@@ -6,6 +6,7 @@ import {
 import { callLLM, aiUnavailable, aiOk } from "./callLLM";
 import type { EmotionResult, AnalysisResult, AIResult } from "./callLLM";
 import { emotionColors } from "./callLLM";
+import { getSystemPromptForCurrentUser } from "./userContext";
 import { logger } from "../../utils/logger";
 
 export type { AnalysisResult };
@@ -34,6 +35,7 @@ Focus on:
 
 Return ONLY the JSON object, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
   const textResponse = await callLLM(
     prompt,
     0.7,
@@ -44,6 +46,7 @@ Return ONLY the JSON object, no additional text.`;
     signal,
     "analyzeJournalEntry",
     { content },
+    systemPrompt,
   );
 
   if (!textResponse) {
@@ -264,6 +267,7 @@ ${content}
 
 Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
 
+  const sysPrompt = await getSystemPromptForCurrentUser();
   const textResponse = await callLLM(
     prompt,
     0.5,
@@ -274,6 +278,7 @@ Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
     signal,
     "extractObjectivesFromJournal",
     { content },
+    sysPrompt,
   );
 
   if (!textResponse) {

@@ -4,6 +4,7 @@ import {
   SuggestedTasksArraySchema,
 } from "../../lib/aiSchemas";
 import { callLLM, aiUnavailable, aiOk } from "./callLLM";
+import { getSystemPromptForCurrentUser } from "./userContext";
 import type { AIResult } from "./callLLM";
 import { logger } from "../../utils/logger";
 
@@ -48,6 +49,8 @@ Guidelines:
 
 Return ONLY the JSON array, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.7,
@@ -58,6 +61,7 @@ Return ONLY the JSON array, no additional text.`;
     signal,
     "suggestObjectivesForGoal",
     { goalTitle, goalDescription },
+    systemPrompt,
   );
 
   if (!textResponse) {
@@ -211,6 +215,8 @@ Guidelines:
 
 Return ONLY the JSON array, no additional text.`;
 
+  const systemPrompt = await getSystemPromptForCurrentUser();
+
   const textResponse = await callLLM(
     prompt,
     0.7,
@@ -221,6 +227,7 @@ Return ONLY the JSON array, no additional text.`;
     signal,
     "suggestTasksForObjective",
     { objectiveTitle, objectiveDescription },
+    systemPrompt,
   );
 
   if (!textResponse) {
