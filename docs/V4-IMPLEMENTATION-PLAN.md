@@ -80,16 +80,26 @@ interface AIUnavailableProps {
 - Add test: DEV mode still returns `{ status: 'ok', data: mockData }` (development experience preserved)
 - Re-export `AIResult` type from `src/services/aiService.ts` barrel file
 
-### 1B. User context injection
+### 1B. Contextual AI Engine
 
-**New file:** `src/services/ai/userContext.ts` (~80 LOC)
+**New file:** `src/services/ai/userContext.ts` (~120 LOC)
+
+The contextual AI engine queries the user's real data before each AI call and injects it as a **system prompt** so the LLM treats it as persistent context, not part of the question.
 
 ```typescript
 interface UserAIContext {
-  recentEmotions: { name: string; date: string }[]; // last 7 from ai_analysis
-  activeGoals: { title: string; progress: number }[]; // top 5 by recent activity
-  completionRate: number; // 30-day task completion %
-  streakDays: number; // current journal/task streak
+  recentJournalEntries: {
+    content: string;
+    date: string;
+    primaryEmotion?: string;
+  }[]; // last 7 days
+  activeObjectives: { title: string; status: string; progress: number }[]; // active goals/objectives
+  taskSummary: {
+    completedThisWeek: number;
+    pendingThisWeek: number;
+    total: number;
+  }; // weekly snapshot
+  streakDays: number;
   preferredLanguage: string;
   aiFeedback?: {
     accepted: Record<string, number>;
@@ -100,33 +110,64 @@ interface UserAIContext {
 export async function buildUserContext(
   userId: string,
 ): Promise<UserAIContext | null>;
+export function formatContextAsSystemPrompt(ctx: UserAIContext): string;
+export function invalidateContextCache(userId: string): void;
 ```
 
-- Queries: `ai_analysis` (last 7, order by analyzed_at), `goals` (status != completed, join tasks for completion count), `tasks` (last 30 days completed count / total), `journal_entries` (streak calc)
-- Cache: 5-minute TTL in module-scope Map keyed by userId. Invalidate on explicit call.
-- Returns null if no session (prevents unauthenticated queries)
+**Queries** (4 parallel SELECTs via `Promise.all`):
+
+1. `journal_entries` — last 7 days, content + created_at + join `ai_analysis` for primary_emotion
+2. `goals` + `objectives` — where status != 'completed', with child task counts for progress %
+3. `tasks` — completed this week (completed_at >= Monday) vs pending (status != 'completed', due this week)
+4. `user_preferences` — ai_feedback JSONB (from 1C)
+
+**Cache:** 1-hour TTL in module-scope Map keyed by userId. `invalidateContextCache(userId)` for explicit bust on writes (journal save, task completion).
+
+**System prompt format:**
+
+```
+You are assisting a user with their personal growth journey. Here is their current context:
+
+## Recent Journal (last 7 days)
+- Apr 1: "Feeling focused after morning routine..." (primary emotion: Focused)
+- Mar 30: "Stressed about the deadline..." (primary emotion: Anxious)
+
+## Active Goals & Progress
+- "Learn Spanish" — 3/5 objectives complete (60%)
+- "Run a marathon" — 1/4 objectives complete (25%)
+
+## This Week
+- Tasks completed: 8
+- Tasks pending: 3
+- Current streak: 12 days
+
+Use this context to personalize your responses. Reference the user's goals, emotions, and progress where relevant.
+```
 
 **Modify:** `src/services/ai/callLLM.ts`
 
-- Add optional parameter: `userContext?: UserAIContext`
-- If provided, prepend to prompt:
-  ```
-  ## User Context
-  Recent emotions: Anxious (3 days ago), Focused (yesterday), Calm (today)
-  Active goals: "Learn Spanish" (60% complete), "Run a marathon" (25% complete)
-  30-day completion rate: 72%
-  Current streak: 5 days
-  ```
-- Formatting function: `formatUserContext(ctx: UserAIContext): string` (~20 lines in same file)
+- Add optional parameter: `systemPrompt?: string`
+- Pass as separate `system` message to the Edge Function (not prepended to user prompt)
+- Edge Function already sends `messages[]` — add `{ role: 'system', content: systemPrompt }` before the user message
 
-**Modify callers** (6 files, ~2 lines each):
+**Modify:** `supabase/functions/ai-proxy/index.ts`
+
+- Accept optional `system_prompt` field in request body
+- If present, prepend as `{ role: 'system', content }` in the messages array sent to LLM
+- Jarvis routing: pass system_prompt in the `context` field
+
+**Modify callers** (6 files, ~3 lines each):
 
 - `journal.ts`, `ideas.ts`, `strategic.ts`, `analysis.ts`, `objectives.ts`, `mindmap.ts`
-- Each: import `buildUserContext`, call it with userId from Supabase session, pass to `callLLM`
-- Pattern: `const ctx = await buildUserContext(session?.user?.id); callLLM(prompt, ..., ctx);`
-- userId comes from `supabase.auth.getSession()` — already available in callLLM's auth check
+- Pattern:
+  ```typescript
+  const session = await supabase.auth.getSession();
+  const ctx = await buildUserContext(session?.data.session?.user?.id ?? '');
+  const systemPrompt = ctx ? formatContextAsSystemPrompt(ctx) : undefined;
+  callLLM(prompt, ..., systemPrompt);
+  ```
 
-**Tests:** New test file `src/services/ai/userContext.test.ts` — mock Supabase queries, assert context shape, assert 5-minute cache behavior.
+**Tests:** New `src/services/ai/userContext.test.ts` — mock Supabase queries, assert context shape, assert 1-hour cache, assert invalidation, assert system prompt formatting.
 
 ### 1C. AI feedback tracking
 
@@ -159,61 +200,63 @@ ALTER TABLE user_preferences ADD COLUMN ai_feedback jsonb DEFAULT '{}';
 
 ## Session 2: Guided Onboarding
 
-**Goal:** 9-step progressive onboarding that teaches the full COMMIT loop by doing it. Follows the acronym order: **C**ontext → **O**bjectives → **M**indMap → **I**deate → **T**rack. Empty states on every page. Progressive disclosure of hierarchy.
+**Goal:** 7-day time-gated onboarding that builds a daily habit while teaching the full COMMIT framework. One step per day — unlocked by time, completed by action. Empty states on every page. Progressive disclosure of hierarchy.
 
 ### 2A. Onboarding state machine
 
 **Migration:** `supabase/migrations/20260401000002_onboarding.sql`
 
 ```sql
-ALTER TABLE user_preferences ADD COLUMN onboarding_step integer DEFAULT 0;
+ALTER TABLE user_preferences ADD COLUMN onboarding_day integer DEFAULT 0;
+ALTER TABLE user_preferences ADD COLUMN onboarding_started_at timestamptz;
 ALTER TABLE user_preferences ADD COLUMN onboarding_completed_at timestamptz;
 ```
 
-**New file:** `src/hooks/useOnboarding.ts` (~120 LOC)
+**New file:** `src/hooks/useOnboarding.ts` (~150 LOC)
 
 ```typescript
 interface UseOnboardingReturn {
-  step: number; // 0-8
-  isActive: boolean; // step < 8 && !completed_at
-  advance: () => Promise<void>; // increment step, save to DB
-  dismiss: () => Promise<void>; // set completed_at, never show again
-  stepConfig: OnboardingStepConfig; // current step's text, CTA, target page
+  day: number; // 0-7 (0 = welcome, 1-7 = active days)
+  isActive: boolean; // day <= 7 && !completed_at
+  availableDay: number; // max day unlocked by time (days since started_at)
+  isDayComplete: boolean; // has the user completed today's action?
+  advance: () => Promise<void>; // mark today's action done, save to DB
+  dismiss: () => Promise<void>; // set completed_at, skip remaining days
+  dayConfig: OnboardingDayConfig; // today's text, CTA, target page
 }
 ```
 
-Step definitions follow the COMMIT acronym — each pillar gets at least one step:
+**7-day schedule — time-gated, action-completed:**
 
-| Step | Pillar         | Page        | Trigger             | Banner text                                           |
-| ---- | -------------- | ----------- | ------------------- | ----------------------------------------------------- |
-| 0    | —              | any         | Account created     | "Welcome! Let's walk through the COMMIT method."      |
-| 1    | **C**ontext    | /journal    | Journal entry saved | "Write your first journal entry — even 2 sentences."  |
-| 2    | **C**ontext    | /journal    | AI analysis viewed  | "See what the AI noticed about your entry."           |
-| 3    | **O**bjectives | /objectives | Goal created        | "Set your first goal — what do you want to achieve?"  |
-| 4    | **M**indMap    | /map        | Mind map generated  | "Map out your goal — let AI visualize your approach." |
-| 5    | **I**deate     | /ideate     | Idea created        | "The map sparked something? Capture that idea."       |
-| 6    | **O**bjectives | /objectives | Task created        | "Back to action — add a task to your goal."           |
-| 7    | **O**bjectives | /objectives | Task completed      | "Check off your first task!"                          |
-| 8    | **T**rack      | /tracking   | Tracking visited    | "See your progress. The COMMIT loop is complete."     |
+| Day | Focus     | Page               | Action to complete             | Banner text                                                               |
+| --- | --------- | ------------------ | ------------------------------ | ------------------------------------------------------------------------- |
+| 0   | Welcome   | any                | Dismiss modal                  | WelcomeModal (first login only)                                           |
+| 1   | Vision    | /objectives        | Create a Vision                | "Day 1: What does your ideal future look like? Create your first vision." |
+| 2   | Journal   | /journal           | Write entry + view AI analysis | "Day 2: Reflect on your vision. Write a journal entry."                   |
+| 3   | Goal      | /objectives        | Convert Vision into a Goal     | "Day 3: Turn your vision into an achievable goal."                        |
+| 4   | Breakdown | /objectives + /map | Create Objective + mind map it | "Day 4: Break your goal down. Try mapping it visually."                   |
+| 5   | Action    | /objectives        | Create and complete first Task | "Day 5: Take your first action. Create a task and check it off."          |
+| 6   | Review    | /tracking          | Visit Tracking dashboard       | "Day 6: See your first week of progress. Your review awaits."             |
+| 7   | Streak    | any                | Login (auto-completes)         | "Day 7: You're back! That's a streak. Keep the momentum."                 |
 
-The flow is intentional: after setting a goal (step 3), the user is guided to the MindMap page to visualize their approach (step 4). The map naturally sparks ideas, so step 5 guides them to Ideate. Then back to Objectives to create and complete a concrete task (steps 6-7), and finally to Track to see everything come together (step 8). This mirrors the actual COMMIT loop users should internalize.
+**Unlocking logic:**
 
-Note: step 3 creates a Goal directly (not Vision → Goal → Objective → Task). Progressive disclosure hides Vision/Objective columns during onboarding. Users discover the full 4-level hierarchy after completing onboarding.
+- `availableDay = Math.min(7, daysSince(onboarding_started_at) + 1)`
+- User can only see/act on steps up to `availableDay`
+- `onboarding_day` tracks highest _completed_ day
+- If user completes today's action, `onboarding_day` advances and toast fires
+- User cannot skip ahead (time-gated), but can catch up if they missed a day
+- Day 7 auto-completes on login → sets `onboarding_completed_at` → celebration
 
-Auto-advancement: hook listens to relevant data changes via custom events. On advance, fires a success toast: "Step complete! Next: [next step description]."
+**Push notification integration:** Each morning, if `onboarding_day < availableDay`, push: "Day N is ready: [banner text]". Critical for retention — the nudge brings them back.
 
-- Step 1: `journal_entries` insert detected → advance + toast
-- Step 2: AI analysis result rendered → advance + toast
-- Step 3: `useObjectivesCRUD` goal creation dispatches `onboardingEvent` → advance + toast, banner CTA links to /map
-- Step 4: `generateMindMap()` returns `{ status: 'ok' }` → advance + toast, banner CTA links to /ideate
-- Step 5: Idea saved in Ideate page → advance + toast, banner CTA links to /objectives
-- Step 6-7: Task creation / completion dispatches `onboardingEvent` → advance + toast
-- Step 8: Page visit to `/tracking` → advance + celebration toast ("You've completed the COMMIT loop!")
+Day 4 is intentionally combined (Objective + MindMap) to introduce both the hierarchy breakdown and visual mapping in one session, keeping the total at 7 days.
 
 **New file:** `src/components/onboarding/OnboardingBanner.tsx` (~80 LOC)
 
 - Non-blocking banner at top of page (not a modal)
-- Shows: step number (1/8), current COMMIT pillar badge (C/O/M/I/T), instruction text, CTA button linking to target page
+- Shows: "Day N/7" progress, focus label (Vision/Journal/Goal/etc.), instruction text, CTA button linking to target page
+- Locked state: if `day > availableDay`, shows "Unlocks tomorrow" with countdown
 - Dismiss button ("I know what I'm doing")
 - Subtle animation (slide-down on mount)
 - Uses i18n for all text
@@ -231,7 +274,7 @@ Auto-advancement: hook listens to relevant data changes via custom events. On ad
 
 **Modify WelcomeModal:** Keep for step 0 (first login only). Remove the language-change re-trigger (currently re-shows on language switch). When user clicks "Get Started," call `advance()` to move to step 1. After first login, modal only appears on-demand (e.g., help menu link "Show COMMIT Guide"). Change localStorage check: only `commit_welcome_modal_seen_${userId}`, drop the `_language_` key.
 
-**i18n:** Add `onboarding.step1` through `onboarding.step8`, `onboarding.dismiss`, `onboarding.progress`, `onboarding.loopComplete` to all 3 language files.
+**i18n:** Add `onboarding.day1` through `onboarding.day7`, `onboarding.dismiss`, `onboarding.progress`, `onboarding.unlocksTomorrow`, `onboarding.complete` to all 3 language files.
 
 **Tests:** `src/hooks/useOnboarding.test.ts` — test advance/dismiss, test auto-advance triggers, test completed_at gates.
 
@@ -257,7 +300,7 @@ Pattern: `{items.length === 0 && <div className="text-center py-12 text-text-ter
 **Modify:** `src/pages/Objectives.tsx`
 
 - Import `useOnboarding`
-- If `step < 8` (onboarding active): show only Goals + Tasks columns (hide Vision, Objective)
+- If onboarding active (`day <= 7 && !completed_at`): show only Goals + Tasks columns (hide Vision, Objective)
 - Add toggle: "Show all levels" that sets a preference and reveals full 4-column view
 - After onboarding complete: always show full 4 columns
 
