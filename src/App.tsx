@@ -17,6 +17,7 @@ const Map = lazy(() => import("./pages/Map"));
 const Ideate = lazy(() => import("./pages/Ideate"));
 const IdeaDetail = lazy(() => import("./pages/IdeaDetail"));
 const Tracking = lazy(() => import("./pages/Tracking"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 function PageLoader() {
   return (
@@ -180,6 +181,14 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key`}
                     element={
                       <ErrorBoundary section="Tracking">
                         <Tracking />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ErrorBoundary section="Settings">
+                        <Settings />
                       </ErrorBoundary>
                     }
                   />

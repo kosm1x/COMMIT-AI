@@ -380,6 +380,14 @@ export default function Journal() {
                 </Button>
               </div>
               <div className="overflow-y-auto max-h-[calc(100vh-16rem)] p-2 space-y-1">
+                {entries.length === 0 && (
+                  <div className="text-center py-16 px-4">
+                    <p className="text-sm text-gray-400 dark:text-gray-500">
+                      {t("emptyState.journal") ||
+                        "Start your first entry. Even 2 sentences count."}
+                    </p>
+                  </div>
+                )}
                 {entries.map((entry) => (
                   <button
                     key={entry.id}
@@ -524,6 +532,14 @@ export default function Journal() {
             height="half"
           >
             <div className="space-y-2">
+              {entries.length === 0 && (
+                <div className="text-center py-16 px-4">
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                    {t("emptyState.journal") ||
+                      "Start your first entry. Even 2 sentences count."}
+                  </p>
+                </div>
+              )}
               {entries.map((entry) => (
                 <button
                   key={entry.id}

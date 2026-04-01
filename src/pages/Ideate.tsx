@@ -415,6 +415,13 @@ export default function Ideate() {
                 <div className="flex items-center justify-center py-20">
                   <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
+              ) : ideas.length === 0 ? (
+                <div className="text-center py-16 px-4">
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                    {t("emptyState.ideate") ||
+                      "What's been on your mind? Capture a rough idea."}
+                  </p>
+                </div>
               ) : filteredIdeas.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                   <FolderOpen className="w-16 h-16 mb-4 opacity-20" />

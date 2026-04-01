@@ -27,6 +27,7 @@ import {
 } from "../components/objectives/modals";
 import { Vision, Goal, Objective, Task } from "../components/objectives/types";
 import { Header, Modal } from "../components/ui";
+import { useOnboarding } from "../hooks/useOnboarding";
 
 type ItemType = "vision" | "goal" | "objective" | "task";
 
@@ -37,6 +38,9 @@ export default function Objectives() {
   const location = useLocation();
 
   const state = useObjectivesState(user?.id);
+  const onboarding = useOnboarding();
+  const [showAllLevels, setShowAllLevels] = useState(false);
+  const simplifiedView = onboarding.isActive && !showAllLevels;
   const hasAnySelection = !!(
     state.selectionPath.visionId ||
     state.selectionPath.goalId ||
@@ -320,7 +324,7 @@ export default function Objectives() {
     await state.convertTaskToObjective(task, null);
   };
 
-  const tabs = [
+  const allTabs = [
     {
       id: "vision" as const,
       label: t("objectives.vision"),
@@ -346,6 +350,10 @@ export default function Objectives() {
       count: state.tasks.length,
     },
   ];
+
+  const tabs = simplifiedView
+    ? allTabs.filter((tab) => tab.id === "goals" || tab.id === "tasks")
+    : allTabs;
 
   if (state.loading) {
     return (
@@ -386,30 +394,41 @@ export default function Objectives() {
           ))}
         </div>
 
-        <div className="flex-1 flex gap-4 overflow-x-auto lg:overflow-x-hidden w-full min-w-0">
-          <div
-            className={`${activeTab === "vision" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
+        {simplifiedView && (
+          <button
+            onClick={() => setShowAllLevels(true)}
+            className="self-end text-xs text-indigo-500 hover:text-indigo-400 font-medium mb-1"
           >
-            <VisionColumn
-              visions={state.visions}
-              selectedVisionId={state.selectionPath.visionId}
-              hasAnySelection={hasAnySelection}
-              isInSelectedFamily={state.isInSelectedFamily}
-              editingVisionId={editingVisionId}
-              setEditingVisionId={setEditingVisionId}
-              onSelectVision={state.selectVision}
-              onCreateVision={() => setShowVisionForm(true)}
-              onUpdateVision={state.updateVision}
-              onDeleteVision={state.deleteVision}
-              onUpdateVisionOrder={state.updateVisionOrder}
-              onTitleClick={handleTitleClick}
-              getVisionDescendantCounts={state.getVisionDescendantCounts}
-              onConvertToGoal={handleConvertVisionToGoal}
-              goals={state.goals}
-              objectives={state.objectives}
-              tasks={state.tasks}
-            />
-          </div>
+            {t("objectives.showAllLevels") || "Show all levels"}
+          </button>
+        )}
+
+        <div className="flex-1 flex gap-4 overflow-x-auto lg:overflow-x-hidden w-full min-w-0">
+          {!simplifiedView && (
+            <div
+              className={`${activeTab === "vision" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
+            >
+              <VisionColumn
+                visions={state.visions}
+                selectedVisionId={state.selectionPath.visionId}
+                hasAnySelection={hasAnySelection}
+                isInSelectedFamily={state.isInSelectedFamily}
+                editingVisionId={editingVisionId}
+                setEditingVisionId={setEditingVisionId}
+                onSelectVision={state.selectVision}
+                onCreateVision={() => setShowVisionForm(true)}
+                onUpdateVision={state.updateVision}
+                onDeleteVision={state.deleteVision}
+                onUpdateVisionOrder={state.updateVisionOrder}
+                onTitleClick={handleTitleClick}
+                getVisionDescendantCounts={state.getVisionDescendantCounts}
+                onConvertToGoal={handleConvertVisionToGoal}
+                goals={state.goals}
+                objectives={state.objectives}
+                tasks={state.tasks}
+              />
+            </div>
+          )}
 
           <div
             className={`${activeTab === "goals" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
@@ -452,47 +471,49 @@ export default function Objectives() {
             />
           </div>
 
-          <div
-            className={`${activeTab === "objectives" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
-          >
-            <ObjectiveColumn
-              objectives={state.objectives}
-              goals={state.goals}
-              selectedGoalId={state.selectionPath.goalId}
-              selectedObjectiveId={state.selectionPath.objectiveId}
-              hasAnySelection={hasAnySelection}
-              isInSelectedFamily={state.isInSelectedFamily}
-              editingObjectiveId={editingObjectiveId}
-              setEditingObjectiveId={setEditingObjectiveId}
-              onSelectObjective={state.selectObjective}
-              onCreateObjective={() => setShowObjectiveForm(true)}
-              onUpdateObjective={state.updateObjective}
-              onDeleteObjective={state.deleteObjective}
-              onToggleObjectiveStatus={state.toggleObjectiveStatus}
-              onTitleClick={handleTitleClick}
-              getObjectiveDescendantCounts={state.getObjectiveDescendantCounts}
-              onConvertToGoal={handleConvertObjectiveToGoal}
-              onConvertToTask={handleConvertObjectiveToTask}
-              onCreateTaskForObjective={async (
-                objectiveId,
-                title,
-                description,
-                priority,
-              ) => {
-                await state.createTask(
+          {!simplifiedView && (
+            <div
+              className={`${activeTab === "objectives" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}
+            >
+              <ObjectiveColumn
+                objectives={state.objectives}
+                goals={state.goals}
+                selectedGoalId={state.selectionPath.goalId}
+                selectedObjectiveId={state.selectionPath.objectiveId}
+                hasAnySelection={hasAnySelection}
+                isInSelectedFamily={state.isInSelectedFamily}
+                editingObjectiveId={editingObjectiveId}
+                setEditingObjectiveId={setEditingObjectiveId}
+                onSelectObjective={state.selectObjective}
+                onCreateObjective={() => setShowObjectiveForm(true)}
+                onUpdateObjective={state.updateObjective}
+                onDeleteObjective={state.deleteObjective}
+                onToggleObjectiveStatus={state.toggleObjectiveStatus}
+                onTitleClick={handleTitleClick}
+                getObjectiveDescendantCounts={state.getObjectiveDescendantCounts}
+                onConvertToGoal={handleConvertObjectiveToGoal}
+                onConvertToTask={handleConvertObjectiveToTask}
+                onCreateTaskForObjective={async (
+                  objectiveId,
                   title,
                   description,
                   priority,
-                  "",
-                  objectiveId,
-                  false,
-                );
-                await state.reloadTasks();
-              }}
-              selectedGoal={state.selectedGoal}
-              taskCounts={state.taskCounts}
-            />
-          </div>
+                ) => {
+                  await state.createTask(
+                    title,
+                    description,
+                    priority,
+                    "",
+                    objectiveId,
+                    false,
+                  );
+                  await state.reloadTasks();
+                }}
+                selectedGoal={state.selectedGoal}
+                taskCounts={state.taskCounts}
+              />
+            </div>
+          )}
 
           <div
             className={`${activeTab === "tasks" ? "flex" : "hidden"} lg:flex flex-1 lg:min-w-[240px] max-w-full shrink`}

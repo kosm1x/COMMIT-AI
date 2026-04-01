@@ -1,11 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { TabBar, BottomSheet } from "../ui";
 import { Moon, Sun, Globe, LogOut } from "lucide-react";
 import WelcomeModal from "../WelcomeModal";
+import OnboardingBanner from "../onboarding/OnboardingBanner";
 import { useLastPageTracking } from "../../hooks/useLastPageTracking";
+import { useOnboarding } from "../../hooks/useOnboarding";
 import { useAgentSuggestions } from "../../hooks/useAgentSuggestions";
 import { SuggestionsPanel } from "../suggestions";
 
@@ -14,6 +17,7 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
@@ -31,6 +35,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   } = useAgentSuggestions();
 
   useLastPageTracking();
+  const onboarding = useOnboarding();
 
   const tabTranslations = {
     journal: t("nav.journal"),
@@ -44,11 +49,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <>
       <WelcomeModal />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        {onboarding.isActive && !onboarding.loading && (
+          <OnboardingBanner
+            day={onboarding.day}
+            availableDay={onboarding.availableDay}
+            isDayComplete={onboarding.isDayComplete}
+            dayConfig={onboarding.dayConfig}
+            onDismiss={onboarding.dismiss}
+          />
+        )}
         <main className="pb-20 min-h-screen">{children}</main>
 
         <TabBar
           translations={tabTranslations}
-          onSettingsClick={() => setSettingsOpen(true)}
+          onSettingsClick={() => navigate("/settings")}
           suggestionsCount={pendingCount}
           onSuggestionsClick={() => {
             refreshSuggestions();
