@@ -4,6 +4,7 @@ import {
   RelatedConceptsArraySchema,
 } from "../../lib/aiSchemas";
 import { callLLM } from "./callLLM";
+import { logger } from '../../utils/logger';
 
 interface CriticalAnalysis {
   strengths: string[];
@@ -68,7 +69,7 @@ Return ONLY the JSON object, no additional text.`;
 
     return generateMockCriticalAnalysis(language);
   } catch (error) {
-    console.error("Error generating critical analysis:", error);
+    logger.error("Error generating critical analysis:", error);
     return generateMockCriticalAnalysis(language);
   }
 }
@@ -208,7 +209,7 @@ Return ONLY the JSON array, no additional text.`;
 
     return generateMockRelatedConcepts(language);
   } catch (error) {
-    console.error("Error generating related concepts:", error);
+    logger.error("Error generating related concepts:", error);
     return generateMockRelatedConcepts(language);
   }
 }

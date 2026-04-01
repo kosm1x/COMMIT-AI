@@ -27,6 +27,7 @@ import {
   Image,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { logger } from '../../utils/logger';
 
 interface MindMap {
   id: string;
@@ -149,7 +150,7 @@ export default function MindMapView() {
       diagramRef.current.innerHTML = svg;
       addNodeClickHandlers();
     } catch (error) {
-      console.error("Error rendering mermaid:", error);
+      logger.error("Error rendering mermaid:", error);
       diagramRef.current.innerHTML = `<div class="text-red-600 p-4">${t("map.errorRendering")}</div>`;
     }
   }, [currentMindMap, loadMermaid, t]);
@@ -253,7 +254,7 @@ export default function MindMapView() {
         loadSavedMindMaps();
       }
     } catch (error) {
-      console.error("Error generating new mind map:", error);
+      logger.error("Error generating new mind map:", error);
     } finally {
       setGenerating(false);
     }
@@ -494,7 +495,7 @@ export default function MindMapView() {
         "data:image/svg+xml;base64," +
         btoa(unescape(encodeURIComponent(svgData)));
     } catch (error) {
-      console.error("Error downloading PNG:", error);
+      logger.error("Error downloading PNG:", error);
       alert(t("map.downloadError"));
     }
     setShowDownloadMenu(false);

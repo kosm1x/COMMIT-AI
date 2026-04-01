@@ -4,6 +4,7 @@ import {
   NextStepsArraySchema,
 } from "../../lib/aiSchemas";
 import { callLLM } from "./callLLM";
+import { logger } from '../../utils/logger';
 
 interface DivergentPath {
   title: string;
@@ -69,7 +70,7 @@ Return ONLY the JSON array, no additional text.`;
 
     return generateMockDivergentPaths(ideaTitle, language);
   } catch (error) {
-    console.error("Error generating divergent paths:", error);
+    logger.error("Error generating divergent paths:", error);
     return generateMockDivergentPaths(ideaTitle, language);
   }
 }
@@ -227,7 +228,7 @@ Return ONLY the JSON array, no additional text.`;
 
     return generateMockNextSteps(language);
   } catch (error) {
-    console.error("Error suggesting next steps:", error);
+    logger.error("Error suggesting next steps:", error);
     return generateMockNextSteps(language);
   }
 }

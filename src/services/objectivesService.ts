@@ -7,6 +7,7 @@ import {
   TaskCount,
 } from "../components/objectives/types";
 import { sanitizeInput } from "../components/objectives/utils";
+import { logger } from '../utils/logger';
 
 export class ObjectivesService {
   private userId: string;
@@ -25,7 +26,7 @@ export class ObjectivesService {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Error loading visions:", error);
+      logger.error("Error loading visions:", error);
       return [];
     }
     return (data || []) as Vision[];
@@ -48,7 +49,7 @@ export class ObjectivesService {
       .single();
 
     if (error) {
-      console.error("Error creating vision:", error);
+      logger.error("Error creating vision:", error);
       return null;
     }
     return data as Vision;
@@ -67,7 +68,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error updating vision:", error);
+      logger.error("Error updating vision:", error);
       return false;
     }
     return true;
@@ -84,7 +85,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error updating vision order:", error);
+      logger.error("Error updating vision order:", error);
       return false;
     }
     return true;
@@ -98,7 +99,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error deleting vision:", error);
+      logger.error("Error deleting vision:", error);
       return false;
     }
     return true;
@@ -117,7 +118,7 @@ export class ObjectivesService {
     });
 
     if (error) {
-      console.error("Error loading goals:", error);
+      logger.error("Error loading goals:", error);
       return [];
     }
     return (data || []) as Goal[];
@@ -132,7 +133,7 @@ export class ObjectivesService {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Error loading orphaned goals:", error);
+      logger.error("Error loading orphaned goals:", error);
       return [];
     }
     return (data || []) as Goal[];
@@ -157,7 +158,7 @@ export class ObjectivesService {
       .single();
 
     if (error) {
-      console.error("Error creating goal:", error);
+      logger.error("Error creating goal:", error);
       return null;
     }
     return data as Goal;
@@ -176,7 +177,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error updating goal:", error);
+      logger.error("Error updating goal:", error);
       return false;
     }
     return true;
@@ -190,7 +191,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error deleting goal:", error);
+      logger.error("Error deleting goal:", error);
       return false;
     }
     return true;
@@ -212,7 +213,7 @@ export class ObjectivesService {
     });
 
     if (error) {
-      console.error("Error loading objectives:", error);
+      logger.error("Error loading objectives:", error);
       return [];
     }
     return (data || []) as Objective[];
@@ -227,7 +228,7 @@ export class ObjectivesService {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Error loading orphaned objectives:", error);
+      logger.error("Error loading orphaned objectives:", error);
       return [];
     }
     return (data || []) as Objective[];
@@ -254,7 +255,7 @@ export class ObjectivesService {
       .single();
 
     if (error) {
-      console.error("Error creating objective:", error);
+      logger.error("Error creating objective:", error);
       return null;
     }
     return data as Objective;
@@ -276,7 +277,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error updating objective:", error);
+      logger.error("Error updating objective:", error);
       return false;
     }
     return true;
@@ -290,7 +291,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error deleting objective:", error);
+      logger.error("Error deleting objective:", error);
       return false;
     }
     return true;
@@ -309,7 +310,7 @@ export class ObjectivesService {
     });
 
     if (error) {
-      console.error("Error loading tasks:", error);
+      logger.error("Error loading tasks:", error);
       return [];
     }
     return (data || []) as Task[];
@@ -324,7 +325,7 @@ export class ObjectivesService {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Error loading orphaned tasks:", error);
+      logger.error("Error loading orphaned tasks:", error);
       return [];
     }
     return (data || []) as Task[];
@@ -342,7 +343,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error loading task counts:", error);
+      logger.error("Error loading task counts:", error);
       return {};
     }
 
@@ -382,7 +383,7 @@ export class ObjectivesService {
       .single();
 
     if (error) {
-      console.error("Error creating task:", error);
+      logger.error("Error creating task:", error);
       return null;
     }
     return data as Task;
@@ -402,7 +403,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error updating task:", error);
+      logger.error("Error updating task:", error);
       return false;
     }
     return true;
@@ -416,7 +417,7 @@ export class ObjectivesService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("Error deleting task:", error);
+      logger.error("Error deleting task:", error);
       return false;
     }
     return true;
@@ -442,7 +443,7 @@ export class ObjectivesService {
         .eq("id", existing.id);
 
       if (error) {
-        console.error("Error removing task completion:", error);
+        logger.error("Error removing task completion:", error);
         return false;
       }
     } else {
@@ -454,7 +455,7 @@ export class ObjectivesService {
       });
 
       if (error) {
-        console.error("Error marking task completed:", error);
+        logger.error("Error marking task completed:", error);
         return false;
       }
     }

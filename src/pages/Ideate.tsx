@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { logger } from '../utils/logger';
 
 interface Idea {
   id: string;
@@ -90,7 +91,7 @@ export default function Ideate() {
         setIdeas((prev) => [...prev, ...newIdeas]);
       }
     } catch (error) {
-      console.error("Error loading ideas:", error);
+      logger.error("Error loading ideas:", error);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -148,7 +149,7 @@ export default function Ideate() {
         }
       }
     } catch (error) {
-      console.error("Error generating idea:", error);
+      logger.error("Error generating idea:", error);
     } finally {
       setGenerating(false);
     }
@@ -180,7 +181,7 @@ export default function Ideate() {
       setSuggestions([]);
       setLibraryCollapsed(false);
     } catch (error) {
-      console.error("Error saving idea:", error);
+      logger.error("Error saving idea:", error);
     }
   };
 
@@ -190,7 +191,7 @@ export default function Ideate() {
       await supabase.from("ideas").delete().eq("id", id);
       setIdeas((prev) => prev.filter((idea) => idea.id !== id));
     } catch (error) {
-      console.error("Error deleting idea:", error);
+      logger.error("Error deleting idea:", error);
     }
   };
 

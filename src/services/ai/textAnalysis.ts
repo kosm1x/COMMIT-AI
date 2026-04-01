@@ -4,6 +4,7 @@
  */
 
 import { STOPWORDS } from "./stopwords";
+import { logger } from '../../utils/logger';
 
 export interface IdeaConnection {
   ideaId: string;
@@ -132,7 +133,7 @@ export function findSimilarIdeasFallback(
   const currentKeywords = extractKeywords(currentFullText, 40, language);
   const currentTitleKeywords = extractKeywords(currentTitle, 10, language);
 
-  console.log(
+  logger.info(
     `[findSimilarIdeasFallback] Current idea keywords: ${currentKeywords.slice(0, 10).join(", ")}...`,
   );
 
@@ -277,7 +278,7 @@ export function findSimilarIdeasFallback(
     .sort((a, b) => b.strength - a.strength)
     .slice(0, 8);
 
-  console.log(
+  logger.info(
     `[findSimilarIdeasFallback] Found ${sortedConnections.length} connections via content-aware fallback`,
   );
   return sortedConnections;

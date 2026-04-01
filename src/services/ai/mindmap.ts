@@ -1,5 +1,6 @@
 import { safeParse, MindMapSchema } from "../../lib/aiSchemas";
 import { callLLM } from "./callLLM";
+import { logger } from '../../utils/logger';
 
 interface MindMapResult {
   mermaidSyntax: string;
@@ -84,7 +85,7 @@ Return ONLY the JSON object with title and mermaidSyntax fields, no additional t
 
     return generateMockMindMap(problemStatement, context, language);
   } catch (error) {
-    console.error("Error generating mind map:", error);
+    logger.error("Error generating mind map:", error);
     return generateMockMindMap(problemStatement, context, language);
   }
 }

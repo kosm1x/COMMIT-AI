@@ -12,6 +12,7 @@ import KanbanOverview from './KanbanOverview';
 import DailyView from './DailyView';
 import WeeklyView from './WeeklyView';
 import MonthlyView from './MonthlyView';
+import { logger } from '../../utils/logger';
 
 interface DashboardLayoutProps {
   activeTab: 'daily' | 'weekly' | 'monthly';
@@ -154,7 +155,7 @@ export default function DashboardLayout({ activeTab, selectedDate }: DashboardLa
           setLayout(parsed);
         }
       } catch (e) {
-        console.error('Failed to parse saved layout', e);
+        logger.error('Failed to parse saved layout', e);
       }
     }
   }, []);

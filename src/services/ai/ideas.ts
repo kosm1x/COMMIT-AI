@@ -6,6 +6,7 @@ import {
 import { callLLM } from "./callLLM";
 import { findSimilarIdeasFallback } from "./textAnalysis";
 import type { IdeaConnection } from "./textAnalysis";
+import { logger } from '../../utils/logger';
 
 interface IdeaCompletionResult {
   title: string;
@@ -80,7 +81,7 @@ Return ONLY the JSON object, no additional text.`;
 
     return generateMockIdeaCompletion(initialInput, language);
   } catch (error) {
-    console.error("Error completing idea:", error);
+    logger.error("Error completing idea:", error);
     return generateMockIdeaCompletion(initialInput, language);
   }
 }
@@ -148,11 +149,11 @@ export async function findIdeaConnections(
   signal?: AbortSignal,
 ): Promise<IdeaConnection[]> {
   if (existingIdeas.length === 0) {
-    console.log("[findIdeaConnections] No existing ideas to compare");
+    logger.info("[findIdeaConnections] No existing ideas to compare");
     return [];
   }
 
-  console.log(
+  logger.info(
     `[findIdeaConnections] Analyzing connections for idea with ${existingIdeas.length} existing ideas`,
   );
 
@@ -222,7 +223,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
   );
 
   if (!textResponse) {
-    console.warn(
+    logger.warn(
       "[findIdeaConnections] API call failed, using fallback similarity check",
     );
     return findSimilarIdeasFallback(
@@ -235,7 +236,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
     );
   }
 
-  console.log(
+  logger.info(
     "[findIdeaConnections] API response received, length:",
     textResponse.length,
   );
@@ -276,7 +277,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
         );
       }
 
-      console.log(
+      logger.info(
         "[findIdeaConnections] Parsed connections:",
         connections.length,
       );
@@ -291,7 +292,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
             (idea) => idea.id === conn.ideaId,
           );
           if (!matchedIdea) {
-            console.warn(
+            logger.warn(
               `[findIdeaConnections] Connection references unknown idea ID: ${conn.ideaId}`,
             );
             return null;
@@ -316,13 +317,13 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
             conn !== null && conn.strength >= MIN_STRENGTH_THRESHOLD,
         );
 
-      console.log(
+      logger.info(
         `[findIdeaConnections] Filtered to ${filteredConnections.length} connections with strength >= ${MIN_STRENGTH_THRESHOLD}`,
       );
 
       // If no AI connections found, use strict fallback
       if (filteredConnections.length === 0) {
-        console.log(
+        logger.info(
           "[findIdeaConnections] No AI connections found, using strict fallback similarity check",
         );
         return findSimilarIdeasFallback(
@@ -337,7 +338,7 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
 
       return filteredConnections;
     } else {
-      console.warn(
+      logger.warn(
         "[findIdeaConnections] Could not extract JSON from response, using fallback",
       );
       return findSimilarIdeasFallback(
@@ -350,8 +351,8 @@ Return ONLY a JSON array of connection objects with strength >= 70. Return empty
       );
     }
   } catch (error) {
-    console.error("[findIdeaConnections] Error parsing connections:", error);
-    console.error(
+    logger.error("[findIdeaConnections] Error parsing connections:", error);
+    logger.error(
       "[findIdeaConnections] Response was:",
       textResponse.substring(0, 500),
     );

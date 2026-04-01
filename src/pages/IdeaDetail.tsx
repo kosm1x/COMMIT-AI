@@ -27,6 +27,7 @@ import {
   Scissors,
   Users,
 } from "lucide-react";
+import { logger } from '../utils/logger';
 
 export default function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
@@ -148,7 +149,7 @@ export default function IdeaDetail() {
         });
       }
     } catch (error) {
-      console.error("Error loading idea:", error);
+      logger.error("Error loading idea:", error);
       if (isInitialLoadRef.current) {
         navigate("/ideate");
       }
@@ -169,12 +170,12 @@ export default function IdeaDetail() {
         .limit(50);
 
       if (error) {
-        console.error("[IdeaDetail] Error fetching ideas:", error);
+        logger.error("[IdeaDetail] Error fetching ideas:", error);
         throw error;
       }
 
       if (import.meta.env.DEV) {
-        console.log(
+        logger.info(
           `[IdeaDetail] Found ${allIdeas?.length || 0} other ideas to compare`,
         );
       }
@@ -195,21 +196,21 @@ export default function IdeaDetail() {
           language,
         );
         if (import.meta.env.DEV) {
-          console.log(
+          logger.info(
             `[IdeaDetail] Found ${foundConnections.length} connections`,
           );
         }
         setConnections(foundConnections);
       } else {
         if (import.meta.env.DEV) {
-          console.log(
+          logger.info(
             "[IdeaDetail] No other ideas found, cannot create connections",
           );
         }
         setConnections([]);
       }
     } catch (error) {
-      console.error("[IdeaDetail] Error loading connections:", error);
+      logger.error("[IdeaDetail] Error loading connections:", error);
       setConnections([]);
     } finally {
       setLoadingConnections(false);
@@ -235,7 +236,7 @@ export default function IdeaDetail() {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error saving idea:", error);
+      logger.error("Error saving idea:", error);
     } finally {
       setSaving(false);
     }
@@ -255,7 +256,7 @@ export default function IdeaDetail() {
       if (error) throw error;
       window.close();
     } catch (error) {
-      console.error("Error deleting idea:", error);
+      logger.error("Error deleting idea:", error);
     }
   };
 
@@ -335,7 +336,7 @@ export default function IdeaDetail() {
         window.open(`/ideate/${data.id}`, "_blank");
       }
     } catch (error) {
-      console.error("Error creating new idea:", error);
+      logger.error("Error creating new idea:", error);
     }
   };
 
@@ -346,7 +347,7 @@ export default function IdeaDetail() {
   ) => {
     if (!user) return;
 
-    console.log("Creating task with:", { title, description, priority });
+    logger.info("Creating task with:", { title, description, priority });
 
     try {
       const { data, error } = await supabase
@@ -364,14 +365,14 @@ export default function IdeaDetail() {
         .single();
 
       if (error) {
-        console.error("Supabase error:", error);
+        logger.error("Supabase error:", error);
         throw error;
       }
 
-      console.log("Task created successfully:", data);
+      logger.info("Task created successfully:", data);
       alert(t("ideaDetail.taskCreatedSuccess").replace("{{title}}", title));
     } catch (error) {
-      console.error("Error creating task:", error);
+      logger.error("Error creating task:", error);
       alert(t("ideaDetail.taskCreateFailed"));
     }
   };

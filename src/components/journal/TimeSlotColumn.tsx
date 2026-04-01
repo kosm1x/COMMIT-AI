@@ -3,6 +3,7 @@ import { Sun, Cloud, Moon, Star } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { TimeSlot, PlannedTask } from '../../hooks/useDailyPlanner';
 import { PlannedTaskCard } from './PlannedTaskCard';
+import { logger } from '../../utils/logger';
 
 interface TimeSlotColumnProps {
   slot: TimeSlot;
@@ -77,7 +78,7 @@ export function TimeSlotColumn({
         }
       }
     } catch (err) {
-      console.error('Error parsing drop data:', err);
+      logger.error('Error parsing drop data:', err);
     }
   };
 

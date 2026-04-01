@@ -23,6 +23,7 @@ import {
   generateCriticalAnalysis,
   generateRelatedConcepts,
 } from "../services/aiService";
+import { logger } from '../utils/logger';
 
 interface AICache {
   divergentPaths?: DivergentPath[];
@@ -216,7 +217,7 @@ export default function AIAssistantPanel({
           break;
       }
     } catch (error) {
-      console.error("Error generating AI content:", error);
+      logger.error("Error generating AI content:", error);
     } finally {
       setLoading(false);
     }
@@ -269,7 +270,7 @@ export default function AIAssistantPanel({
         }
       }
     } catch (error) {
-      console.error("Error refreshing AI content:", error);
+      logger.error("Error refreshing AI content:", error);
     } finally {
       setLoading(false);
     }

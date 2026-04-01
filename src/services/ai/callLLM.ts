@@ -1,6 +1,7 @@
 import { fetchWithRetry } from "../../utils/fetchWithRetry";
 import { supabase } from "../../lib/supabase";
 import { RateLimiter } from "../../utils/security";
+import { logger } from '../../utils/logger';
 
 export const aiRateLimiter = new RateLimiter(10, 1);
 
@@ -111,7 +112,7 @@ export async function callLLM(
     );
 
     if (!response.ok) {
-      console.error("AI proxy error:", response.status, response.statusText);
+      logger.error("AI proxy error:", response.status, response.statusText);
       return null;
     }
 
@@ -119,10 +120,10 @@ export async function callLLM(
     return data.content || null;
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      console.warn("AI call aborted or timed out");
+      logger.warn("AI call aborted or timed out");
       return null;
     }
-    console.error("Error calling AI proxy:", error);
+    logger.error("Error calling AI proxy:", error);
     return null;
   } finally {
     clearTimeout(timeoutId);

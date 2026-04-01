@@ -42,7 +42,7 @@ A personal growth companion implementing the COMMIT framework (Context, Objectiv
 - Streak tracking, completion rates, upcoming deadlines
 - Draggable widget dashboard layout
 
-### Jarvis Integration (v2.26)
+### Jarvis Integration
 
 - **Suggestions Panel** — Jarvis proposes tasks, goals, and improvements as actionable cards
 - **Activity Feed** — see what Jarvis changed and why
@@ -50,7 +50,7 @@ A personal growth companion implementing the COMMIT framework (Context, Objectiv
 - AI functions route through Jarvis for full context (memory, calendar, projects)
 - Event-driven: database changes trigger Jarvis reactions in real-time
 - Graceful fallback to Groq when Jarvis is unavailable
-- Production-hardened: structured logging (Pino), 3-layer tool guardrails, 8-model LLM benchmark
+- Production-hardened: structured logging (Pino), 3-layer tool guardrails, provider rotation
 
 ## Technology Stack
 

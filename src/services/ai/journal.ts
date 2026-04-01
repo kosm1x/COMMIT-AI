@@ -6,6 +6,7 @@ import {
 import { callLLM } from "./callLLM";
 import type { EmotionResult, AnalysisResult } from "./callLLM";
 import { emotionColors } from "./callLLM";
+import { logger } from '../../utils/logger';
 
 export type { AnalysisResult };
 
@@ -77,7 +78,7 @@ Return ONLY the JSON object, no additional text.`;
 
     return generateMockAnalysis(content, language);
   } catch (error) {
-    console.error("Error analyzing journal entry:", error);
+    logger.error("Error analyzing journal entry:", error);
     return generateMockAnalysis(content, language);
   }
 }
@@ -280,7 +281,7 @@ Return ONLY a JSON array like: ["goal1", "goal2", "goal3"]`;
 
     return [];
   } catch (error) {
-    console.error("Error extracting objectives:", error);
+    logger.error("Error extracting objectives:", error);
     return [];
   }
 }

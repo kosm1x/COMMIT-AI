@@ -11,6 +11,7 @@ import { useNotification } from "../contexts/NotificationContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { createSuggestionsService } from "../services/suggestionsService";
 import type { AgentSuggestion } from "../services/suggestionsService";
+import { logger } from '../utils/logger';
 
 interface JarvisActivity {
   table: string;
@@ -57,7 +58,7 @@ export function useAgentSuggestions(): UseAgentSuggestionsReturn {
       setPendingCount(count);
       setActivity(jarvisActivity);
     } catch (err) {
-      console.error("[useAgentSuggestions] refresh failed:", err);
+      logger.error("[useAgentSuggestions] refresh failed:", err);
     } finally {
       setLoading(false);
     }

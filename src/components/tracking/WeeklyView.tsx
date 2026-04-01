@@ -8,6 +8,7 @@ import {
   getEndOfWeek,
   formatShortDate,
 } from "../../utils/trackingStats";
+import { logger } from '../../utils/logger';
 
 interface DayStats {
   date: Date;
@@ -122,7 +123,7 @@ export default function WeeklyView({ selectedDate }: WeeklyViewProps) {
         total: uniqueTasksDue.size,
       });
     } catch (error) {
-      console.error("Error loading weekly data:", error);
+      logger.error("Error loading weekly data:", error);
     } finally {
       setLoading(false);
     }

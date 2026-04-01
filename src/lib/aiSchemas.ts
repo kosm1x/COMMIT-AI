@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from '../utils/logger';
 
 // Shared refinements
 const clampedIntensity = z
@@ -137,7 +138,7 @@ export function safeParse<T>(
   const result = schema.safeParse(data);
   if (result.success) return result.data;
   if (import.meta.env.DEV) {
-    console.warn(
+    logger.warn(
       "[AI Schema] Validation failed, using fallback:",
       result.error.issues,
     );

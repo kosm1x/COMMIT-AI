@@ -1,6 +1,6 @@
 # Outstanding Tasks
 
-> Last updated: 2026-03-29
+> Last updated: 2026-04-01
 
 ## Phase 6 Backlog
 
@@ -11,12 +11,12 @@
 | 3   | WebAuthn fallback     | Medium | Low    | None                                    | Biometric auth for web browsers (currently only works on native via Capacitor plugin)                                                                                                     |
 | 4   | Storybook             | Medium | Low    | None                                    | Component library documentation. 60+ components across 9 directories                                                                                                                      |
 
-## Deferred from v2.26
+## Jarvis Enhancements
 
-| #   | Item                                     | Context   | Notes                                                                                                                                                                                      |
-| --- | ---------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 5   | "Jarvis Says" insight cards (6B)         | Session 6 | Strategic insights on journal/objectives pages. Journal already shows AI analysis (emotions, patterns). This would add goal connections, suggested actions, and Jarvis commentary overlays |
-| 6   | Link 3 unlinked projects to COMMIT goals | Session 3 | Data task in Jarvis SQLite. Projects: presencia-digital-eurekamd, pipesong, alianza-cmll. Need to identify matching COMMIT goals or create new ones                                        |
+| #   | Item                                     | Notes                                                                                                                                                                                      |
+| --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 5   | "Jarvis Says" insight cards              | Strategic insights on journal/objectives pages. Journal already shows AI analysis (emotions, patterns). This would add goal connections, suggested actions, and Jarvis commentary overlays |
+| 6   | Link 3 unlinked projects to COMMIT goals | Data task in Jarvis SQLite. Projects: presencia-digital-eurekamd, pipesong, alianza-cmll. Need to identify matching COMMIT goals or create new ones                                        |
 
 ## Code Quality
 

@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { Vision, Goal, Objective, Task } from "../components/objectives/types";
 import type { ObjectivesDataState } from "./useObjectivesData";
 import type { SelectionPath } from "./useObjectivesSelection";
+import { logger } from '../utils/logger';
 
 interface SelectionDeps {
   selectionPath: SelectionPath;
@@ -135,7 +136,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (error) {
-        console.error("Error creating vision:", error);
+        logger.error("Error creating vision:", error);
         return null;
       }
       await loadVisions();
@@ -156,7 +157,7 @@ export function useObjectivesCRUD(
         .update(updates)
         .eq("id", id);
       if (error) {
-        console.error("Error updating vision:", error);
+        logger.error("Error updating vision:", error);
         setVisions(previousVisions);
         return false;
       }
@@ -244,7 +245,7 @@ export function useObjectivesCRUD(
           .eq("user_id", userId!);
 
         if (orphanError) {
-          console.error("Error orphaning goals:", orphanError);
+          logger.error("Error orphaning goals:", orphanError);
           setVisions(previousVisions);
           setGoals(previousGoals);
           return false;
@@ -253,7 +254,7 @@ export function useObjectivesCRUD(
 
       const { error } = await supabase.from("visions").delete().eq("id", id);
       if (error) {
-        console.error("Error deleting vision:", error);
+        logger.error("Error deleting vision:", error);
         setVisions(previousVisions);
         setGoals(previousGoals);
         return false;
@@ -330,7 +331,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (error) {
-        console.error("Error creating goal:", error);
+        logger.error("Error creating goal:", error);
         return null;
       }
       await loadGoals();
@@ -351,7 +352,7 @@ export function useObjectivesCRUD(
         .update(updates)
         .eq("id", id);
       if (error) {
-        console.error("Error updating goal:", error);
+        logger.error("Error updating goal:", error);
         setGoals(previousGoals);
         return false;
       }
@@ -417,7 +418,7 @@ export function useObjectivesCRUD(
           .eq("user_id", userId!);
 
         if (orphanError) {
-          console.error("Error orphaning objectives:", orphanError);
+          logger.error("Error orphaning objectives:", orphanError);
           setGoals(previousGoals);
           setObjectives(previousObjectives);
           return false;
@@ -426,7 +427,7 @@ export function useObjectivesCRUD(
 
       const { error } = await supabase.from("goals").delete().eq("id", id);
       if (error) {
-        console.error("Error deleting goal:", error);
+        logger.error("Error deleting goal:", error);
         setGoals(previousGoals);
         setObjectives(previousObjectives);
         return false;
@@ -500,7 +501,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (error) {
-        console.error("Error creating objective:", error);
+        logger.error("Error creating objective:", error);
         return null;
       }
       await loadObjectives();
@@ -521,7 +522,7 @@ export function useObjectivesCRUD(
         .update(updates)
         .eq("id", id);
       if (error) {
-        console.error("Error updating objective:", error);
+        logger.error("Error updating objective:", error);
         setObjectives(previousObjectives);
         return false;
       }
@@ -577,7 +578,7 @@ export function useObjectivesCRUD(
           .eq("user_id", userId!);
 
         if (orphanError) {
-          console.error("Error orphaning tasks:", orphanError);
+          logger.error("Error orphaning tasks:", orphanError);
           setObjectives(previousObjectives);
           setTasks(previousTasks);
           return false;
@@ -586,7 +587,7 @@ export function useObjectivesCRUD(
 
       const { error } = await supabase.from("objectives").delete().eq("id", id);
       if (error) {
-        console.error("Error deleting objective:", error);
+        logger.error("Error deleting objective:", error);
         setObjectives(previousObjectives);
         setTasks(previousTasks);
         return false;
@@ -665,7 +666,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (error) {
-        console.error("Error creating task:", error);
+        logger.error("Error creating task:", error);
         return null;
       }
       await loadTasks();
@@ -713,7 +714,7 @@ export function useObjectivesCRUD(
         .update(updates)
         .eq("id", id);
       if (error) {
-        console.error("Error updating task:", error);
+        logger.error("Error updating task:", error);
         setTasks(previousTasks);
         await loadTaskCounts();
         return false;
@@ -750,7 +751,7 @@ export function useObjectivesCRUD(
 
       const { error } = await supabase.from("tasks").delete().eq("id", id);
       if (error) {
-        console.error("Error deleting task:", error);
+        logger.error("Error deleting task:", error);
         setTasks(previousTasks);
         setTaskCounts(previousTaskCounts);
         return false;
@@ -884,7 +885,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (goalError || !newGoal) {
-        console.error("Error converting vision to goal:", goalError);
+        logger.error("Error converting vision to goal:", goalError);
         return null;
       }
 
@@ -940,7 +941,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (visionError || !newVision) {
-        console.error("Error converting goal to vision:", visionError);
+        logger.error("Error converting goal to vision:", visionError);
         return null;
       }
 
@@ -992,7 +993,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (objError || !newObjective) {
-        console.error("Error converting goal to objective:", objError);
+        logger.error("Error converting goal to objective:", objError);
         return null;
       }
 
@@ -1044,7 +1045,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (goalError || !newGoal) {
-        console.error("Error converting objective to goal:", goalError);
+        logger.error("Error converting objective to goal:", goalError);
         return null;
       }
 
@@ -1097,7 +1098,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (taskError || !newTask) {
-        console.error("Error converting objective to task:", taskError);
+        logger.error("Error converting objective to task:", taskError);
         return null;
       }
 
@@ -1136,7 +1137,7 @@ export function useObjectivesCRUD(
         .single();
 
       if (objError || !newObjective) {
-        console.error("Error converting task to objective:", objError);
+        logger.error("Error converting task to objective:", objError);
         return null;
       }
 

@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { Repeat } from 'lucide-react';
+import { logger } from '../../../utils/logger';
 
 interface RecurringTask {
   id: string;
@@ -138,7 +139,7 @@ export default function RecurringTasksGrid() {
 
       setTasks(tasksWithCompletions);
     } catch (error) {
-      console.error('Error fetching recurring tasks:', error);
+      logger.error('Error fetching recurring tasks:', error);
     } finally {
       setLoading(false);
     }
@@ -189,7 +190,7 @@ export default function RecurringTasksGrid() {
         return task;
       }));
     } catch (error) {
-      console.error('Error toggling completion:', error);
+      logger.error('Error toggling completion:', error);
       // Reload on error
       await fetchRecurringTasks();
     } finally {

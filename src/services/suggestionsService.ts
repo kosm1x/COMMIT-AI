@@ -6,6 +6,7 @@
  */
 
 import { supabase } from "../lib/supabase";
+import { logger } from '../utils/logger';
 
 export interface AgentSuggestion {
   id: string;
@@ -39,7 +40,7 @@ export class SuggestionsService {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[suggestions] Failed to load pending:", error.message);
+      logger.error("[suggestions] Failed to load pending:", error.message);
       return [];
     }
     return (data ?? []) as AgentSuggestion[];
@@ -56,7 +57,7 @@ export class SuggestionsService {
       .limit(limit);
 
     if (error) {
-      console.error("[suggestions] Failed to load recent:", error.message);
+      logger.error("[suggestions] Failed to load recent:", error.message);
       return [];
     }
     return (data ?? []) as AgentSuggestion[];
@@ -71,7 +72,7 @@ export class SuggestionsService {
       .eq("status", "pending");
 
     if (error) {
-      console.error("[suggestions] Failed to count pending:", error.message);
+      logger.error("[suggestions] Failed to count pending:", error.message);
       return 0;
     }
     return count ?? 0;
@@ -89,7 +90,7 @@ export class SuggestionsService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("[suggestions] Failed to accept:", error.message);
+      logger.error("[suggestions] Failed to accept:", error.message);
       return false;
     }
     return true;
@@ -107,7 +108,7 @@ export class SuggestionsService {
       .eq("user_id", this.userId);
 
     if (error) {
-      console.error("[suggestions] Failed to reject:", error.message);
+      logger.error("[suggestions] Failed to reject:", error.message);
       return false;
     }
     return true;

@@ -12,7 +12,9 @@ export interface CompletionStats {
   percentage: number;
 }
 
-export function calculateStatusCounts(items: Array<{ status: string }>): StatusCount {
+export function calculateStatusCounts(
+  items: Array<{ status: string }>,
+): StatusCount {
   const counts = {
     not_started: 0,
     in_progress: 0,
@@ -23,7 +25,7 @@ export function calculateStatusCounts(items: Array<{ status: string }>): StatusC
 
   items.forEach((item) => {
     if (item.status in counts) {
-      counts[item.status as keyof Omit<StatusCount, 'total'>]++;
+      counts[item.status as keyof Omit<StatusCount, "total">]++;
     }
   });
 
@@ -32,14 +34,16 @@ export function calculateStatusCounts(items: Array<{ status: string }>): StatusC
 
 export function calculateCompletionPercentage(
   completed: number,
-  total: number
+  total: number,
 ): number {
   if (total === 0) return 0;
   return Math.round((completed / total) * 100);
 }
 
-export function getCompletionStats(items: Array<{ status: string }>): CompletionStats {
-  const completed = items.filter((item) => item.status === 'completed').length;
+export function getCompletionStats(
+  items: Array<{ status: string }>,
+): CompletionStats {
+  const completed = items.filter((item) => item.status === "completed").length;
   const total = items.length;
   const percentage = calculateCompletionPercentage(completed, total);
 
@@ -49,7 +53,7 @@ export function getCompletionStats(items: Array<{ status: string }>): Completion
 export function filterByDateRange(
   items: Array<{ created_at: string }>,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Array<{ created_at: string }> {
   return items.filter((item) => {
     const itemDate = new Date(item.created_at);
@@ -60,7 +64,7 @@ export function filterByDateRange(
 export function filterCompletedInRange(
   items: Array<{ completed_at: string | null }>,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Array<{ completed_at: string | null }> {
   return items.filter((item) => {
     if (!item.completed_at) return false;
@@ -117,47 +121,32 @@ export function getDaysInMonth(date: Date): number {
 
 export function formatDate(date: Date): string {
   const year = date.getFullYear();
-  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const month = date.toLocaleDateString("en-US", { month: "short" });
   const day = date.getDate();
   return `${month} ${day}, ${year}`;
 }
 
 export function formatShortDate(date: Date): string {
-  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const month = date.toLocaleDateString("en-US", { month: "short" });
   const day = date.getDate();
   return `${month} ${day}`;
 }
 
 export function formatDateTime(date: Date): string {
   const year = date.getFullYear();
-  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const month = date.toLocaleDateString("en-US", { month: "short" });
   const day = date.getDate();
   const hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
   const displayHours = hours % 12 || 12;
   return `${month} ${day}, ${year} ${displayHours}:${minutes} ${ampm}`;
 }
 
 export function formatTime(date: Date): string {
   const hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
   const displayHours = hours % 12 || 12;
   return `${displayHours}:${minutes} ${ampm}`;
 }
-
-export function formatMonthYear(date: Date): string {
-  const year = date.getFullYear();
-  const month = date.toLocaleDateString('en-US', { month: 'long' });
-  return `${month} ${year}`;
-}
-
-export function formatWeekday(date: Date): string {
-  return date.toLocaleDateString('en-US', { weekday: 'short' });
-}
-
-export function formatWeekdayNarrow(date: Date): string {
-  return date.toLocaleDateString('en-US', { weekday: 'narrow' });
-}
-

@@ -4,6 +4,7 @@ import {
   SuggestedTasksArraySchema,
 } from "../../lib/aiSchemas";
 import { callLLM } from "./callLLM";
+import { logger } from '../../utils/logger';
 
 export interface SuggestedObjective {
   title: string;
@@ -72,7 +73,7 @@ Return ONLY the JSON array, no additional text.`;
     }
     return generateMockObjectives(goalTitle, language);
   } catch (error) {
-    console.error("Error generating objectives:", error);
+    logger.error("Error generating objectives:", error);
     return generateMockObjectives(goalTitle, language);
   }
 }
@@ -225,7 +226,7 @@ Return ONLY the JSON array, no additional text.`;
     }
     return generateMockTasks(objectiveTitle, language);
   } catch (error) {
-    console.error("Error generating tasks:", error);
+    logger.error("Error generating tasks:", error);
     return generateMockTasks(objectiveTitle, language);
   }
 }

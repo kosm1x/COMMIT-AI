@@ -16,6 +16,7 @@ import {
   getEndOfDay,
   formatDate,
 } from "../../utils/trackingStats";
+import { logger } from '../../utils/logger';
 
 interface Task {
   id: string;
@@ -127,7 +128,7 @@ export default function DailyView({ selectedDate }: DailyViewProps) {
 
       setOverdueCount(overdueResult.data?.length || 0);
     } catch (error) {
-      console.error("Error loading daily data:", error);
+      logger.error("Error loading daily data:", error);
     } finally {
       setLoading(false);
     }

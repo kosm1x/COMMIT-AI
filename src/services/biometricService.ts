@@ -1,6 +1,7 @@
 import { NativeBiometric, BiometryType } from '@capgo/capacitor-native-biometric';
 import { Capacitor } from '@capacitor/core';
 import { getItem, setItem } from './storageService';
+import { logger } from '../utils/logger';
 
 const BIOMETRIC_ENABLED_KEY = 'commit_biometric_enabled';
 
@@ -121,7 +122,7 @@ export async function deleteBiometricCredentials(): Promise<void> {
     });
     await setItem(BIOMETRIC_ENABLED_KEY, 'false');
   } catch {
-    console.error('[Biometric] Failed to delete credentials');
+    logger.error('[Biometric] Failed to delete credentials');
   }
 }
 

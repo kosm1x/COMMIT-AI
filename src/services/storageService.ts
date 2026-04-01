@@ -1,5 +1,6 @@
 import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
+import { logger } from '../utils/logger';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -37,7 +38,7 @@ export async function clear(): Promise<void> {
 
 export function getItemSync(key: string): string | null {
   if (isNative) {
-    console.warn('[Storage] Sync access not available on native, returning null');
+    logger.warn('[Storage] Sync access not available on native, returning null');
     return null;
   }
   return localStorage.getItem(key);

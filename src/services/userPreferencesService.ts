@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Language } from '../i18n/translations';
+import { logger } from '../utils/logger';
 
 export interface UserPreferences {
   language: Language;
@@ -28,12 +29,12 @@ export async function savePreferencesToDB(userId: string, preferences: Partial<U
       });
 
     if (error) {
-      console.error('[Preferences] Error saving to database:', error);
+      logger.error('[Preferences] Error saving to database:', error);
     } else {
-      console.log('[Preferences] Successfully saved to database');
+      logger.info('[Preferences] Successfully saved to database');
     }
   } catch (error) {
-    console.error('[Preferences] Failed to save preferences:', error);
+    logger.error('[Preferences] Failed to save preferences:', error);
   }
 }
 
@@ -49,12 +50,12 @@ export async function loadPreferencesFromDB(userId: string): Promise<UserPrefere
       .maybeSingle();
 
     if (error) {
-      console.error('Error loading user preferences:', error);
+      logger.error('Error loading user preferences:', error);
       return null;
     }
 
     if (!data) {
-      console.log('[Preferences] No preferences found in database for user');
+      logger.info('[Preferences] No preferences found in database for user');
       return null;
     }
 
@@ -64,7 +65,7 @@ export async function loadPreferencesFromDB(userId: string): Promise<UserPrefere
       last_page_visited: data.last_page_visited || '/journal',
     };
   } catch (error) {
-    console.error('Failed to load preferences:', error);
+    logger.error('Failed to load preferences:', error);
     return null;
   }
 }
@@ -90,7 +91,7 @@ export function savePreferencesToLocalStorage(preferences: Partial<UserPreferenc
       localStorage.setItem('commit_last_page', preferences.last_page_visited);
     }
   } catch (error) {
-    console.error('Failed to save preferences to localStorage:', error);
+    logger.error('Failed to save preferences to localStorage:', error);
   }
 }
 
@@ -119,7 +120,7 @@ export function loadPreferencesFromLocalStorage(): UserPreferences | null {
 
     return null;
   } catch (error) {
-    console.error('Failed to load preferences from localStorage:', error);
+    logger.error('Failed to load preferences from localStorage:', error);
     return null;
   }
 }
@@ -134,15 +135,15 @@ export function loadPreferencesFromLocalStorage(): UserPreferences | null {
  * representing the authoritative "last known state" before logout.
  */
 export async function syncPreferencesOnSignIn(userId: string): Promise<UserPreferences> {
-  console.log('[Preferences] Syncing preferences for user:', userId);
+  logger.info('[Preferences] Syncing preferences for user:', userId);
   
   // First, check localStorage for any existing preferences
   const localPrefs = loadPreferencesFromLocalStorage();
-  console.log('[Preferences] Local preferences:', localPrefs);
+  logger.info('[Preferences] Local preferences:', localPrefs);
 
   // Then, load from database (authoritative source for last_page_visited)
   const dbPrefs = await loadPreferencesFromDB(userId);
-  console.log('[Preferences] Database preferences:', dbPrefs);
+  logger.info('[Preferences] Database preferences:', dbPrefs);
 
   // Merge preferences with different priorities:
   // - theme/language: localStorage > database (user might have changed them locally)
@@ -153,7 +154,7 @@ export async function syncPreferencesOnSignIn(userId: string): Promise<UserPrefe
     last_page_visited: dbPrefs?.last_page_visited || localPrefs?.last_page_visited || '/journal',
   };
 
-  console.log('[Preferences] Final merged preferences:', finalPrefs);
+  logger.info('[Preferences] Final merged preferences:', finalPrefs);
 
   // Save merged result to localStorage
   savePreferencesToLocalStorage(finalPrefs);
@@ -168,11 +169,11 @@ export async function syncPreferencesOnSignIn(userId: string): Promise<UserPrefe
  * Sync preferences from localStorage to database (called before sign-out)
  */
 export async function syncPreferencesOnSignOut(userId: string) {
-  console.log('[Preferences] Saving preferences before sign-out for user:', userId);
+  logger.info('[Preferences] Saving preferences before sign-out for user:', userId);
   const prefs = loadPreferencesFromLocalStorage();
-  console.log('[Preferences] Preferences to save:', prefs);
+  logger.info('[Preferences] Preferences to save:', prefs);
   if (prefs) {
     await savePreferencesToDB(userId, prefs);
-    console.log('[Preferences] Preferences saved to database');
+    logger.info('[Preferences] Preferences saved to database');
   }
 }

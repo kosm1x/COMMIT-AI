@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { Task, Goal, Objective } from "../components/objectives/types";
+import { logger } from '../utils/logger';
 
 export type TimeSlot = "morning" | "afternoon" | "evening" | "night";
 
@@ -260,7 +261,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
       .single();
 
     if (error) {
-      console.error("Error creating daily plan:", error);
+      logger.error("Error creating daily plan:", error);
       return null;
     }
 
@@ -297,7 +298,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
       });
 
       if (error) {
-        console.error("Error adding task to plan:", error);
+        logger.error("Error adding task to plan:", error);
         return false;
       }
 
@@ -317,7 +318,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
         .eq("id", plannedTaskId);
 
       if (error) {
-        console.error("Error removing task from plan:", error);
+        logger.error("Error removing task from plan:", error);
         return false;
       }
 
@@ -348,7 +349,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
         .eq("id", plannedTaskId);
 
       if (error) {
-        console.error("Error moving task to slot:", error);
+        logger.error("Error moving task to slot:", error);
         return false;
       }
 
@@ -373,7 +374,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
         .eq("id", plannedTaskId);
 
       if (error) {
-        console.error("Error reordering task:", error);
+        logger.error("Error reordering task:", error);
         return false;
       }
 
@@ -411,7 +412,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
         .eq("id", taskId);
 
       if (error) {
-        console.error("Error toggling task completion:", error);
+        logger.error("Error toggling task completion:", error);
         return false;
       }
 
@@ -450,7 +451,7 @@ export function useDailyPlanner(userId: string | undefined): DailyPlannerState {
         .eq("id", plan.id);
 
       if (error) {
-        console.error("Error updating plan notes:", error);
+        logger.error("Error updating plan notes:", error);
         return false;
       }
 

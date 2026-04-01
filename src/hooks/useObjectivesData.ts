@@ -8,6 +8,7 @@ import {
   sortObjectives,
   sortTasks,
 } from "../utils/autoSort";
+import { logger } from '../utils/logger';
 
 export interface ObjectivesDataState {
   visions: Vision[];
@@ -133,7 +134,7 @@ export function useObjectivesData(
       supabase
         .rpc("prune_completed_tasks" as never)
         .then(({ error }: { error: { message: string } | null }) => {
-          if (error) console.warn("Task pruning skipped:", error.message);
+          if (error) logger.warn("Task pruning skipped:", error.message);
           reloadAll();
         });
     } else {

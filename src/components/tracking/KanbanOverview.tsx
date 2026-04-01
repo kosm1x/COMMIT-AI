@@ -12,6 +12,7 @@ import {
   Clock,
   Pause,
 } from "lucide-react";
+import { logger } from '../../utils/logger';
 
 interface Item {
   id: string;
@@ -155,7 +156,7 @@ export default function KanbanOverview() {
 
       setAllItems(items);
     } catch (error) {
-      console.error("Error loading items:", error);
+      logger.error("Error loading items:", error);
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,7 @@ import {
   getEndOfMonth,
   getDaysInMonth,
 } from "../utils/trackingStats";
+import { logger } from '../utils/logger';
 
 export interface DayActivity {
   date: Date;
@@ -260,7 +261,7 @@ export function useCreativeData(
     try {
       await Promise.all([loadCreativeStats(), loadJournalData()]);
     } catch (error) {
-      console.error("Error loading data:", error);
+      logger.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
@@ -708,7 +709,7 @@ export function useCreativeData(
 
       setWordFrequencies(sortedWords);
     } catch (error) {
-      console.error("Error loading journal data:", error);
+      logger.error("Error loading journal data:", error);
     }
   };
 

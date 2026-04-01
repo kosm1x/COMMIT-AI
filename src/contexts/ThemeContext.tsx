@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { savePreferencesToLocalStorage, savePreferencesToDB } from '../services/userPreferencesService';
 import { supabase } from '../lib/supabase';
 import { updateStatusBarStyle } from '../services/nativePlatformService';
+import { logger } from '../utils/logger';
 
 type Theme = 'light' | 'dark';
 
@@ -25,11 +26,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Listen for preferences loaded event from AuthContext
   useEffect(() => {
     const handlePreferencesLoaded = () => {
-      console.log('[ThemeContext] Preferences loaded event received');
+      logger.info('[ThemeContext] Preferences loaded event received');
       const stored = localStorage.getItem('theme') as Theme | null;
-      console.log('[ThemeContext] Stored theme:', stored);
+      logger.info('[ThemeContext] Stored theme:', stored);
       if (stored) {
-        console.log('[ThemeContext] Updating theme to:', stored);
+        logger.info('[ThemeContext] Updating theme to:', stored);
         setTheme(stored);
       }
     };

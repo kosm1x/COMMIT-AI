@@ -16,6 +16,7 @@ import {
   savePreferencesToDB,
 } from "../services/userPreferencesService";
 import { supabase } from "../lib/supabase";
+import { logger } from '../utils/logger';
 
 interface LanguageContextType {
   language: Language;
@@ -46,11 +47,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Listen for preferences loaded event from AuthContext
   useEffect(() => {
     const handlePreferencesLoaded = () => {
-      console.log("[LanguageContext] Preferences loaded event received");
+      logger.info("[LanguageContext] Preferences loaded event received");
       const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-      console.log("[LanguageContext] Stored language:", stored);
+      logger.info("[LanguageContext] Stored language:", stored);
       if (stored === "en" || stored === "es" || stored === "zh") {
-        console.log("[LanguageContext] Updating language to:", stored);
+        logger.info("[LanguageContext] Updating language to:", stored);
         setLanguageState(stored);
       }
     };
@@ -61,7 +62,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    console.log(
+    logger.info(
       "Language changed to:",
       language,
       "saving to localStorage and DB",
@@ -78,7 +79,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language]);
 
   const setLanguage = (lang: Language) => {
-    console.log(
+    logger.info(
       "LanguageContext.setLanguage called with:",
       lang,
       "current:",

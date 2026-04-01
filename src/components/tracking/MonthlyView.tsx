@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar, TrendingUp, Target, CheckCircle2 } from 'lucide-react';
 import { getStartOfMonth, getEndOfMonth, getDaysInMonth } from '../../utils/trackingStats';
+import { logger } from '../../utils/logger';
 
 interface MonthlyStats {
   tasksCompleted: number;
@@ -144,7 +145,7 @@ export default function MonthlyView({ selectedDate }: MonthlyViewProps) {
       });
       setDailyActivity(activity);
     } catch (error) {
-      console.error('Error loading monthly data:', error);
+      logger.error('Error loading monthly data:', error);
     } finally {
       setLoading(false);
     }

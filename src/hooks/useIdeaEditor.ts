@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { transformIdeaText } from "../services/aiService";
 import type { Idea } from "../components/ideas/types";
+import { logger } from '../utils/logger';
 
 type TransformMode =
   | "enhance"
@@ -231,7 +232,7 @@ export function useIdeaEditor(
           setSelection({ start: 0, end: result.length, text: result });
         }
       } catch (error) {
-        console.error("Error transforming text:", error);
+        logger.error("Error transforming text:", error);
       } finally {
         setAiTransforming(null);
       }

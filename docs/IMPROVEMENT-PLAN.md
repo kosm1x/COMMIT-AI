@@ -9,20 +9,9 @@ Phase 5 completed: 2026-03-17 | 17 root .md files → 3, consolidated deployment
 Lint cleanup: 2026-03-17 | All 35 lint errors eliminated (28 any, 4 case-decl, 2 unused-vars, 1 prefer-const)
 Task pruning: 2026-03-17 | Auto-delete completed non-recurring tasks after 15 days (pg_cron + client RPC)
 
-## v2.26 Unification (2026-03-23 — Complete)
+## Jarvis Integration (Complete 2026-03-28)
 
-COMMIT and Jarvis (agent-controller) merged into a unified system.
-COMMIT is the strategic UI. Jarvis is the intelligence engine.
-Full plan: `mission-control/docs/v2.26-plan.md`
-
-| Session | COMMIT-side changes                                                                                                                                                     | Status                                              |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| 1       | `modified_by` column, `agent_suggestions` table, `commit-events` Edge Function, pg_net triggers                                                                         | **Done**                                            |
-| 2       | ai-proxy Jarvis-first routing, `callLLM()` function_name threading (12 functions), Groq fallback                                                                        | **Done**                                            |
-| 3       | Project entity + COMMIT linking (projects table, tools, credential resolution, `commit_goal_id`)                                                                        | **Done** (Jarvis-side; no COMMIT UI changes needed) |
-| 4       | Strategic autonomy: event reactor (6 handlers), proactive scanner, conversation→COMMIT pipeline, weekly review, required tool validation                                | **Done** (Jarvis-side)                              |
-| 5       | Reliability: per-tool metrics, event latency tracking, health endpoint, ACI enhancement (token budget + latency tracking already existed)                               | **Done** (Jarvis-side)                              |
-| 6       | Suggestions panel UI, activity feed, Jarvis badge in TabBar (SuggestionCard, SuggestionsPanel, SuggestionsBadge, ActivityFeed, suggestionsService, useAgentSuggestions) | **Done**                                            |
+COMMIT and Jarvis unified across two phases: v2.26 (6 sessions, data layer through UI) and v3.0 (production hardening). COMMIT = strategic UI, Jarvis = intelligence engine. All sessions complete. Details: `mission-control/docs/PROJECT-STATUS.md`.
 
 ## Executive Summary
 

@@ -5,6 +5,7 @@ import {
   syncPreferencesOnSignIn,
   syncPreferencesOnSignOut,
 } from "../services/userPreferencesService";
+import { logger } from '../utils/logger';
 
 interface AuthContextType {
   user: User | null;
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth
       .getSession()
       .then(async ({ data: { session } }) => {
-        console.log(
+        logger.info(
           "[AuthContext] getSession result:",
           session ? "User signed in" : "No session",
         );
@@ -59,14 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Check if preferences were already loaded this session
         const alreadyLoaded = getPreferencesLoadedFlag();
-        console.log(
+        logger.info(
           "[AuthContext] Preferences already loaded this session?",
           alreadyLoaded,
         );
 
         // Sync preferences from DB when user signs in (non-blocking, only once per browser session)
         if (session?.user && !alreadyLoaded) {
-          console.log(
+          logger.info(
             "[AuthContext] Syncing preferences for user:",
             session.user.id,
           );
@@ -74,19 +75,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Don't await - run in background to avoid blocking app loading
           syncPreferencesOnSignIn(session.user.id)
             .then(() => {
-              console.log(
+              logger.info(
                 "[AuthContext] Preferences synced, dispatching event",
               );
               window.dispatchEvent(new CustomEvent("preferencesLoaded"));
             })
             .catch((error) => {
-              console.error("[AuthContext] Error syncing preferences:", error);
+              logger.error("[AuthContext] Error syncing preferences:", error);
               // Still dispatch event so app doesn't hang waiting
               window.dispatchEvent(new CustomEvent("preferencesLoaded"));
             });
         } else if (session?.user && alreadyLoaded) {
           // If already loaded, still dispatch event so contexts can initialize from localStorage
-          console.log(
+          logger.info(
             "[AuthContext] Preferences already loaded, dispatching event for context initialization",
           );
           setTimeout(() => {
@@ -98,14 +99,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("[AuthContext] Error getting session:", error);
+        logger.error("[AuthContext] Error getting session:", error);
         setLoading(false);
       });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log(
+      logger.info(
         "[AuthContext] Auth state changed:",
         _event,
         session ? "User present" : "No user",
@@ -118,16 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Sync preferences when auth state changes to signed in (non-blocking, only once per browser session)
       if (session?.user && _event === "SIGNED_IN" && !alreadyLoaded) {
-        console.log("[AuthContext] User signed in, syncing preferences");
+        logger.info("[AuthContext] User signed in, syncing preferences");
         setPreferencesLoadedFlag(true);
         // Don't await - run in background
         syncPreferencesOnSignIn(session.user.id)
           .then(() => {
-            console.log("[AuthContext] Preferences synced, dispatching event");
+            logger.info("[AuthContext] Preferences synced, dispatching event");
             window.dispatchEvent(new CustomEvent("preferencesLoaded"));
           })
           .catch((error) => {
-            console.error("[AuthContext] Error syncing preferences:", error);
+            logger.error("[AuthContext] Error syncing preferences:", error);
             window.dispatchEvent(new CustomEvent("preferencesLoaded"));
           });
       }
@@ -194,13 +195,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Sign out from Supabase (this clears auth tokens from storage)
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error("Sign out error:", error);
+        logger.error("Sign out error:", error);
       }
 
       // React will automatically show login page when user becomes null
       // No page reload needed - Supabase's onAuthStateChange handles state update
     } catch (error) {
-      console.error("Failed to sign out:", error);
+      logger.error("Failed to sign out:", error);
     }
   };
 
