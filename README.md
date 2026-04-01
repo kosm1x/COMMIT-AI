@@ -169,8 +169,10 @@ e2e/                       # Playwright E2E tests
 ## Documentation
 
 - **[COMMIT_METHOD_GUIDE.md](./COMMIT_METHOD_GUIDE.md)** — Non-technical user guide
+- **[docs/NORTH-STAR.md](./docs/NORTH-STAR.md)** — Product vision and strategic priorities
+- **[docs/V4-TECHNICAL-PLAN.md](./docs/V4-TECHNICAL-PLAN.md)** — v4.0 implementation plan (retention, onboarding, push, insights)
 - **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** — Deployment guide and troubleshooting
-- **[docs/IMPROVEMENT-PLAN.md](./docs/IMPROVEMENT-PLAN.md)** — Improvement roadmap
+- **[docs/IMPROVEMENT-PLAN.md](./docs/IMPROVEMENT-PLAN.md)** — Historical improvement roadmap (Phases 1-6)
 - **[docs/TECHNICAL_SPECIFICATION.md](./docs/TECHNICAL_SPECIFICATION.md)** — Technical architecture
 
 ## License
