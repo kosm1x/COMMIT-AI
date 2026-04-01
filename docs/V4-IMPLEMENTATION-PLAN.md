@@ -9,6 +9,9 @@ COMMIT-AI has shipped all core features (Phases 1-6) and Jarvis integration (v2.
 1. **AI failure return type**: Discriminated union `AIResult<T> = { status: 'ok'; data: T } | { status: 'unavailable' }`. Every AI function adopts this return type. Callers pattern-match on `status`.
 2. **WelcomeModal**: Keep for step 0 (first login only). Remove language-change re-trigger. Available on-demand after that (e.g., help menu).
 3. **Onboarding advancement**: Auto-advance when criteria met. Success toast confirms: "Step complete! Next: [next step description]."
+4. **Settings page**: New `/settings` route. Houses notification preferences, data export, timezone, "Show COMMIT Guide" link, and existing theme/language toggles.
+5. **Onboarding banner**: Collapsible — small pill on mobile (shows step + pillar badge), full bar on desktop. Non-blocking, scrolls with content.
+6. **AI unavailable component**: Shared `src/components/ui/AIUnavailable.tsx` created in Session 1 before any page touches. Ensures consistent treatment across 5+ pages.
 
 ---
 
@@ -53,6 +56,21 @@ export const aiUnavailable: { status: "unavailable" } = {
 | `src/components/map/MindMapView.tsx`  | `'unavailable'` → show inline message instead of blank area.                                                                              |
 | `src/pages/Ideate.tsx`                | `'unavailable'` → error toast via NotificationContext.                                                                                    |
 | `src/pages/Objectives.tsx`            | `'unavailable'` → inline message under suggest buttons.                                                                                   |
+
+**New shared component:** `src/components/ui/AIUnavailable.tsx` (~40 LOC)
+
+```typescript
+interface AIUnavailableProps {
+  onRetry?: () => void;
+  compact?: boolean; // true for inline use (panels), false for card use (pages)
+}
+```
+
+- Renders: cloud-off icon, "AI analysis unavailable" message, optional "Try again" button
+- Compact mode: single line with icon + text + retry link (for AIAssistantPanel sections)
+- Full mode: centered card with icon, message, detail text, retry button (for Journal, MindMap)
+- Dark mode aware, uses existing Tailwind palette
+- All text via i18n
 
 **i18n:** Add keys to `en.ts`, `es.ts`, `zh.ts`: `ai.unavailable`, `ai.retry`, `ai.unavailableDetail`.
 
@@ -248,6 +266,25 @@ Pattern: `{items.length === 0 && <div className="text-center py-12 text-text-ter
 - Add `visibleLevels` filter that respects onboarding state
 - When reduced: selecting a Goal directly shows its Tasks (skip Objective level)
 
+### 2D. Settings page
+
+**New file:** `src/pages/Settings.tsx` (~200 LOC)
+
+Dedicated `/settings` route. Consolidates scattered preferences and provides a home for v4.0 features.
+
+**Sections:**
+
+- **Appearance**: Theme toggle (light/dark), language selector — migrated from current header placement
+- **Notifications**: Journal reminder, streak alert, task due, weekly digest toggles + reminder hour picker (Session 3 wires these)
+- **Data**: "Export My Data" button (Session 5 wires this), timezone display
+- **About**: "Show COMMIT Guide" link (opens WelcomeModal on-demand), app version
+
+**Modify:** `src/config/navigation.ts` — add Settings route (gear icon in nav, not in bottom tab bar — accessible from header)
+**Modify:** `src/App.tsx` — add lazy-loaded `/settings` route
+**Modify:** Header component — add gear icon linking to `/settings`, remove inline theme/language toggles
+
+**i18n:** Add `settings.appearance`, `settings.notifications`, `settings.data`, `settings.about`, `settings.exportData`, `settings.showGuide` to all 3 language files.
+
 **Dependencies:** Requires Session 1 only for AI unavailable states to show cleanly during onboarding steps 1-2. Otherwise independent.
 
 ---
@@ -331,9 +368,7 @@ ALTER TABLE user_preferences
 - Extend `savePreferences()` and `loadPreferences()` to include them
 - Auto-detect timezone on sign-in: `Intl.DateTimeFormat().resolvedOptions().timeZone`
 
-**New UI:** Add "Notifications" section to Settings (currently lives where? Need to check — likely in a settings modal or page linked from navigation).
-
-Search for existing settings UI — may be inline in nav/header or a dedicated component. The notification toggles go there.
+**Modify:** `src/pages/Settings.tsx` (created in Session 2D) — wire the Notifications section with toggles bound to these new columns + reminder hour picker.
 
 ### 3D. Server-side push delivery
 
