@@ -10,6 +10,7 @@ import OnboardingBanner from "../onboarding/OnboardingBanner";
 import { useLastPageTracking } from "../../hooks/useLastPageTracking";
 import { useOnboarding } from "../../hooks/useOnboarding";
 import { useAgentSuggestions } from "../../hooks/useAgentSuggestions";
+import { useNotificationScheduler } from "../../hooks/useNotificationScheduler";
 import { SuggestionsPanel } from "../suggestions";
 
 interface AppLayoutProps {
@@ -35,6 +36,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   } = useAgentSuggestions();
 
   useLastPageTracking();
+  useNotificationScheduler();
   const onboarding = useOnboarding();
 
   const tabTranslations = {

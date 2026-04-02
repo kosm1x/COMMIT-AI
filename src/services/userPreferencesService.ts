@@ -8,6 +8,24 @@ export interface UserPreferences {
   last_page_visited: string;
 }
 
+export interface NotificationPreferences {
+  notify_journal_reminder: boolean;
+  notify_streak_alert: boolean;
+  notify_task_due: boolean;
+  notify_weekly_digest: boolean;
+  reminder_hour: number;
+  timezone: string | null;
+}
+
+const DEFAULT_NOTIFICATION_PREFS: NotificationPreferences = {
+  notify_journal_reminder: true,
+  notify_streak_alert: true,
+  notify_task_due: true,
+  notify_weekly_digest: true,
+  reminder_hour: 20,
+  timezone: null,
+};
+
 const PREFS_STORAGE_KEY = "commit_user_preferences";
 
 /**
@@ -189,6 +207,76 @@ export async function syncPreferencesOnSignOut(userId: string) {
   if (prefs) {
     await savePreferencesToDB(userId, prefs);
     logger.info("[Preferences] Preferences saved to database");
+  }
+}
+
+/**
+ * Load notification preferences from database
+ */
+export async function loadNotificationPrefs(
+  userId: string,
+): Promise<NotificationPreferences> {
+  try {
+    const { data, error } = await supabase
+      .from("user_preferences")
+      .select(
+        "notify_journal_reminder, notify_streak_alert, notify_task_due, notify_weekly_digest, reminder_hour, timezone",
+      )
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return { ...DEFAULT_NOTIFICATION_PREFS };
+    }
+
+    // Columns added in migration 20260402000001 — not yet in generated types
+    const raw = data as unknown as Record<string, unknown>;
+    return {
+      notify_journal_reminder:
+        (raw.notify_journal_reminder as boolean | null) ??
+        DEFAULT_NOTIFICATION_PREFS.notify_journal_reminder,
+      notify_streak_alert:
+        (raw.notify_streak_alert as boolean | null) ??
+        DEFAULT_NOTIFICATION_PREFS.notify_streak_alert,
+      notify_task_due:
+        (raw.notify_task_due as boolean | null) ??
+        DEFAULT_NOTIFICATION_PREFS.notify_task_due,
+      notify_weekly_digest:
+        (raw.notify_weekly_digest as boolean | null) ??
+        DEFAULT_NOTIFICATION_PREFS.notify_weekly_digest,
+      reminder_hour:
+        (raw.reminder_hour as number | null) ??
+        DEFAULT_NOTIFICATION_PREFS.reminder_hour,
+      timezone: (raw.timezone as string | null) ?? null,
+    };
+  } catch (error) {
+    logger.error("[Preferences] Failed to load notification prefs:", error);
+    return { ...DEFAULT_NOTIFICATION_PREFS };
+  }
+}
+
+/**
+ * Save notification preferences to database.
+ * Also auto-detects timezone if not already set.
+ */
+export async function saveNotificationPrefs(
+  userId: string,
+  prefs: Partial<NotificationPreferences>,
+): Promise<void> {
+  try {
+    const timezone =
+      prefs.timezone ??
+      Intl.DateTimeFormat().resolvedOptions().timeZone ??
+      null;
+
+    await supabase
+      .from("user_preferences")
+      .update({ ...prefs, timezone } as Record<string, unknown>)
+      .eq("user_id", userId);
+
+    logger.info("[Preferences] Notification prefs saved");
+  } catch (error) {
+    logger.error("[Preferences] Failed to save notification prefs:", error);
   }
 }
 

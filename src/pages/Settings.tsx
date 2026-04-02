@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -9,14 +10,60 @@ import {
   Download,
   BookOpen,
   Bell,
+  BellOff,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import { Header } from "../components/ui";
+import {
+  loadNotificationPrefs,
+  saveNotificationPrefs,
+} from "../services/userPreferencesService";
+import type { NotificationPreferences } from "../services/userPreferencesService";
+
+function formatHour(hour: number): string {
+  const h = hour % 12 || 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+  return `${h}:00 ${ampm}`;
+}
 
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>({
+    notify_journal_reminder: true,
+    notify_streak_alert: true,
+    notify_task_due: true,
+    notify_weekly_digest: true,
+    reminder_hour: 20,
+    timezone: null,
+  });
+  const [notifLoaded, setNotifLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    loadNotificationPrefs(user.id).then((prefs) => {
+      setNotifPrefs(prefs);
+      setNotifLoaded(true);
+    });
+  }, [user]);
+
+  const updateNotifPref = useCallback(
+    (key: keyof NotificationPreferences, value: boolean | number) => {
+      if (!user) return;
+      const updated = { ...notifPrefs, [key]: value };
+      setNotifPrefs(updated);
+      saveNotificationPrefs(user.id, { [key]: value });
+      // Dispatch event so notificationScheduler can reschedule
+      window.dispatchEvent(
+        new CustomEvent("notificationPrefsChanged", { detail: updated }),
+      );
+    },
+    [user, notifPrefs],
+  );
+
   if (!user) return null;
 
   const languages = [
@@ -24,6 +71,9 @@ export default function Settings() {
     { code: "es" as const, label: "Español" },
     { code: "zh" as const, label: "中文" },
   ];
+
+  const toggleRowClass =
+    "w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
@@ -50,10 +100,7 @@ export default function Settings() {
             {t("settings.appearance") || "Appearance"}
           </h3>
 
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-          >
+          <button onClick={toggleTheme} className={toggleRowClass}>
             <div className="flex items-center gap-3">
               {theme === "dark" ? (
                 <Moon className="w-5 h-5 text-text-secondary" />
@@ -94,18 +141,174 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* Notifications (placeholder for Session 3) */}
+        {/* Notifications */}
         <section className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
           <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider px-4 pt-4 pb-2">
             {t("settings.notifications") || "Notifications"}
           </h3>
-          <div className="px-4 py-3 flex items-center gap-3 text-text-tertiary">
-            <Bell className="w-5 h-5" />
-            <span className="text-sm">
-              {t("settings.notificationsComingSoon") ||
-                "Push notifications coming soon"}
-            </span>
-          </div>
+
+          {notifLoaded ? (
+            <>
+              {/* Journal Reminder */}
+              <div className={toggleRowClass}>
+                <div className="flex items-center gap-3">
+                  <Bell className="w-5 h-5 text-text-secondary" />
+                  <span className="text-sm text-text-primary">
+                    {t("settings.journalReminder") || "Journal reminder"}
+                  </span>
+                </div>
+                <button
+                  onClick={() =>
+                    updateNotifPref(
+                      "notify_journal_reminder",
+                      !notifPrefs.notify_journal_reminder,
+                    )
+                  }
+                  className={`w-10 h-6 rounded-full transition-colors relative ${
+                    notifPrefs.notify_journal_reminder
+                      ? "bg-indigo-600"
+                      : "bg-gray-300 dark:bg-gray-700"
+                  }`}
+                  aria-label={
+                    t("settings.journalReminder") || "Toggle journal reminder"
+                  }
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                      notifPrefs.notify_journal_reminder
+                        ? "translate-x-[18px]"
+                        : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Reminder Hour */}
+              {notifPrefs.notify_journal_reminder && (
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3 ml-8">
+                    <Clock className="w-4 h-4 text-text-tertiary" />
+                    <span className="text-sm text-text-secondary">
+                      {t("settings.reminderTime") || "Reminder time"}
+                    </span>
+                  </div>
+                  <select
+                    value={notifPrefs.reminder_hour}
+                    onChange={(e) =>
+                      updateNotifPref("reminder_hour", Number(e.target.value))
+                    }
+                    className="text-sm bg-gray-100 dark:bg-gray-800 text-text-primary rounded-lg px-2 py-1 border-0 focus:ring-2 focus:ring-indigo-500"
+                    aria-label={
+                      t("settings.reminderTime") || "Select reminder time"
+                    }
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {formatHour(i)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Streak Alert */}
+              <div className={toggleRowClass}>
+                <div className="flex items-center gap-3">
+                  <Bell className="w-5 h-5 text-text-secondary" />
+                  <span className="text-sm text-text-primary">
+                    {t("settings.streakAlert") || "Streak alert"}
+                  </span>
+                </div>
+                <button
+                  onClick={() =>
+                    updateNotifPref(
+                      "notify_streak_alert",
+                      !notifPrefs.notify_streak_alert,
+                    )
+                  }
+                  className={`w-10 h-6 rounded-full transition-colors relative ${
+                    notifPrefs.notify_streak_alert
+                      ? "bg-indigo-600"
+                      : "bg-gray-300 dark:bg-gray-700"
+                  }`}
+                  aria-label={
+                    t("settings.streakAlert") || "Toggle streak alert"
+                  }
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                      notifPrefs.notify_streak_alert
+                        ? "translate-x-[18px]"
+                        : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Task Due */}
+              <div className={toggleRowClass}>
+                <div className="flex items-center gap-3">
+                  <Bell className="w-5 h-5 text-text-secondary" />
+                  <span className="text-sm text-text-primary">
+                    {t("settings.taskDue") || "Task due dates"}
+                  </span>
+                </div>
+                <button
+                  onClick={() =>
+                    updateNotifPref(
+                      "notify_task_due",
+                      !notifPrefs.notify_task_due,
+                    )
+                  }
+                  className={`w-10 h-6 rounded-full transition-colors relative ${
+                    notifPrefs.notify_task_due
+                      ? "bg-indigo-600"
+                      : "bg-gray-300 dark:bg-gray-700"
+                  }`}
+                  aria-label={t("settings.taskDue") || "Toggle task due alerts"}
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                      notifPrefs.notify_task_due
+                        ? "translate-x-[18px]"
+                        : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Weekly Digest */}
+              <div className={toggleRowClass}>
+                <div className="flex items-center gap-3">
+                  <BellOff className="w-5 h-5 text-text-tertiary" />
+                  <div>
+                    <span className="text-sm text-text-secondary">
+                      {t("settings.weeklyDigest") || "Weekly digest"}
+                    </span>
+                    <span className="text-xs text-text-tertiary ml-2">
+                      {t("common.comingSoon") || "Coming soon"}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  disabled
+                  className="w-10 h-6 rounded-full bg-gray-300 dark:bg-gray-700 relative opacity-50 cursor-not-allowed"
+                  aria-label={
+                    t("settings.weeklyDigest") || "Weekly digest toggle"
+                  }
+                >
+                  <span className="absolute top-0.5 translate-x-0.5 w-5 h-5 rounded-full bg-white shadow" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="px-4 py-3 flex items-center gap-3 text-text-tertiary">
+              <Bell className="w-5 h-5 animate-pulse" />
+              <span className="text-sm">
+                {t("common.loading") || "Loading..."}
+              </span>
+            </div>
+          )}
         </section>
 
         {/* Data */}

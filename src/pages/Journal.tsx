@@ -5,6 +5,7 @@ import { useNotification } from "../contexts/NotificationContext";
 import { supabase } from "../lib/supabase";
 import { analyzeJournalEntry } from "../services/aiService";
 import AIUnavailable from "../components/ui/AIUnavailable";
+import { cancelStreakAlert } from "../services/notificationScheduler";
 import { formatShortDate } from "../utils/trackingStats";
 import { Card, Button, IconButton, BottomSheet } from "../components/ui";
 import { Header } from "../components/ui";
@@ -194,6 +195,8 @@ export default function Journal() {
       }
     } finally {
       setSaving(false);
+      // Cancel today's streak alert — user already journaled
+      cancelStreakAlert().catch(() => {});
     }
   };
 
