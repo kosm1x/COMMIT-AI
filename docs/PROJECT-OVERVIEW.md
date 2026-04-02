@@ -45,8 +45,8 @@ Five beliefs shape every decision:
 | Layer      | Technology                                      | Notes                                              |
 | ---------- | ----------------------------------------------- | -------------------------------------------------- |
 | Frontend   | React 18 + TypeScript 5.5 + Vite 5 + Tailwind 3 | SPA, lazy-loaded pages, dark mode                  |
-| Database   | Supabase (PostgreSQL)                           | 22 migrations, 15+ tables, RLS on everything       |
-| Auth       | Supabase Auth                                   | Email/password + biometric via Capacitor           |
+| Database   | Self-hosted PostgreSQL 15 (Supabase image)      | 25 migrations, 16 tables, RLS on everything        |
+| Auth       | Self-hosted GoTrue (Supabase Auth)              | Email/password + biometric via Capacitor           |
 | AI         | Vendor-agnostic via Edge Function               | Groq (Qwen 3.2) default, configurable via env vars |
 | Validation | Zod                                             | 11 schemas for all AI response types               |
 | Mobile     | Capacitor 8                                     | iOS + Android shells                               |
@@ -154,6 +154,7 @@ The banner is collapsible (pill on mobile, full bar on desktop), non-blocking, a
 | 2026-03-28    | Phase 6 + Jarvis Integration           | DB indexes, E2E tests, undo/redo, Jarvis unification (v2.26 + v3.0)                                                                            |
 | 2026-04-01    | v4.0 Sessions 1-2                      | Honest AI (discriminated unions, contextual engine, feedback tracking), guided onboarding, Settings page, empty states, progressive disclosure |
 | 2026-04-02    | v4.0 Session 3                         | Push notifications: Capacitor local + PWA service worker + Edge Function delivery + notification preferences UI                                |
+| 2026-04-02    | Supabase self-hosted migration         | Moved from hosted Supabase to self-hosted on VPS (5 Docker containers, 277 MB RAM, zero egress cost). Caddy TLS at db.mycommit.net             |
 
 ### By the Numbers
 

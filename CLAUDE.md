@@ -20,13 +20,13 @@ npm run types:generate # Regenerate Supabase types (requires local Supabase runn
 ## Stack
 
 - **Frontend**: React 18 + TypeScript 5.5 + Vite 5 + Tailwind 3
-- **Database**: Supabase (PostgreSQL + RLS on all 15 tables + Auth)
+- **Database**: Self-hosted Supabase on VPS — PostgreSQL 15 + GoTrue Auth + PostgREST + Edge Runtime (RLS on all 16 tables)
 - **AI**: Groq API (Qwen 3.2) via Supabase Edge Function (`ai-proxy`) — key is server-side, vendor-agnostic via `LLM_MODEL`/`LLM_ENDPOINT` env vars
 - **Validation**: Zod schemas for all 11 AI response types (`src/lib/aiSchemas.ts`)
 - **Mobile**: Capacitor 8 (iOS + Android)
 - **Diagrams**: Mermaid 11 (mind maps)
 - **Push**: Capacitor Local Notifications (native) + PWA Service Worker (web)
-- **No custom backend** — Supabase Edge Functions for AI proxy, push delivery, browser for everything else
+- **Infra**: Self-hosted at `db.mycommit.net` via Caddy (TLS) → Kong → GoTrue/PostgREST/Edge Runtime. Daily pg_dump backups
 
 ## Architecture
 
@@ -68,7 +68,7 @@ src/
   i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
 supabase/
-  migrations/                    # 24 SQL migrations (additive only)
+  migrations/                    # 25 SQL migrations (additive only)
   functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
   functions/commit-events/       # Edge Function: DB webhook → Jarvis event bridge
   functions/push-notify/         # Edge Function: server-side push notification delivery
@@ -109,9 +109,9 @@ Supabase Auth (email/password). `AuthContext` manages session + syncs `user_pref
 ## Environment
 
 ```
-VITE_SUPABASE_URL=...
+VITE_SUPABASE_URL=https://db.mycommit.net
 VITE_SUPABASE_ANON_KEY=...
-# --- Edge Function secrets (Supabase dashboard, not in client code) ---
+# --- Edge Function secrets (self-hosted: /opt/supabase/.env on VPS) ---
 # GROQ_API_KEY          — Groq LLM fallback key
 # LLM_API_KEY           — Primary LLM provider key
 # LLM_ENDPOINT          — Primary LLM endpoint URL

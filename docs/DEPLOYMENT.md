@@ -25,12 +25,14 @@ COMMIT Journal is a React SPA with a Supabase backend. The build produces static
 ## Environment Variables
 
 **Client-side** (set in hosting platform):
+
 ```
-VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_URL=https://db.mycommit.net
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-**Server-side** (set as Supabase Edge Function secrets):
+**Server-side** (self-hosted: `/opt/supabase/.env` on VPS):
+
 ```
 LLM_API_KEY=your_api_key
 LLM_MODEL=qwen-qwq-32b          # optional, defaults to Groq Qwen
@@ -129,17 +131,20 @@ CMD ["nginx", "-g", "daemon off;"]
 ## Troubleshooting
 
 ### Build Errors
+
 - Ensure Node.js 18+ and all dependencies installed (`npm install`)
 - Clear and reinstall: `rm -rf node_modules && npm install`
 - Run `npm run typecheck` to surface type errors
 
 ### Runtime Errors
+
 - Check browser console for errors
 - Verify `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set
 - Check Supabase connection and RLS policies
 - AI features fall back to mock data if Edge Function is unreachable
 
 ### Performance
+
 - Check bundle sizes in build output
 - Code splitting is pre-configured (React, Supabase, Mermaid vendor chunks)
 - All routes use lazy loading
