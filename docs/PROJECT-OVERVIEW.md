@@ -153,6 +153,7 @@ The banner is collapsible (pill on mobile, full bar on desktop), non-blocking, a
 | 2026-03-17    | Phases 3-5: Performance, Testing, Docs | Memoization, pagination, accessibility, 215 tests, doc cleanup                                                                                 |
 | 2026-03-28    | Phase 6 + Jarvis Integration           | DB indexes, E2E tests, undo/redo, Jarvis unification (v2.26 + v3.0)                                                                            |
 | 2026-04-01    | v4.0 Sessions 1-2                      | Honest AI (discriminated unions, contextual engine, feedback tracking), guided onboarding, Settings page, empty states, progressive disclosure |
+| 2026-04-02    | v4.0 Session 3                         | Push notifications: Capacitor local + PWA service worker + Edge Function delivery + notification preferences UI                                |
 
 ### By the Numbers
 
@@ -162,15 +163,15 @@ The banner is collapsible (pill on mobile, full bar on desktop), non-blocking, a
 | Test assertions        | 0             | 217                       |
 | Test files             | 0             | 14                        |
 | E2E tests              | 0             | 8                         |
-| DB tables              | 8             | 15+                       |
-| SQL migrations         | ~10           | 22                        |
+| DB tables              | 8             | 16                        |
+| SQL migrations         | ~10           | 24                        |
 | ARIA labels            | 4             | 46+                       |
 | Client-side secrets    | 1             | 0                         |
 | Lint errors            | 35            | 0                         |
 | `any` types            | 71            | 0                         |
 | AI response validation | None          | 11 Zod schemas            |
 | i18n languages         | 3             | 3 (with full v4 coverage) |
-| Source LOC             | ~20K          | ~29K                      |
+| Source LOC             | ~20K          | ~30K                      |
 
 ### What Changed and Why
 
@@ -188,13 +189,11 @@ The banner is collapsible (pill on mobile, full bar on desktop), non-blocking, a
 
 ### What's Shipped
 
-**Sessions 1-2 are complete.** The AI is honest and contextual. New users get a guided 7-day onboarding. Every page has empty-state guidance. The objectives hierarchy simplifies itself for beginners. There's a proper Settings page.
+**Sessions 1-3 are complete.** The AI is honest and contextual. New users get a guided 7-day onboarding. Every page has empty-state guidance. The objectives hierarchy simplifies itself for beginners. There's a proper Settings page. Push notifications are wired — local scheduling on native, PWA + service worker on web, server-side Edge Function for delivery.
 
 ### What's Next
 
-Three sessions remain before v4.0 is feature-complete:
-
-**Session 3: Push Notifications** — The #1 retention lever. Daily journal reminders, streak alerts, task due dates. Capacitor for native, Push API for web. Notification preferences in Settings. Server-side delivery via Edge Function + pg_cron.
+Two sessions remain before v4.0 is feature-complete:
 
 **Session 4: Weekly Digest & Insights** — Transform Tracking from "here are numbers" to "here's proof you're growing." AI-generated weekly digest with interpretive insights. Week-over-week deltas. Streak celebrations at milestones (3, 7, 30 days).
 
@@ -214,15 +213,18 @@ This is an MVP preparing for real users. Before the next push of improvement, th
 
 5. **Settings page** — Is it discoverable enough? Should theme/language also remain in the header, or is Settings-only sufficient?
 
-6. **Mobile experience** — The layout is responsive, but hasn't been tested on physical devices with the new onboarding banner and Settings page.
+6. **Mobile experience** — The layout is responsive, but hasn't been tested on physical devices with the new onboarding banner, Settings page, and notification scheduling.
+
+7. **Push notifications** — Local notifications schedule correctly on native? Web notifications fire when tab is open? Settings toggles + hour picker persist and reschedule? Streak alert cancels on journal save?
 
 ### Known Gaps
 
-- Push notifications not yet implemented (Session 3)
+- VAPID keys not generated yet (needed for web push background delivery)
+- FCM/APNs not configured (needed for native remote push; local notifications cover the gap)
 - Tracking page shows raw data, no interpretive layer (Session 4)
 - Idea connections are ephemeral — lost on page refresh (Session 5)
 - No data export (Session 5)
-- No offline support
+- No offline support beyond PWA shell
 - Service role key hardcoded in one migration (documented, repo is private)
 
 ---
@@ -276,6 +278,6 @@ Deployed to `app.mycommit.net` via rsync to Hostinger VPS (port 65002).
 
 ---
 
-_157 commits. 29,000 lines of TypeScript. 22 migrations. 217 tests. Three languages. One loop._
+_160 commits. 30,000 lines of TypeScript. 24 migrations. 217 tests. Three languages. One loop._
 
 _The COMMIT framework is the seed. The product is the soil, water, and sunlight. The job is to make growth inevitable._

@@ -25,23 +25,25 @@ npm run types:generate # Regenerate Supabase types (requires local Supabase runn
 - **Validation**: Zod schemas for all 11 AI response types (`src/lib/aiSchemas.ts`)
 - **Mobile**: Capacitor 8 (iOS + Android)
 - **Diagrams**: Mermaid 11 (mind maps)
-- **No custom backend** — Supabase Edge Functions for AI proxy, browser for everything else
+- **Push**: Capacitor Local Notifications (native) + PWA Service Worker (web)
+- **No custom backend** — Supabase Edge Functions for AI proxy, push delivery, browser for everything else
 
 ## Architecture
 
 ```
 src/
   App.tsx                        # Router + context providers (Language > Theme > Auth > Notification > Undo > BrowserRouter)
-  pages/                         # 6 lazy-loaded route components + Login (direct import)
+  pages/                         # 7 lazy-loaded route components + Login (direct import)
     IdeaDetail.tsx               # Layout orchestrator (split in Phase 2.2)
   components/                    # 60+ components in domain folders:
     ideas/                       #   types.ts, SelectionMenu.tsx, ConnectionsSidebar.tsx
     journal/, objectives/,       #   cards/, columns/, modals/ subfolders
     map/, tracking/,             #   widgets/ subfolder
     suggestions/                 #   SuggestionsPanel, SuggestionCard, SuggestionsBadge, ActivityFeed
+    onboarding/                  #   OnboardingBanner (collapsible 7-day progress)
     navigation/, layout/, ui/
   contexts/                      # AuthContext, ThemeContext, LanguageContext, NotificationContext, UndoContext
-  hooks/                         # 12 custom hooks
+  hooks/                         # 14 custom hooks
     useObjectivesState.ts        # Thin composer (split in Phase 2.1)
     useObjectivesData.ts         # Data loading + state
     useObjectivesSelection.ts    # Selection path + navigation
@@ -49,11 +51,15 @@ src/
     useIdeaEditor.ts             # Text selection + AI transforms
     useFocusTrap.ts              # Tab cycling + focus restore for modals
     useAgentSuggestions.ts       # Jarvis suggestions state + accept/reject
-  services/                      # 7 services
+    useOnboarding.ts             # 7-day time-gated onboarding state machine
+    useNotificationScheduler.ts  # Push notification lifecycle management
+  services/                      # 9 services
     aiService.ts                 # Barrel re-export for 12 AI functions (split into ai/ modules)
-    ai/                          #   callLLM, journal, mindmap, ideas, strategic, analysis, objectives
+    ai/                          #   callLLM, journal, mindmap, ideas, strategic, analysis, objectives, userContext
     objectivesService.ts         # CRUD for Vision/Goal/Objective/Task
     suggestionsService.ts        # CRUD for agent_suggestions (Jarvis proposals)
+    notificationScheduler.ts     # Local + web notification scheduling
+    nativePlatformService.ts     # Capacitor platform detection + native APIs
   lib/
     supabase.ts                  # Typed client: createClient<Database>()
     database.types.ts            # Auto-generated from DB (npm run types:generate)
@@ -62,9 +68,10 @@ src/
   i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
 supabase/
-  migrations/                    # 20 SQL migrations (additive only)
+  migrations/                    # 24 SQL migrations (additive only)
   functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
   functions/commit-events/       # Edge Function: DB webhook → Jarvis event bridge
+  functions/push-notify/         # Edge Function: server-side push notification delivery
   config.toml                    # Local Supabase config (for types:generate)
 docs/                            # Improvement plan, deployment, tech spec
 ```
@@ -73,9 +80,9 @@ docs/                            # Improvement plan, deployment, tech spec
 
 Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent (orphaned items supported). Status: `not_started | in_progress | completed | on_hold`. Priority: `high | medium | low`. Completed non-recurring tasks are auto-pruned after 15 days via `prune_completed_tasks()` (pg_cron daily + client RPC on login).
 
-### Database tables (15)
+### Database tables (16)
 
-`journal_entries`, `ai_analysis`, `visions`, `goals`, `objectives`, `tasks`, `task_completions`, `ideas`, `idea_connections`, `idea_ai_suggestions`, `mind_maps`, `user_preferences`, `daily_plans`, `daily_plan_tasks`, `agent_suggestions`. All have `user_id` FK with CASCADE DELETE + RLS policies for SELECT/INSERT/UPDATE/DELETE. The 4 hierarchy tables + `journal_entries` have `modified_by` provenance tracking (`user`/`jarvis`/`system`).
+`journal_entries`, `ai_analysis`, `visions`, `goals`, `objectives`, `tasks`, `task_completions`, `ideas`, `idea_connections`, `idea_ai_suggestions`, `mind_maps`, `user_preferences`, `daily_plans`, `daily_plan_tasks`, `agent_suggestions`, `push_tokens`. All have `user_id` FK with CASCADE DELETE + RLS policies for SELECT/INSERT/UPDATE/DELETE. The 4 hierarchy tables + `journal_entries` have `modified_by` provenance tracking (`user`/`jarvis`/`system`). `user_preferences` has notification columns: `notify_journal_reminder`, `notify_streak_alert`, `notify_task_due`, `notify_weekly_digest`, `reminder_hour`, `timezone`, plus onboarding columns: `onboarding_day`, `onboarding_started_at`, `onboarding_completed_at`, plus `ai_feedback` JSONB.
 
 ### AI service (`src/services/aiService.ts`)
 
@@ -156,8 +163,18 @@ See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
 3. ~~Performance & UX~~ — DONE (2026-03-17)
 4. ~~Testing Depth~~ — DONE (2026-03-17)
 5. ~~Documentation Cleanup~~ — DONE (2026-03-17)
-6. ~~Future Enhancements~~ — 4 done (indexes, password UI, E2E, undo/redo), 1 skipped (virtual scrolling), 4 remaining (PWA, push, WebAuthn, Storybook)
+6. ~~Future Enhancements~~ — 4 done (indexes, password UI, E2E, undo/redo), 1 skipped (virtual scrolling), 2 remaining (WebAuthn, Storybook). PWA + push done in v4.0
 
 ### Jarvis Integration — COMPLETE (v2.26 unification + v3.0 hardening)
 
 COMMIT = strategic UI. Jarvis = intelligence engine. Unified data layer, Jarvis-first AI routing with Groq fallback, event-driven reactions, suggestions panel UI, structured logging (Pino), 3-layer tool guardrails, provider rotation. Details: `mission-control/docs/PROJECT-STATUS.md`.
+
+### v4.0 Retention — IN PROGRESS (3 of 5 sessions done)
+
+1. ~~Honest AI~~ — DONE: `AIResult<T>` discriminated unions, contextual AI engine, feedback tracking
+2. ~~Guided Onboarding~~ — DONE: 7-day time-gated flow, empty states, progressive disclosure, Settings page
+3. ~~Push Notifications~~ — DONE: Capacitor local + PWA service worker + Edge Function delivery + Settings UI
+4. Weekly Digest & Insights — remaining
+5. Quick Wins (persist idea connections, data export) — remaining
+
+Details: `docs/V4-IMPLEMENTATION-PLAN.md`. Project overview: `docs/PROJECT-OVERVIEW.md`.
