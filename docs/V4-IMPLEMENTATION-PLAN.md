@@ -338,7 +338,9 @@ Dedicated `/settings` route. Consolidates scattered preferences and provides a h
 
 ---
 
-## Session 3: Push Notifications
+## Session 3: Push Notifications — DONE (4998803)
+
+> 18 files, 1,097 insertions. 2 migrations, notificationScheduler service, useNotificationScheduler hook, Settings UI with toggles + hour picker, PWA manifest + service worker, push-notify Edge Function. QA passed.
 
 **Goal:** Daily journal reminder, streak alerts, task due dates. Works on native (Capacitor) and web (Push API).
 
