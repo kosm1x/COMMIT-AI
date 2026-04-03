@@ -396,6 +396,11 @@ export const en = {
     // Weekly digest notification
     weeklyDigestTitle: "Your Weekly Summary",
     weeklyDigestBody: "See how your week went — insights are ready.",
+    // Pattern detection (v4.1)
+    mostProductiveDay: "Most productive day",
+    mostReflectiveDay: "Most reflective day",
+    emotionTrending: "{emotion} trending",
+    weeksImproving: "{n} weeks improving",
   },
   // Map/Kanban
   map: {

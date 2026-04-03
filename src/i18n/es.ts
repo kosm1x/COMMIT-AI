@@ -401,6 +401,10 @@ export const es = {
     keepGoing: "¡Sigue así!",
     weeklyDigestTitle: "Tu Resumen Semanal",
     weeklyDigestBody: "Mira cómo fue tu semana — los análisis están listos.",
+    mostProductiveDay: "Día más productivo",
+    mostReflectiveDay: "Día más reflexivo",
+    emotionTrending: "{emotion} en tendencia",
+    weeksImproving: "{n} semanas mejorando",
   },
   // Map/Kanban
   map: {

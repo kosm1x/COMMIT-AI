@@ -3,6 +3,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { supabase } from "../../lib/supabase";
 import { calculateJournalStreak } from "../../utils/streakCalculator";
+import { detectPatterns } from "../../utils/patternDetector";
+import type { Patterns } from "../../utils/patternDetector";
 import {
   Lightbulb,
   Flame,
@@ -10,6 +12,7 @@ import {
   Target,
   CalendarClock,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 
 interface WeeklyStats {
@@ -28,6 +31,7 @@ export default function InsightsCard() {
   const [tasksDueToday, setTasksDueToday] = useState(0);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats | null>(null);
   const [insights, setInsights] = useState<string[]>([]);
+  const [patterns, setPatterns] = useState<Patterns | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -38,7 +42,14 @@ export default function InsightsCard() {
         .toISOString()
         .slice(0, 10);
 
-      const [journalResult, tasksResult, digestResult] = await Promise.all([
+      const [
+        journalResult,
+        tasksResult,
+        digestResult,
+        taskDatesResult,
+        emotionsResult,
+        digestsHistoryResult,
+      ] = await Promise.all([
         supabase
           .from("journal_entries")
           .select("entry_date")
@@ -58,6 +69,26 @@ export default function InsightsCard() {
           .order("week_start", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("tasks")
+          .select("completed_at")
+          .eq("user_id", user.id)
+          .eq("status", "completed")
+          .not("completed_at", "is", null)
+          .gte("completed_at", `${thirtyDaysAgo}T00:00:00Z`),
+        supabase
+          .from("journal_entries")
+          .select("primary_emotion, created_at")
+          .eq("user_id", user.id)
+          .not("primary_emotion", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(14),
+        supabase
+          .from("weekly_digests")
+          .select("week_start, stats")
+          .eq("user_id", user.id)
+          .order("week_start", { ascending: false })
+          .limit(4),
       ]);
 
       // Journal streak
@@ -79,6 +110,29 @@ export default function InsightsCard() {
         setWeeklyStats(stats);
         setInsights((digestResult.data.insights as string[]) ?? []);
       }
+
+      // Pattern detection (v4.1)
+      const taskDateStrs = (taskDatesResult.data ?? [])
+        .filter((r) => r.completed_at)
+        .map((r) => new Date(r.completed_at!).toISOString().slice(0, 10));
+      const emotions = (emotionsResult.data ?? [])
+        .filter((r) => r.primary_emotion)
+        .map((r) => ({
+          date: new Date(r.created_at).toISOString().slice(0, 10),
+          emotion: r.primary_emotion!,
+        }));
+      const digestHistory = (digestsHistoryResult.data ?? []).map((d) => ({
+        week_start: d.week_start as string,
+        stats: (d.stats ?? {}) as Record<string, number>,
+      }));
+      setPatterns(
+        detectPatterns({
+          journalDates: dates,
+          taskCompletionDates: taskDateStrs,
+          emotions,
+          weeklyDigests: digestHistory,
+        }),
+      );
 
       setLoading(false);
     };
@@ -168,6 +222,48 @@ export default function InsightsCard() {
             </span>
           </div>
         )}
+
+        {/* Behavioral patterns (v4.1) */}
+        {patterns &&
+          (patterns.mostActiveDay ||
+            patterns.mostJournalingDay ||
+            patterns.emotionTrend ||
+            patterns.consecutiveWeeksImproving > 0) && (
+            <>
+              {patterns.mostActiveDay && (
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <TrendingUp className="w-4 h-4 text-teal-500 shrink-0" />
+                  <span>
+                    {t("tracking.mostProductiveDay") || "Most productive day"}:{" "}
+                    <strong>{patterns.mostActiveDay.day}</strong>
+                  </span>
+                </div>
+              )}
+              {patterns.emotionTrend && (
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <TrendingUp className="w-4 h-4 text-violet-500 shrink-0" />
+                  <span>
+                    {(
+                      t("tracking.emotionTrending") || "{emotion} trending"
+                    ).replace("{emotion}", patterns.emotionTrend.emotion)}
+                  </span>
+                </div>
+              )}
+              {patterns.consecutiveWeeksImproving > 1 && (
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>
+                    {(
+                      t("tracking.weeksImproving") || "{n} weeks improving"
+                    ).replace(
+                      "{n}",
+                      String(patterns.consecutiveWeeksImproving),
+                    )}
+                  </span>
+                </div>
+              )}
+            </>
+          )}
 
         {/* Tasks due today */}
         <div className="flex items-center gap-2 text-text-secondary">

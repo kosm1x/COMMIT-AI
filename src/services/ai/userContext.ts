@@ -1,6 +1,8 @@
 import { supabase } from "../../lib/supabase";
 import { logger } from "../../utils/logger";
 import { calculateActivityStreak } from "../../utils/streakCalculator";
+import { detectPatterns } from "../../utils/patternDetector";
+import type { Patterns } from "../../utils/patternDetector";
 
 export interface UserAIContext {
   recentJournalEntries: {
@@ -20,6 +22,8 @@ export interface UserAIContext {
     accepted_types?: Record<string, number>;
     rejected_types?: Record<string, number>;
   };
+  patterns?: Patterns | null;
+  feedbackSummary?: string | null;
 }
 
 interface CacheEntry {
@@ -51,12 +55,17 @@ export async function buildUserContext(
     mondayOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7));
     mondayOfWeek.setHours(0, 0, 0, 0);
 
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     const [
       journalResult,
       goalsResult,
       tasksCompletedResult,
       tasksPendingResult,
       prefsResult,
+      emotionsResult,
+      digestsResult,
+      journal30dResult,
     ] = await Promise.all([
       // 1. Last 7 days of journal entries + primary emotion
       supabase
@@ -97,6 +106,31 @@ export async function buildUserContext(
         .select("*")
         .eq("user_id", userId)
         .single(),
+
+      // 6. Emotions from journal entries (last 14 with primary_emotion)
+      supabase
+        .from("journal_entries")
+        .select("primary_emotion, created_at")
+        .eq("user_id", userId)
+        .not("primary_emotion", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(14),
+
+      // 7. Weekly digests (last 4 weeks for improvement tracking)
+      supabase
+        .from("weekly_digests")
+        .select("week_start, stats")
+        .eq("user_id", userId)
+        .order("week_start", { ascending: false })
+        .limit(4),
+
+      // 8. Journal dates (last 30 days for pattern detection)
+      supabase
+        .from("journal_entries")
+        .select("entry_date")
+        .eq("user_id", userId)
+        .gte("entry_date", thirtyDaysAgo.toISOString().slice(0, 10))
+        .order("entry_date", { ascending: false }),
     ]);
 
     // Build journal entries (keep ISO date for streak calc, formatted date for display)
@@ -141,7 +175,6 @@ export async function buildUserContext(
     );
 
     // Calculate streak from journal entries + task completions
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const { data: completedTaskDates } = await supabase
       .from("tasks")
       .select("completed_at")
@@ -165,6 +198,30 @@ export async function buildUserContext(
       | UserAIContext["aiFeedback"]
       | undefined;
 
+    // Detect behavioral patterns (v4.1)
+    const journal30dDates = (journal30dResult.data ?? []).map(
+      (r) => r.entry_date as string,
+    );
+    const emotions = (emotionsResult.data ?? [])
+      .filter((r) => r.primary_emotion)
+      .map((r) => ({
+        date: new Date(r.created_at).toISOString().slice(0, 10),
+        emotion: r.primary_emotion!,
+      }));
+    const digests = (digestsResult.data ?? []).map((d) => ({
+      week_start: d.week_start as string,
+      stats: (d.stats ?? {}) as Record<string, number>,
+    }));
+    const patterns = detectPatterns({
+      journalDates: journal30dDates,
+      taskCompletionDates: taskDateStrs,
+      emotions,
+      weeklyDigests: digests,
+    });
+
+    // Build feedback summary (v4.1)
+    const feedbackSummary = buildFeedbackSummary(aiFeedback);
+
     const context: UserAIContext = {
       recentJournalEntries,
       activeObjectives,
@@ -177,6 +234,8 @@ export async function buildUserContext(
       streakDays,
       preferredLanguage: "en",
       aiFeedback: aiFeedback ?? undefined,
+      patterns,
+      feedbackSummary,
     };
 
     contextCache.set(userId, { context, timestamp: Date.now() });
@@ -220,8 +279,43 @@ export function formatContextAsSystemPrompt(ctx: UserAIContext): string {
   lines.push(`- Tasks pending: ${ctx.taskSummary.pendingThisWeek}`);
   lines.push(`- Current streak: ${ctx.streakDays} days`);
   lines.push("");
+
+  // Behavioral patterns (v4.1)
+  if (ctx.patterns) {
+    const p = ctx.patterns;
+    const patternLines: string[] = [];
+    if (p.mostActiveDay)
+      patternLines.push(
+        `- Most productive day: ${p.mostActiveDay.day} (${p.mostActiveDay.count} tasks)`,
+      );
+    if (p.mostJournalingDay)
+      patternLines.push(
+        `- Most reflective day: ${p.mostJournalingDay.day} (${p.mostJournalingDay.count} entries)`,
+      );
+    if (p.emotionTrend)
+      patternLines.push(
+        `- Emotion trend: "${p.emotionTrend.emotion}" is ${p.emotionTrend.direction}`,
+      );
+    if (p.consecutiveWeeksImproving > 0)
+      patternLines.push(
+        `- ${p.consecutiveWeeksImproving} consecutive weeks of task improvement`,
+      );
+    if (patternLines.length > 0) {
+      lines.push("## Your Patterns");
+      lines.push(...patternLines);
+      lines.push("");
+    }
+  }
+
+  // AI feedback preferences (v4.1)
+  if (ctx.feedbackSummary) {
+    lines.push("## AI Feedback Preferences");
+    lines.push(ctx.feedbackSummary);
+    lines.push("");
+  }
+
   lines.push(
-    "Use this context to personalize your responses. Reference the user's goals, emotions, and progress where relevant.",
+    "Use this context to personalize your responses. Reference the user's goals, emotions, patterns, and progress where relevant. Adapt your tone based on their feedback preferences.",
   );
 
   return lines.join("\n");
@@ -231,6 +325,46 @@ export function formatContextAsSystemPrompt(ctx: UserAIContext): string {
  * Convenience: get the system prompt string for the current authenticated user.
  * Returns undefined if no session or context build fails (callLLM handles undefined gracefully).
  */
+/**
+ * Build a human-readable summary of AI feedback preferences.
+ */
+function buildFeedbackSummary(
+  feedback: UserAIContext["aiFeedback"] | undefined,
+): string | null {
+  if (!feedback) return null;
+
+  const accepted = feedback.accepted_types ?? {};
+  const rejected = feedback.rejected_types ?? {};
+  const lines: string[] = [];
+
+  const allTypes = new Set([
+    ...Object.keys(accepted),
+    ...Object.keys(rejected),
+  ]);
+  if (allTypes.size === 0) return null;
+
+  for (const fn of allTypes) {
+    const acc = accepted[fn] ?? 0;
+    const rej = rejected[fn] ?? 0;
+    const total = acc + rej;
+    if (total < 3) continue; // Not enough data
+
+    const label = fn.replace(/_/g, " ");
+    const rate = Math.round((acc / total) * 100);
+    if (rate >= 70) {
+      lines.push(
+        `- User finds "${label}" suggestions helpful (${rate}% acceptance)`,
+      );
+    } else if (rate <= 30) {
+      lines.push(
+        `- User dislikes "${label}" suggestions (${100 - rate}% rejection) — prefer a different approach`,
+      );
+    }
+  }
+
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
 export async function getSystemPromptForCurrentUser(): Promise<
   string | undefined
 > {

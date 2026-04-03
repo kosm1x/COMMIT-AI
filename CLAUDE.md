@@ -178,3 +178,9 @@ COMMIT = strategic UI. Jarvis = intelligence engine. Unified data layer, Jarvis-
 5. ~~Quick Wins~~ — Persist idea connections to DB, full data export (JSON + Markdown)
 
 Details: `docs/V4-IMPLEMENTATION-PLAN.md`. Project overview: `docs/PROJECT-OVERVIEW.md`.
+
+### v4.1 Intelligence — COMPLETE
+
+Feedback-adapted AI prompts, pattern detection, compounding insights. System prompt now includes behavioral patterns (most productive/reflective day, emotion trends, consecutive improvement weeks) and AI feedback preferences (acceptance ratios per function type). Weekly digest enriched with 4-week historical trends and pattern-aware LLM prompts. InsightsCard surfaces detected patterns.
+
+Details: `docs/V4-IMPLEMENTATION-PLAN.md`. Project overview: `docs/PROJECT-OVERVIEW.md`.

@@ -27,9 +27,6 @@ Deno.serve(async (req: Request) => {
 
   const now = new Date();
   const weekStart = getWeekStart(now);
-  const prevWeekStart = getWeekStart(
-    new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-  );
 
   console.log(`[weekly-digest] Running for week starting ${weekStart}`);
 
@@ -51,32 +48,59 @@ Deno.serve(async (req: Request) => {
 
   for (const { user_id } of users) {
     try {
-      // Parallel queries for this week's stats
-      const [tasksResult, journalResult, goalsResult, prevDigest] =
-        await Promise.all([
-          supabase
-            .from("tasks")
-            .select("id, status, completed_at, created_at", { count: "exact" })
-            .eq("user_id", user_id)
-            .gte("created_at", `${weekStart}T00:00:00Z`),
-          supabase
-            .from("journal_entries")
-            .select("entry_date")
-            .eq("user_id", user_id)
-            .gte("entry_date", weekStart)
-            .order("entry_date", { ascending: false }),
-          supabase
-            .from("goals")
-            .select("id, title, status")
-            .eq("user_id", user_id)
-            .neq("status", "completed"),
-          supabase
-            .from("weekly_digests")
-            .select("stats")
-            .eq("user_id", user_id)
-            .eq("week_start", prevWeekStart)
-            .maybeSingle(),
-        ]);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      // Parallel queries: this week's stats + 4 weeks of history + patterns
+      const [
+        tasksResult,
+        journalResult,
+        goalsResult,
+        recentDigests,
+        taskDates30d,
+        journalDates30d,
+        emotionsResult,
+      ] = await Promise.all([
+        supabase
+          .from("tasks")
+          .select("id, status, completed_at, created_at", { count: "exact" })
+          .eq("user_id", user_id)
+          .gte("created_at", `${weekStart}T00:00:00Z`),
+        supabase
+          .from("journal_entries")
+          .select("entry_date")
+          .eq("user_id", user_id)
+          .gte("entry_date", weekStart)
+          .order("entry_date", { ascending: false }),
+        supabase
+          .from("goals")
+          .select("id, title, status")
+          .eq("user_id", user_id)
+          .neq("status", "completed"),
+        supabase
+          .from("weekly_digests")
+          .select("week_start, stats")
+          .eq("user_id", user_id)
+          .order("week_start", { ascending: false })
+          .limit(4),
+        supabase
+          .from("tasks")
+          .select("completed_at")
+          .eq("user_id", user_id)
+          .eq("status", "completed")
+          .gte("completed_at", thirtyDaysAgo.toISOString()),
+        supabase
+          .from("journal_entries")
+          .select("entry_date")
+          .eq("user_id", user_id)
+          .gte("entry_date", thirtyDaysAgo.toISOString().slice(0, 10)),
+        supabase
+          .from("journal_entries")
+          .select("primary_emotion, created_at")
+          .eq("user_id", user_id)
+          .not("primary_emotion", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(14),
+      ]);
 
       const tasksCreated = tasksResult.count ?? 0;
       const tasksCompleted = (tasksResult.data ?? []).filter(
@@ -85,19 +109,56 @@ Deno.serve(async (req: Request) => {
       const journalEntries = journalResult.data?.length ?? 0;
       const activeGoals = goalsResult.data?.length ?? 0;
 
-      // Journal streak (consecutive days backwards from today)
+      // Journal streak
       const journalDates = (journalResult.data ?? []).map(
         (r) => r.entry_date as string,
       );
       const journalStreak = calculateStreak(journalDates, now);
 
-      // Previous week deltas
-      const prevStats = (prevDigest.data?.stats ?? {}) as Record<
-        string,
-        number
-      >;
+      // Multi-week analysis from last 4 digests
+      const digests = (recentDigests.data ?? []) as {
+        week_start: string;
+        stats: Record<string, number>;
+      }[];
+      const prevStats = digests.length > 0 ? digests[0].stats : {};
       const tasksDelta = tasksCompleted - (prevStats.tasks_completed ?? 0);
       const journalDelta = journalEntries - (prevStats.journal_entries ?? 0);
+
+      // Consecutive weeks improving
+      let consecutiveWeeksImproving = 0;
+      for (let i = 0; i < digests.length - 1; i++) {
+        if (
+          (digests[i].stats.tasks_completed ?? 0) >=
+          (digests[i + 1].stats.tasks_completed ?? 0)
+        ) {
+          consecutiveWeeksImproving++;
+        } else break;
+      }
+
+      // 4-week average
+      const fourWeekAvg =
+        digests.length > 0
+          ? digests.reduce(
+              (sum, d) => sum + (d.stats.tasks_completed ?? 0),
+              0,
+            ) / digests.length
+          : 0;
+
+      // Day-of-week patterns
+      const taskDateStrs = (taskDates30d.data ?? [])
+        .filter((r) => r.completed_at)
+        .map((r) => r.completed_at!.slice(0, 10));
+      const journalDateStrs = (journalDates30d.data ?? []).map(
+        (r) => r.entry_date as string,
+      );
+      const mostProductiveDay = findPeakDay(taskDateStrs);
+      const mostReflectiveDay = findPeakDay(journalDateStrs);
+
+      // Emotion trend
+      const emotions = (emotionsResult.data ?? []).filter(
+        (r) => r.primary_emotion,
+      );
+      const emotionTrend = detectEmotionTrend(emotions);
 
       const stats = {
         tasks_completed: tasksCompleted,
@@ -107,12 +168,19 @@ Deno.serve(async (req: Request) => {
         active_goals: activeGoals,
         tasks_delta: tasksDelta,
         journal_delta: journalDelta,
+        consecutive_weeks_improving: consecutiveWeeksImproving,
+        four_week_avg: Math.round(fourWeekAvg * 10) / 10,
       };
 
-      // Generate AI insights (graceful degradation)
+      // Generate AI insights with pattern context (graceful degradation)
       let insights: string[] = [];
       try {
-        insights = await generateInsights(stats, goalsResult.data ?? []);
+        insights = await generateInsights(stats, goalsResult.data ?? [], {
+          mostProductiveDay,
+          mostReflectiveDay,
+          emotionTrend,
+          consecutiveWeeksImproving,
+        });
       } catch (err) {
         console.error(`[weekly-digest] LLM failed for user ${user_id}:`, err);
       }
@@ -176,9 +244,61 @@ function calculateStreak(dates: string[], now: Date): number {
   return streak;
 }
 
+const DAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+function findPeakDay(dates: string[]): string | null {
+  if (dates.length < 7) return null;
+  const counts = new Array(7).fill(0);
+  for (const d of dates) {
+    counts[new Date(d + "T12:00:00").getDay()]++;
+  }
+  let maxIdx = 0;
+  for (let i = 1; i < 7; i++) {
+    if (counts[i] > counts[maxIdx]) maxIdx = i;
+  }
+  return counts[maxIdx] > 0 ? DAYS[maxIdx] : null;
+}
+
+function detectEmotionTrend(
+  emotions: { primary_emotion: string | null; created_at: string }[],
+): string | null {
+  const valid = emotions.filter((e) => e.primary_emotion);
+  if (valid.length < 7) return null;
+  const recent = valid.slice(0, 7);
+  const counts = new Map<string, number>();
+  for (const e of recent) {
+    counts.set(e.primary_emotion!, (counts.get(e.primary_emotion!) ?? 0) + 1);
+  }
+  let top = "";
+  let topCount = 0;
+  for (const [emotion, count] of counts) {
+    if (count > topCount) {
+      top = emotion;
+      topCount = count;
+    }
+  }
+  return topCount >= 3 ? top : null;
+}
+
+interface PatternContext {
+  mostProductiveDay: string | null;
+  mostReflectiveDay: string | null;
+  emotionTrend: string | null;
+  consecutiveWeeksImproving: number;
+}
+
 async function generateInsights(
   stats: Record<string, number>,
   goals: { id: string; title: string; status: string }[],
+  patterns: PatternContext,
 ): Promise<string[]> {
   const endpoint = Deno.env.get("LLM_ENDPOINT");
   const apiKey = Deno.env.get("LLM_API_KEY") || Deno.env.get("GROQ_API_KEY");
@@ -192,13 +312,29 @@ async function generateInsights(
     .join(", ");
   const deltaSign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 
-  const prompt = `You are a personal growth coach. Given these weekly stats, generate exactly 2-3 brief encouraging insights (1 sentence each). Return ONLY a JSON array of strings, no markdown.
+  let patternBlock = "";
+  const pLines: string[] = [];
+  if (patterns.mostProductiveDay)
+    pLines.push(`- Most productive day: ${patterns.mostProductiveDay}`);
+  if (patterns.mostReflectiveDay)
+    pLines.push(`- Most reflective day: ${patterns.mostReflectiveDay}`);
+  if (patterns.emotionTrend)
+    pLines.push(`- Dominant recent emotion: ${patterns.emotionTrend}`);
+  if (patterns.consecutiveWeeksImproving > 0)
+    pLines.push(
+      `- ${patterns.consecutiveWeeksImproving} consecutive weeks of task improvement`,
+    );
+  if (pLines.length > 0) {
+    patternBlock = `\n\nBehavioral patterns:\n${pLines.join("\n")}`;
+  }
+
+  const prompt = `You are a personal growth coach. Given these weekly stats and behavioral patterns, generate exactly 2-3 brief encouraging insights (1 sentence each). Reference patterns and celebrate sustained progress when present. Return ONLY a JSON array of strings, no markdown.
 
 Stats:
-- Tasks completed: ${stats.tasks_completed} (${deltaSign(stats.tasks_delta)} from last week)
+- Tasks completed: ${stats.tasks_completed} (${deltaSign(stats.tasks_delta)} from last week, 4-week avg: ${stats.four_week_avg})
 - Journal entries: ${stats.journal_entries} (${deltaSign(stats.journal_delta)} from last week)
 - Current journal streak: ${stats.journal_streak} days
-- Active goals: ${stats.active_goals}${goalList ? ` (${goalList})` : ""}`;
+- Active goals: ${stats.active_goals}${goalList ? ` (${goalList})` : ""}${patternBlock}`;
 
   const response = await fetch(endpoint, {
     method: "POST",

@@ -391,6 +391,10 @@ export const zh = {
     keepGoing: "继续加油！",
     weeklyDigestTitle: "你的每周总结",
     weeklyDigestBody: "看看你这周的表现——洞察已就绪。",
+    mostProductiveDay: "最高效的日子",
+    mostReflectiveDay: "最多反思的日子",
+    emotionTrending: "{emotion}趋势上升",
+    weeksImproving: "连续{n}周进步",
   },
   // Map/Kanban
   map: {
