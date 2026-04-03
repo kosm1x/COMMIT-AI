@@ -1,5 +1,8 @@
 # COMMIT-AI Engineering Improvement Plan — Post v4.1 Audit
 
+> **Sprint 1 — DONE** (10e4b1e): Listener leak, XSS, LLM timeout, upsert error check, RLS policy
+> **Sprint 2 — DONE** (77e76b7): Stale types, N+1 elimination, content keys, ErrorBoundary, composite indexes, query limits, task upsert
+
 ## Context
 
 v4.0 + v4.1 shipped. Development paused for real-world usage. Three parallel audit agents reviewed the entire system: frontend code quality, backend/infrastructure, and UX/testing. 60+ findings across security, performance, testing, and polish. This plan prioritizes and sequences them for systematic improvement.
