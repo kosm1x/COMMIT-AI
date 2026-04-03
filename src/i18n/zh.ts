@@ -654,6 +654,7 @@ export const zh = {
     notificationsEnabled: "通知已启用",
     data: "数据",
     exportData: "导出我的数据",
+    exporting: "导出中...",
     about: "关于",
     showGuide: "显示COMMIT指南",
     signOut: "退出登录",

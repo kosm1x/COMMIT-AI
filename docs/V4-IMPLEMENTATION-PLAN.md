@@ -512,7 +512,9 @@ CREATE POLICY "Users read own digests" ON weekly_digests
 
 ---
 
-## Session 5: Quick Wins
+## Session 5: Quick Wins — DONE
+
+> 7 files, ~200 insertions. ideaConnectionService (load/save with upsert), exportService (JSON + Markdown), Settings export buttons, upsert index migration. QA passed.
 
 **Goal:** Persist idea connections to DB. Full data export.
 

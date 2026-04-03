@@ -666,6 +666,7 @@ export const en = {
     notificationsEnabled: "Notifications enabled",
     data: "Data",
     exportData: "Export My Data",
+    exporting: "Exporting...",
     about: "About",
     showGuide: "Show COMMIT Guide",
     signOut: "Sign Out",

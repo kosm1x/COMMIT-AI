@@ -673,6 +673,7 @@ export const es = {
     notificationsEnabled: "Notificaciones activadas",
     data: "Datos",
     exportData: "Exportar Mis Datos",
+    exporting: "Exportando...",
     about: "Acerca de",
     showGuide: "Mostrar Guía COMMIT",
     signOut: "Cerrar Sesión",

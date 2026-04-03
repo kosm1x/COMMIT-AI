@@ -4,6 +4,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { supabase } from "../lib/supabase";
 import { findIdeaConnections } from "../services/aiService";
+import {
+  loadConnections as loadSavedConnections,
+  saveConnections as persistConnections,
+} from "../services/ideaConnectionService";
 import { useIdeaEditor } from "../hooks/useIdeaEditor";
 import { SelectionMenu, ConnectionsSidebar } from "../components/ideas";
 import type { Idea, Connection } from "../components/ideas/types";
@@ -27,7 +31,7 @@ import {
   Scissors,
   Users,
 } from "lucide-react";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export default function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
@@ -161,6 +165,13 @@ export default function IdeaDetail() {
   const loadConnections = async (currentIdea: Idea) => {
     setLoadingConnections(true);
     try {
+      // Load saved connections from DB first
+      const saved = await loadSavedConnections(currentIdea.id);
+      if (saved.length > 0) {
+        setConnections(saved);
+      }
+
+      // Then discover new connections via AI
       const { data: allIdeas, error } = await supabase
         .from("ideas")
         .select("id, title, content, tags")
@@ -172,12 +183,6 @@ export default function IdeaDetail() {
       if (error) {
         logger.error("[IdeaDetail] Error fetching ideas:", error);
         throw error;
-      }
-
-      if (import.meta.env.DEV) {
-        logger.info(
-          `[IdeaDetail] Found ${allIdeas?.length || 0} other ideas to compare`,
-        );
       }
 
       if (allIdeas && allIdeas.length > 0) {
@@ -195,23 +200,19 @@ export default function IdeaDetail() {
           },
           language,
         );
-        if (import.meta.env.DEV) {
-          logger.info(
-            `[IdeaDetail] Found ${foundConnections.length} connections`,
+        if (foundConnections.length > 0) {
+          setConnections(foundConnections);
+          // Persist AI-discovered connections to DB
+          persistConnections(currentIdea.id, user!.id, foundConnections).catch(
+            () => {},
           );
         }
-        setConnections(foundConnections);
-      } else {
-        if (import.meta.env.DEV) {
-          logger.info(
-            "[IdeaDetail] No other ideas found, cannot create connections",
-          );
-        }
+      } else if (saved.length === 0) {
         setConnections([]);
       }
     } catch (error) {
       logger.error("[IdeaDetail] Error loading connections:", error);
-      setConnections([]);
+      // Keep saved connections if AI fails
     } finally {
       setLoadingConnections(false);
     }

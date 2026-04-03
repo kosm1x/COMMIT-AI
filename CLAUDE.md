@@ -68,7 +68,7 @@ src/
   i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
 supabase/
-  migrations/                    # 26 SQL migrations (additive only)
+  migrations/                    # 27 SQL migrations (additive only)
   functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
   functions/commit-events/       # Edge Function: DB webhook → Jarvis event bridge
   functions/push-notify/         # Edge Function: server-side push notification delivery
@@ -169,12 +169,12 @@ See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
 
 COMMIT = strategic UI. Jarvis = intelligence engine. Unified data layer, Jarvis-first AI routing with Groq fallback, event-driven reactions, suggestions panel UI, structured logging (Pino), 3-layer tool guardrails, provider rotation. Details: `mission-control/docs/PROJECT-STATUS.md`.
 
-### v4.0 Retention — IN PROGRESS (4 of 5 sessions done)
+### v4.0 Retention — COMPLETE (all 5 sessions)
 
-1. ~~Honest AI~~ — DONE: `AIResult<T>` discriminated unions, contextual AI engine, feedback tracking
-2. ~~Guided Onboarding~~ — DONE: 7-day time-gated flow, empty states, progressive disclosure, Settings page
-3. ~~Push Notifications~~ — DONE: Capacitor local + PWA service worker + Edge Function delivery + Settings UI
-4. ~~Weekly Digest & Insights~~ — DONE: InsightsCard, streak celebrations, weekly-digest Edge Function + LLM insights
-5. Quick Wins (persist idea connections, data export) — remaining
+1. ~~Honest AI~~ — `AIResult<T>` discriminated unions, contextual AI engine, feedback tracking
+2. ~~Guided Onboarding~~ — 7-day time-gated flow, empty states, progressive disclosure, Settings page
+3. ~~Push Notifications~~ — Capacitor local + PWA service worker + Edge Function delivery + Settings UI
+4. ~~Weekly Digest & Insights~~ — InsightsCard, streak celebrations, weekly-digest Edge Function + LLM insights
+5. ~~Quick Wins~~ — Persist idea connections to DB, full data export (JSON + Markdown)
 
 Details: `docs/V4-IMPLEMENTATION-PLAN.md`. Project overview: `docs/PROJECT-OVERVIEW.md`.

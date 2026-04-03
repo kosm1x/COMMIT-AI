@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { exportAllData } from "../services/exportService";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -41,6 +42,7 @@ export default function Settings() {
     timezone: null,
   });
   const [notifLoaded, setNotifLoaded] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -316,20 +318,42 @@ export default function Settings() {
           <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-wider px-4 pt-4 pb-2">
             {t("settings.data") || "Data"}
           </h3>
-          <button
-            disabled
-            className="w-full flex items-center justify-between px-4 py-3 opacity-50 cursor-not-allowed"
-          >
+          <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Download className="w-5 h-5 text-text-secondary" />
               <span className="text-sm text-text-primary">
                 {t("settings.exportData") || "Export My Data"}
               </span>
             </div>
-            <span className="text-xs text-text-tertiary">
-              {t("common.comingSoon") || "Coming soon"}
-            </span>
-          </button>
+            <div className="flex gap-2">
+              <button
+                disabled={exporting}
+                onClick={async () => {
+                  setExporting(true);
+                  await exportAllData(user.id, "json").finally(() =>
+                    setExporting(false),
+                  );
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {exporting ? t("settings.exporting") || "Exporting..." : "JSON"}
+              </button>
+              <button
+                disabled={exporting}
+                onClick={async () => {
+                  setExporting(true);
+                  await exportAllData(user.id, "markdown").finally(() =>
+                    setExporting(false),
+                  );
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {exporting
+                  ? t("settings.exporting") || "Exporting..."
+                  : "Markdown"}
+              </button>
+            </div>
+          </div>
         </section>
 
         {/* About */}
