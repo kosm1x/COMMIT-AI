@@ -25,6 +25,7 @@ export default {
         "slide-up": "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         "scale-in": "scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
         "slide-in-bottom": "slideInBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        confetti: "confettiFall 3s ease-in forwards",
       },
       keyframes: {
         fadeIn: {
@@ -42,6 +43,16 @@ export default {
         slideInBottom: {
           "0%": { transform: "translateY(100%)" },
           "100%": { transform: "translateY(0)" },
+        },
+        confettiFall: {
+          "0%": {
+            transform: "translateY(-10vh) rotate(0deg)",
+            opacity: "1",
+          },
+          "100%": {
+            transform: "translateY(100vh) rotate(720deg)",
+            opacity: "0",
+          },
         },
       },
       boxShadow: {

@@ -11,6 +11,8 @@ import { useLastPageTracking } from "../../hooks/useLastPageTracking";
 import { useOnboarding } from "../../hooks/useOnboarding";
 import { useAgentSuggestions } from "../../hooks/useAgentSuggestions";
 import { useNotificationScheduler } from "../../hooks/useNotificationScheduler";
+import { useStreakCelebration } from "../../hooks/useStreakCelebration";
+import Celebration from "../ui/Celebration";
 import { SuggestionsPanel } from "../suggestions";
 
 interface AppLayoutProps {
@@ -38,6 +40,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   useLastPageTracking();
   useNotificationScheduler();
   const onboarding = useOnboarding();
+  const {
+    showCelebration,
+    milestone,
+    dismiss: dismissCelebration,
+  } = useStreakCelebration();
 
   const tabTranslations = {
     journal: t("nav.journal"),
@@ -61,6 +68,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           />
         )}
         <main className="pb-20 min-h-screen">{children}</main>
+
+        {showCelebration && milestone && (
+          <Celebration milestone={milestone} onDismiss={dismissCelebration} />
+        )}
 
         <TabBar
           translations={tabTranslations}

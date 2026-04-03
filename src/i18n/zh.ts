@@ -378,6 +378,19 @@ export const zh = {
     noEmotionDataFound: "未找到情绪数据",
     analyzeJournalToTrackEmotions: "分析日记条目以追踪情绪",
     emotionTimeline: "情绪时间线",
+    // InsightsCard
+    weeklyInsights: "每周洞察",
+    insightsUnavailable: "AI洞察将在你完成第一周后出现。",
+    journalStreak: "日记连续记录",
+    longestStreak: "你最长的连续记录！",
+    fromLastWeek: "较上周",
+    goalProgress: "完成",
+    // Celebration
+    streakMilestone: "连续记录里程碑！",
+    streakCongrats: "你已保持{days}天的日记连续记录！",
+    keepGoing: "继续加油！",
+    weeklyDigestTitle: "你的每周总结",
+    weeklyDigestBody: "看看你这周的表现——洞察已就绪。",
   },
   // Map/Kanban
   map: {

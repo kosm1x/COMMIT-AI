@@ -382,6 +382,20 @@ export const en = {
     noEmotionDataFound: "No emotion data found",
     analyzeJournalToTrackEmotions: "Analyze journal entries to track emotions",
     emotionTimeline: "Emotion Timeline",
+    // InsightsCard
+    weeklyInsights: "Weekly Insights",
+    insightsUnavailable: "AI insights will appear after your first full week.",
+    journalStreak: "journal streak",
+    longestStreak: "your longest yet!",
+    fromLastWeek: "from last week",
+    goalProgress: "complete",
+    // Celebration
+    streakMilestone: "Streak Milestone!",
+    streakCongrats: "You've maintained a {days}-day journal streak!",
+    keepGoing: "Keep going!",
+    // Weekly digest notification
+    weeklyDigestTitle: "Your Weekly Summary",
+    weeklyDigestBody: "See how your week went — insights are ready.",
   },
   // Map/Kanban
   map: {

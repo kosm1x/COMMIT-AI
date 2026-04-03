@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useLanguage } from '../../../contexts/LanguageContext';
-import { supabase } from '../../../lib/supabase';
-import { CheckCircle2, Target, TrendingUp, Activity } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { supabase } from "../../../lib/supabase";
+import { CheckCircle2, Target, TrendingUp, Activity } from "lucide-react";
+import { calculateActivityStreak } from "../../../utils/streakCalculator";
 
 export default function StatsOverview() {
   const { user } = useAuth();
@@ -24,61 +25,44 @@ export default function StatsOverview() {
 
   const loadStats = async () => {
     setLoading(true);
-    const [completedResult, totalResult, activeGoalsResult] = await Promise.all([
-      supabase
-        .from('tasks')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user!.id)
-        .eq('status', 'completed'),
-      supabase
-        .from('tasks')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user!.id),
-      supabase
-        .from('goals')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user!.id)
-        .eq('status', 'in_progress'),
-    ]);
+    const [completedResult, totalResult, activeGoalsResult] = await Promise.all(
+      [
+        supabase
+          .from("tasks")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user!.id)
+          .eq("status", "completed"),
+        supabase
+          .from("tasks")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user!.id),
+        supabase
+          .from("goals")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user!.id)
+          .eq("status", "in_progress"),
+      ],
+    );
 
     const completed = completedResult.count || 0;
     const total = totalResult.count || 0;
     const activeGoals = activeGoalsResult.count || 0;
 
-    // Calculate streak (simplified - count consecutive days with completed tasks)
+    // Calculate streak from task completions
     const { data: recentCompletions } = await supabase
-      .from('tasks')
-      .select('completed_at')
-      .eq('user_id', user!.id)
-      .eq('status', 'completed')
-      .not('completed_at', 'is', null)
-      .order('completed_at', { ascending: false })
+      .from("tasks")
+      .select("completed_at")
+      .eq("user_id", user!.id)
+      .eq("status", "completed")
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: false })
       .limit(30);
 
-    let streak = 0;
-    if (recentCompletions && recentCompletions.length > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - i);
-        const nextDay = new Date(checkDate);
-        nextDay.setDate(checkDate.getDate() + 1);
-
-        const hasCompletion = recentCompletions.some((task) => {
-          if (!task.completed_at) return false;
-          const completedDate = new Date(task.completed_at);
-          return completedDate >= checkDate && completedDate < nextDay;
-        });
-
-        if (hasCompletion) {
-          streak++;
-        } else if (i > 0) {
-          break;
-        }
-      }
-    }
+    const taskDates = (recentCompletions ?? [])
+      .filter((t) => t.completed_at)
+      .map((t) => new Date(t.completed_at!).toISOString().slice(0, 10));
+    const streakResult = calculateActivityStreak([], taskDates);
+    const streak = streakResult.current;
 
     setStats({
       completedTasks: completed,
@@ -94,7 +78,10 @@ export default function StatsOverview() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="glass-card p-5 border border-white/40 dark:border-white/10 h-32 animate-pulse bg-white/20 dark:bg-white/5" />
+          <div
+            key={i}
+            className="glass-card p-5 border border-white/40 dark:border-white/10 h-32 animate-pulse bg-white/20 dark:bg-white/5"
+          />
         ))}
       </div>
     );
@@ -109,10 +96,16 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-green-600 mb-2">
             <CheckCircle2 className="w-5 h-5" />
-            <span className="font-bold text-sm">{t('tracking.completedTasks')}</span>
+            <span className="font-bold text-sm">
+              {t("tracking.completedTasks")}
+            </span>
           </div>
-          <div className="text-3xl font-heading font-bold text-text-primary">{stats.completedTasks}</div>
-          <div className="text-xs text-text-tertiary mt-1">{t('tracking.totalTasksFinished')}</div>
+          <div className="text-3xl font-heading font-bold text-text-primary">
+            {stats.completedTasks}
+          </div>
+          <div className="text-xs text-text-tertiary mt-1">
+            {t("tracking.totalTasksFinished")}
+          </div>
         </div>
       </div>
 
@@ -123,12 +116,16 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-blue-600 mb-2">
             <Target className="w-5 h-5" />
-            <span className="font-bold text-sm">{t('tracking.completionRate')}</span>
+            <span className="font-bold text-sm">
+              {t("tracking.completionRate")}
+            </span>
           </div>
-          <div className="text-3xl font-heading font-bold text-text-primary">{stats.completionRate}%</div>
+          <div className="text-3xl font-heading font-bold text-text-primary">
+            {stats.completionRate}%
+          </div>
           <div className="w-full bg-blue-100 rounded-full h-1.5 mt-2 overflow-hidden">
-            <div 
-              className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000" 
+            <div
+              className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000"
               style={{ width: `${stats.completionRate}%` }}
             />
           </div>
@@ -142,10 +139,19 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-orange-600 mb-2">
             <TrendingUp className="w-5 h-5" />
-            <span className="font-bold text-sm">{t('tracking.currentStreak')}</span>
+            <span className="font-bold text-sm">
+              {t("tracking.currentStreak")}
+            </span>
           </div>
-          <div className="text-3xl font-heading font-bold text-text-primary">{stats.streak} <span className="text-lg font-normal text-text-tertiary">{t('tracking.days')}</span></div>
-          <div className="text-xs text-text-tertiary mt-1">{t('tracking.keepItUp')}</div>
+          <div className="text-3xl font-heading font-bold text-text-primary">
+            {stats.streak}{" "}
+            <span className="text-lg font-normal text-text-tertiary">
+              {t("tracking.days")}
+            </span>
+          </div>
+          <div className="text-xs text-text-tertiary mt-1">
+            {t("tracking.keepItUp")}
+          </div>
         </div>
       </div>
 
@@ -156,13 +162,18 @@ export default function StatsOverview() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-purple-600 mb-2">
             <Activity className="w-5 h-5" />
-            <span className="font-bold text-sm">{t('tracking.activeGoals')}</span>
+            <span className="font-bold text-sm">
+              {t("tracking.activeGoals")}
+            </span>
           </div>
-          <div className="text-3xl font-heading font-bold text-text-primary">{stats.activeGoals}</div>
-          <div className="text-xs text-text-tertiary mt-1">{t('tracking.inProgressGoals')}</div>
+          <div className="text-3xl font-heading font-bold text-text-primary">
+            {stats.activeGoals}
+          </div>
+          <div className="text-xs text-text-tertiary mt-1">
+            {t("tracking.inProgressGoals")}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

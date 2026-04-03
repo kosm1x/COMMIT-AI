@@ -1,5 +1,6 @@
 import { supabase } from "../../lib/supabase";
 import { logger } from "../../utils/logger";
+import { calculateActivityStreak } from "../../utils/streakCalculator";
 
 export interface UserAIContext {
   recentJournalEntries: {
@@ -139,7 +140,7 @@ export async function buildUserContext(
       }),
     );
 
-    // Calculate streak — single batch query instead of 30 sequential calls
+    // Calculate streak from journal entries + task completions
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const { data: completedTaskDates } = await supabase
       .from("tasks")
@@ -149,31 +150,14 @@ export async function buildUserContext(
       .gte("completed_at", thirtyDaysAgo.toISOString())
       .order("completed_at", { ascending: false });
 
-    // Build set of active days (YYYY-MM-DD) from journal entries + completed tasks
-    const activeDays = new Set<string>();
-    for (const row of journalRows) {
-      activeDays.add(new Date(row.created_at).toISOString().slice(0, 10));
-    }
-    for (const row of completedTaskDates ?? []) {
-      if (row.completed_at) {
-        activeDays.add(new Date(row.completed_at).toISOString().slice(0, 10));
-      }
-    }
-
-    // Count consecutive days backwards from today
-    let streakDays = 0;
-    const today = new Date(now);
-    today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < 30; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-      const dateKey = checkDate.toISOString().slice(0, 10);
-      if (activeDays.has(dateKey)) {
-        streakDays++;
-      } else if (i > 0) {
-        break;
-      }
-    }
+    const journalDateStrs = journalRows.map((r) =>
+      new Date(r.created_at).toISOString().slice(0, 10),
+    );
+    const taskDateStrs = (completedTaskDates ?? [])
+      .filter((r) => r.completed_at)
+      .map((r) => new Date(r.completed_at!).toISOString().slice(0, 10));
+    const streakResult = calculateActivityStreak(journalDateStrs, taskDateStrs);
+    const streakDays = streakResult.current;
 
     // Extract ai_feedback from preferences (column added in migration 20260401000001)
     const prefsRaw = prefsResult.data as Record<string, unknown> | null;

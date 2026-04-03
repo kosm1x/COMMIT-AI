@@ -68,7 +68,7 @@ src/
   i18n/                          # en.ts, es.ts, zh.ts
   config/navigation.ts           # Nav structure
 supabase/
-  migrations/                    # 25 SQL migrations (additive only)
+  migrations/                    # 26 SQL migrations (additive only)
   functions/ai-proxy/            # Edge Function: vendor-agnostic LLM proxy
   functions/commit-events/       # Edge Function: DB webhook → Jarvis event bridge
   functions/push-notify/         # Edge Function: server-side push notification delivery
@@ -169,12 +169,12 @@ See `docs/IMPROVEMENT-PLAN.md` for the 6-phase roadmap:
 
 COMMIT = strategic UI. Jarvis = intelligence engine. Unified data layer, Jarvis-first AI routing with Groq fallback, event-driven reactions, suggestions panel UI, structured logging (Pino), 3-layer tool guardrails, provider rotation. Details: `mission-control/docs/PROJECT-STATUS.md`.
 
-### v4.0 Retention — IN PROGRESS (3 of 5 sessions done)
+### v4.0 Retention — IN PROGRESS (4 of 5 sessions done)
 
 1. ~~Honest AI~~ — DONE: `AIResult<T>` discriminated unions, contextual AI engine, feedback tracking
 2. ~~Guided Onboarding~~ — DONE: 7-day time-gated flow, empty states, progressive disclosure, Settings page
 3. ~~Push Notifications~~ — DONE: Capacitor local + PWA service worker + Edge Function delivery + Settings UI
-4. Weekly Digest & Insights — remaining
+4. ~~Weekly Digest & Insights~~ — DONE: InsightsCard, streak celebrations, weekly-digest Edge Function + LLM insights
 5. Quick Wins (persist idea connections, data export) — remaining
 
 Details: `docs/V4-IMPLEMENTATION-PLAN.md`. Project overview: `docs/PROJECT-OVERVIEW.md`.

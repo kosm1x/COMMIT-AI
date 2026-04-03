@@ -387,6 +387,20 @@ export const es = {
     analyzeJournalToTrackEmotions:
       "Analiza las entradas del diario para rastrear emociones",
     emotionTimeline: "Línea de Tiempo de Emociones",
+    // InsightsCard
+    weeklyInsights: "Resumen Semanal",
+    insightsUnavailable:
+      "Los análisis de IA aparecerán después de tu primera semana completa.",
+    journalStreak: "racha de diario",
+    longestStreak: "¡tu racha más larga!",
+    fromLastWeek: "respecto a la semana pasada",
+    goalProgress: "completado",
+    // Celebration
+    streakMilestone: "¡Hito de Racha!",
+    streakCongrats: "¡Has mantenido una racha de {days} días de diario!",
+    keepGoing: "¡Sigue así!",
+    weeklyDigestTitle: "Tu Resumen Semanal",
+    weeklyDigestBody: "Mira cómo fue tu semana — los análisis están listos.",
   },
   // Map/Kanban
   map: {

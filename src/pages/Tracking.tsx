@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import DashboardLayout from "../components/tracking/DashboardLayout";
+import InsightsCard from "../components/tracking/InsightsCard";
 import { Header } from "../components/ui";
 
 export default function Tracking() {
@@ -37,13 +38,8 @@ export default function Tracking() {
         }
       />
 
-      <div className="flex-1 p-4 pb-24 max-w-7xl mx-auto w-full">
-        <div className="text-center py-2 mb-4">
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            {t("emptyState.tracking") ||
-              "Complete a few tasks and journal entries — your dashboard will come alive."}
-          </p>
-        </div>
+      <div className="flex-1 p-4 pb-24 max-w-7xl mx-auto w-full space-y-4">
+        <InsightsCard />
         <DashboardLayout activeTab={activeTab} selectedDate={selectedDate} />
       </div>
     </div>

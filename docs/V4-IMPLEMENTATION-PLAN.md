@@ -441,7 +441,9 @@ Triggered by pg_cron (every hour, checks which users need notifications based on
 
 ---
 
-## Session 4: Weekly Digest & Insights
+## Session 4: Weekly Digest & Insights — DONE
+
+> 13 files, ~650 insertions. Migration, weekly-digest Edge Function, InsightsCard, Celebration overlay, useStreakCelebration hook, shared streakCalculator utility (refactored 2 consumers), i18n in 3 languages. QA audit passed.
 
 **Goal:** Transform Tracking from raw numbers to interpretive insights. Weekly digest delivered via push. Streak celebrations.
 

@@ -563,6 +563,33 @@ export type Database = {
           },
         ];
       };
+      weekly_digests: {
+        Row: {
+          id: string;
+          user_id: string;
+          week_start: string;
+          stats: Json;
+          insights: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          week_start: string;
+          stats: Json;
+          insights?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          week_start?: string;
+          stats?: Json;
+          insights?: string[];
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       user_preferences: {
         Row: {
           created_at: string;
