@@ -600,6 +600,16 @@ export type Database = {
           theme: string | null;
           updated_at: string;
           user_id: string;
+          ai_feedback: Json | null;
+          onboarding_day: number | null;
+          onboarding_started_at: string | null;
+          onboarding_completed_at: string | null;
+          notify_journal_reminder: boolean | null;
+          notify_streak_alert: boolean | null;
+          notify_task_due: boolean | null;
+          notify_weekly_digest: boolean | null;
+          reminder_hour: number | null;
+          timezone: string | null;
         };
         Insert: {
           created_at?: string;
@@ -610,6 +620,16 @@ export type Database = {
           theme?: string | null;
           updated_at?: string;
           user_id: string;
+          ai_feedback?: Json | null;
+          onboarding_day?: number | null;
+          onboarding_started_at?: string | null;
+          onboarding_completed_at?: string | null;
+          notify_journal_reminder?: boolean | null;
+          notify_streak_alert?: boolean | null;
+          notify_task_due?: boolean | null;
+          notify_weekly_digest?: boolean | null;
+          reminder_hour?: number | null;
+          timezone?: string | null;
         };
         Update: {
           created_at?: string;
@@ -620,6 +640,16 @@ export type Database = {
           theme?: string | null;
           updated_at?: string;
           user_id?: string;
+          ai_feedback?: Json | null;
+          onboarding_day?: number | null;
+          onboarding_started_at?: string | null;
+          onboarding_completed_at?: string | null;
+          notify_journal_reminder?: boolean | null;
+          notify_streak_alert?: boolean | null;
+          notify_task_due?: boolean | null;
+          notify_weekly_digest?: boolean | null;
+          reminder_hour?: number | null;
+          timezone?: string | null;
         };
         Relationships: [];
       };

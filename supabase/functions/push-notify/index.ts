@@ -52,7 +52,8 @@ Deno.serve(async (req: Request) => {
     )
     .or(
       `notify_journal_reminder.eq.true,notify_streak_alert.eq.true,notify_task_due.eq.true`,
-    );
+    )
+    .limit(500);
 
   if (usersError || !users) {
     console.error("[push-notify] Failed to query users:", usersError);

@@ -71,9 +71,11 @@ export interface ObjectivesState {
   updateVision: (id: string, updates: Partial<Vision>) => Promise<boolean>;
   deleteVision: (id: string, orphanDescendants?: boolean) => Promise<boolean>;
   updateVisionOrder: (visionId: string, newOrder: number) => Promise<void>;
-  getVisionDescendantCounts: (
-    id: string,
-  ) => Promise<{ goals: number; objectives: number; tasks: number }>;
+  getVisionDescendantCounts: (id: string) => {
+    goals: number;
+    objectives: number;
+    tasks: number;
+  };
 
   createGoal: (
     title: string,

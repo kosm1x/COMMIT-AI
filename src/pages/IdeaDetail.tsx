@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { supabase } from "../lib/supabase";
 import { findIdeaConnections } from "../services/aiService";
 import {
@@ -545,28 +546,30 @@ export default function IdeaDetail() {
       </div>
 
       {showAIPanel && (
-        <Suspense
-          fallback={
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-bg-primary rounded-lg p-6 flex items-center gap-3">
-                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                <span className="text-text-secondary">
-                  Loading AI Assistant...
-                </span>
+        <ErrorBoundary section="AI Assistant">
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-bg-primary rounded-lg p-6 flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                  <span className="text-text-secondary">
+                    Loading AI Assistant...
+                  </span>
+                </div>
               </div>
-            </div>
-          }
-        >
-          <AIAssistantPanel
-            ideaTitle={idea.title}
-            ideaContent={idea.content}
-            onClose={() => setShowAIPanel(false)}
-            onSaveAsNewIdea={handleSaveAsNewIdea}
-            onCreateTask={handleCreateTask}
-            cache={aiCache}
-            onCacheUpdate={setAiCache}
-          />
-        </Suspense>
+            }
+          >
+            <AIAssistantPanel
+              ideaTitle={idea.title}
+              ideaContent={idea.content}
+              onClose={() => setShowAIPanel(false)}
+              onSaveAsNewIdea={handleSaveAsNewIdea}
+              onCreateTask={handleCreateTask}
+              cache={aiCache}
+              onCacheUpdate={setAiCache}
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
 
       <div className="flex-1 overflow-y-auto">

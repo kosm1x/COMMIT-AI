@@ -25,9 +25,11 @@ interface VisionColumnProps {
     description: string,
     e: React.MouseEvent,
   ) => void;
-  getVisionDescendantCounts: (
-    id: string,
-  ) => Promise<{ goals: number; objectives: number; tasks: number }>;
+  getVisionDescendantCounts: (id: string) => {
+    goals: number;
+    objectives: number;
+    tasks: number;
+  };
   onConvertToGoal?: (
     vision: Vision,
     targetVisionId: string | null,
@@ -119,7 +121,7 @@ export function VisionColumn({
 
   const handleDelete = async (id: string) => {
     // Check for descendants
-    const counts = await getVisionDescendantCounts(id);
+    const counts = getVisionDescendantCounts(id);
     const hasDescendants =
       counts.goals > 0 || counts.objectives > 0 || counts.tasks > 0;
 

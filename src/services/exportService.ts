@@ -18,48 +18,61 @@ export async function exportAllData(
     connections,
     mindMaps,
     digests,
+    // Limit per table to prevent browser OOM on large datasets
   ] = await Promise.all([
     supabase
       .from("journal_entries")
       .select("*, ai_analysis(*)")
       .eq("user_id", userId)
-      .order("entry_date", { ascending: false }),
+      .order("entry_date", { ascending: false })
+      .limit(5000),
     supabase
       .from("visions")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(500),
     supabase
       .from("goals")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(1000),
     supabase
       .from("objectives")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(2000),
     supabase
       .from("tasks")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(5000),
     supabase
       .from("ideas")
       .select("*")
       .eq("user_id", userId)
-      .order("updated_at", { ascending: false }),
-    supabase.from("idea_connections").select("*").eq("user_id", userId),
+      .order("updated_at", { ascending: false })
+      .limit(2000),
+    supabase
+      .from("idea_connections")
+      .select("*")
+      .eq("user_id", userId)
+      .limit(5000),
     supabase
       .from("mind_maps")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(500),
     supabase
       .from("weekly_digests")
       .select("*")
       .eq("user_id", userId)
-      .order("week_start", { ascending: false }),
+      .order("week_start", { ascending: false })
+      .limit(500),
   ]);
 
   const data = {

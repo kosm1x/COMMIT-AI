@@ -7,7 +7,7 @@ import {
   TaskCount,
 } from "../components/objectives/types";
 import { sanitizeInput } from "../components/objectives/utils";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export class ObjectivesService {
   private userId: string;
@@ -447,12 +447,15 @@ export class ObjectivesService {
         return false;
       }
     } else {
-      // Mark as completed today
-      const { error } = await supabase.from("task_completions").insert({
-        task_id: taskId,
-        user_id: this.userId,
-        completion_date: today,
-      });
+      // Mark as completed today (upsert to prevent race condition duplicates)
+      const { error } = await supabase.from("task_completions").upsert(
+        {
+          task_id: taskId,
+          user_id: this.userId,
+          completion_date: today,
+        },
+        { onConflict: "task_id,completion_date" },
+      );
 
       if (error) {
         logger.error("Error marking task completed:", error);

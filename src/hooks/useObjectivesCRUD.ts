@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { Vision, Goal, Objective, Task } from "../components/objectives/types";
 import type { ObjectivesDataState } from "./useObjectivesData";
 import type { SelectionPath } from "./useObjectivesSelection";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 interface SelectionDeps {
   selectionPath: SelectionPath;
@@ -20,9 +20,11 @@ export interface ObjectivesCRUDOps {
   updateVision: (id: string, updates: Partial<Vision>) => Promise<boolean>;
   deleteVision: (id: string, orphanDescendants?: boolean) => Promise<boolean>;
   updateVisionOrder: (visionId: string, newOrder: number) => Promise<void>;
-  getVisionDescendantCounts: (
-    id: string,
-  ) => Promise<{ goals: number; objectives: number; tasks: number }>;
+  getVisionDescendantCounts: (id: string) => {
+    goals: number;
+    objectives: number;
+    tasks: number;
+  };
 
   createGoal: (
     title: string,
@@ -166,61 +168,25 @@ export function useObjectivesCRUD(
     [visions, setVisions],
   );
 
+  // Compute descendant counts from in-memory state (no DB round-trips)
   const getVisionDescendantCounts = useCallback(
-    async (
-      id: string,
-    ): Promise<{ goals: number; objectives: number; tasks: number }> => {
-      if (!userId) return { goals: 0, objectives: 0, tasks: 0 };
-
-      const { count: goalsCount } = await supabase
-        .from("goals")
-        .select("*", { count: "exact", head: true })
-        .eq("vision_id", id)
-        .eq("user_id", userId);
-
-      const { data: goalIds } = await supabase
-        .from("goals")
-        .select("id")
-        .eq("vision_id", id)
-        .eq("user_id", userId);
-
-      let objectivesCount = 0;
-      let tasksCount = 0;
-
-      if (goalIds && goalIds.length > 0) {
-        const goalIdList = goalIds.map((g) => g.id);
-
-        const { count: objCount } = await supabase
-          .from("objectives")
-          .select("*", { count: "exact", head: true })
-          .in("goal_id", goalIdList)
-          .eq("user_id", userId);
-        objectivesCount = objCount || 0;
-
-        const { data: objectiveIds } = await supabase
-          .from("objectives")
-          .select("id")
-          .in("goal_id", goalIdList)
-          .eq("user_id", userId);
-
-        if (objectiveIds && objectiveIds.length > 0) {
-          const objectiveIdList = objectiveIds.map((o) => o.id);
-          const { count: taskCount } = await supabase
-            .from("tasks")
-            .select("*", { count: "exact", head: true })
-            .in("objective_id", objectiveIdList)
-            .eq("user_id", userId);
-          tasksCount = taskCount || 0;
-        }
-      }
-
+    (id: string): { goals: number; objectives: number; tasks: number } => {
+      const visionGoals = goals.filter((g) => g.vision_id === id);
+      const goalIds = new Set(visionGoals.map((g) => g.id));
+      const visionObjectives = objectives.filter((o) =>
+        o.goal_id ? goalIds.has(o.goal_id) : false,
+      );
+      const objectiveIds = new Set(visionObjectives.map((o) => o.id));
+      const visionTasks = tasks.filter((t) =>
+        t.objective_id ? objectiveIds.has(t.objective_id) : false,
+      );
       return {
-        goals: goalsCount || 0,
-        objectives: objectivesCount,
-        tasks: tasksCount,
+        goals: visionGoals.length,
+        objectives: visionObjectives.length,
+        tasks: visionTasks.length,
       };
     },
-    [userId],
+    [goals, objectives, tasks],
   );
 
   const deleteVision = useCallback(

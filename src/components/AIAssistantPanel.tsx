@@ -536,9 +536,9 @@ export default function AIAssistantPanel({
                   onRetry={() => handleRefresh("divergent")}
                 />
               ) : (
-                divergentPaths.map((path, index) => (
+                divergentPaths.map((path) => (
                   <div
-                    key={index}
+                    key={path.title}
                     className="bg-bg-primary border border-border-primary rounded-lg p-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -638,7 +638,7 @@ export default function AIAssistantPanel({
             ) : (
               nextSteps.map((step, index) => (
                 <div
-                  key={index}
+                  key={step.step}
                   className="bg-bg-primary border border-border-primary rounded-lg p-3 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start gap-3">
@@ -759,9 +759,9 @@ export default function AIAssistantPanel({
                     {t("ideate.aiAssistant.strengths")}
                   </h4>
                   <ul className="space-y-1">
-                    {criticalAnalysis.strengths.map((strength, index) => (
+                    {criticalAnalysis.strengths.map((strength) => (
                       <li
-                        key={index}
+                        key={strength}
                         className="text-sm text-green-800 dark:text-green-300 flex gap-2"
                       >
                         <span className="text-green-600 dark:text-green-400">
@@ -778,9 +778,9 @@ export default function AIAssistantPanel({
                     {t("ideate.aiAssistant.challenges")}
                   </h4>
                   <ul className="space-y-1">
-                    {criticalAnalysis.challenges.map((challenge, index) => (
+                    {criticalAnalysis.challenges.map((challenge) => (
                       <li
-                        key={index}
+                        key={challenge}
                         className="text-sm text-orange-800 dark:text-orange-300 flex gap-2"
                       >
                         <span className="text-orange-600 dark:text-orange-400">
@@ -797,9 +797,9 @@ export default function AIAssistantPanel({
                     {t("ideate.aiAssistant.assumptions")}
                   </h4>
                   <ul className="space-y-1">
-                    {criticalAnalysis.assumptions.map((assumption, index) => (
+                    {criticalAnalysis.assumptions.map((assumption) => (
                       <li
-                        key={index}
+                        key={assumption}
                         className="text-sm text-blue-800 dark:text-blue-300 flex gap-2"
                       >
                         <span className="text-blue-600 dark:text-blue-400">
@@ -817,9 +817,9 @@ export default function AIAssistantPanel({
                   </h4>
                   <ul className="space-y-1">
                     {criticalAnalysis.alternativePerspectives.map(
-                      (perspective, index) => (
+                      (perspective) => (
                         <li
-                          key={index}
+                          key={perspective}
                           className="text-sm text-text-secondary flex gap-2"
                         >
                           <span className="text-text-tertiary">•</span>
@@ -884,9 +884,9 @@ export default function AIAssistantPanel({
                 onRetry={() => handleRefresh("concepts")}
               />
             ) : (
-              relatedConcepts.map((concept, index) => (
+              relatedConcepts.map((concept) => (
                 <div
-                  key={index}
+                  key={concept.concept}
                   className="bg-bg-primary border border-border-primary rounded-lg p-4 hover:shadow-md transition-shadow select-text"
                 >
                   <div className="flex items-start gap-2 mb-2">
