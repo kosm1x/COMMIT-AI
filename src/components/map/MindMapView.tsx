@@ -77,6 +77,7 @@ export default function MindMapView() {
   const [contextChain, setContextChain] = useState<string>("");
   const diagramRef = useRef<HTMLDivElement>(null);
   const mermaidRef = useRef<typeof import("mermaid").default | null>(null);
+  const listenerCleanupRef = useRef<(() => void) | null>(null);
 
   // Lazy load mermaid library
   const loadMermaid = useCallback(async () => {
@@ -135,55 +136,6 @@ export default function MindMapView() {
     if (data) {
       setSavedMindMaps(data as MindMap[]);
     }
-  };
-
-  const renderMermaid = useCallback(async () => {
-    if (!diagramRef.current || !currentMindMap) return;
-
-    try {
-      // Lazy load mermaid if not loaded yet
-      const mermaid = await loadMermaid();
-
-      diagramRef.current.innerHTML = "";
-      const { svg } = await mermaid.render(
-        `mermaid-${Date.now()}`,
-        currentMindMap.mermaid_syntax,
-      );
-      diagramRef.current.innerHTML = svg;
-      addNodeClickHandlers();
-    } catch (error) {
-      logger.error("Error rendering mermaid:", error);
-      diagramRef.current.innerHTML = `<div class="text-red-600 p-4">${t("map.errorRendering")}</div>`;
-    }
-  }, [currentMindMap, loadMermaid, t]);
-
-  const addNodeClickHandlers = () => {
-    if (!diagramRef.current) return;
-
-    const nodes = diagramRef.current.querySelectorAll(".mindmap-node, .node");
-    nodes.forEach((node) => {
-      // Single click for selection
-      node.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const textElement = node.querySelector("text, span");
-        if (textElement) {
-          const nodeText = textElement.textContent || "";
-          handleNodeClick(nodeText);
-        }
-      });
-
-      // Double click to create new tree
-      node.addEventListener("dblclick", (e) => {
-        e.stopPropagation();
-        const textElement = node.querySelector("text, span");
-        if (textElement) {
-          const nodeText = textElement.textContent || "";
-          handleNodeDoubleClick(nodeText);
-        }
-      });
-
-      (node as HTMLElement).style.cursor = "pointer";
-    });
   };
 
   const handleNodeClick = async (nodeText: string) => {
@@ -267,6 +219,62 @@ export default function MindMapView() {
       setGenerating(false);
     }
   };
+
+  const addNodeClickHandlers = () => {
+    if (!diagramRef.current) return;
+
+    // Clean up previous listeners to prevent memory leak
+    if (listenerCleanupRef.current) listenerCleanupRef.current();
+
+    const nodes = diagramRef.current.querySelectorAll(".mindmap-node, .node");
+    const cleanups: (() => void)[] = [];
+
+    nodes.forEach((node) => {
+      const onClick = (e: Event) => {
+        e.stopPropagation();
+        const textElement = node.querySelector("text, span");
+        if (textElement) handleNodeClick(textElement.textContent || "");
+      };
+      const onDblClick = (e: Event) => {
+        e.stopPropagation();
+        const textElement = node.querySelector("text, span");
+        if (textElement) handleNodeDoubleClick(textElement.textContent || "");
+      };
+      node.addEventListener("click", onClick);
+      node.addEventListener("dblclick", onDblClick);
+      cleanups.push(() => {
+        node.removeEventListener("click", onClick);
+        node.removeEventListener("dblclick", onDblClick);
+      });
+      (node as HTMLElement).style.cursor = "pointer";
+    });
+
+    listenerCleanupRef.current = () => cleanups.forEach((fn) => fn());
+  };
+
+  const renderMermaid = useCallback(async () => {
+    if (!diagramRef.current || !currentMindMap) return;
+
+    try {
+      const mermaid = await loadMermaid();
+      diagramRef.current.innerHTML = "";
+      const { svg } = await mermaid.render(
+        `mermaid-${Date.now()}`,
+        currentMindMap.mermaid_syntax,
+      );
+      diagramRef.current.innerHTML = svg;
+      addNodeClickHandlers();
+    } catch (error) {
+      logger.error("Error rendering mermaid:", error);
+      if (diagramRef.current) {
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "text-red-600 p-4";
+        errorDiv.textContent =
+          t("map.errorRendering") || "Error rendering diagram";
+        diagramRef.current.replaceChildren(errorDiv);
+      }
+    }
+  }, [currentMindMap, loadMermaid, t]);
 
   const handleGenerate = async () => {
     if (!problemStatement.trim()) return;

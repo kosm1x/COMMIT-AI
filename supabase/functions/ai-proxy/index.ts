@@ -195,6 +195,7 @@ Deno.serve(async (req: Request) => {
         Authorization: `Bearer ${llmApiKey}`,
       },
       body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!llmResponse.ok) {

@@ -196,7 +196,9 @@ export default function Journal() {
     } finally {
       setSaving(false);
       // Cancel today's streak alert — user already journaled
-      cancelStreakAlert().catch(() => {});
+      cancelStreakAlert().catch(() => {
+        // Non-critical — streak alert cancel can fail silently
+      });
     }
   };
 

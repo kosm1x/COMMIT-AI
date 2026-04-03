@@ -186,15 +186,25 @@ Deno.serve(async (req: Request) => {
       }
 
       // Upsert digest
-      await supabase.from("weekly_digests").upsert(
-        {
-          user_id,
-          week_start: weekStart,
-          stats,
-          insights,
-        },
-        { onConflict: "user_id,week_start" },
-      );
+      const { error: upsertError } = await supabase
+        .from("weekly_digests")
+        .upsert(
+          {
+            user_id,
+            week_start: weekStart,
+            stats,
+            insights,
+          },
+          { onConflict: "user_id,week_start" },
+        );
+
+      if (upsertError) {
+        console.error(
+          `[weekly-digest] Upsert failed for user ${user_id}:`,
+          upsertError,
+        );
+        continue;
+      }
 
       generated++;
       console.log(
