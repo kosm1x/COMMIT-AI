@@ -8,11 +8,9 @@ import {
 } from "../test/helpers";
 
 const mockFrom = vi.fn();
-const mockRpc = vi.fn().mockResolvedValue({ data: 0, error: null });
 vi.mock("../lib/supabase", () => ({
   supabase: {
     from: (...args: unknown[]) => mockFrom(...args),
-    rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
 
@@ -242,22 +240,9 @@ describe("useObjectivesData", () => {
     expect(mockFrom).toHaveBeenCalledWith("tasks");
   });
 
-  it("calls prune_completed_tasks RPC on initial load", async () => {
-    setupMocks();
-    renderHook(() => useObjectivesData("user-123"));
-
-    await waitFor(() => {
-      expect(mockRpc).toHaveBeenCalledWith("prune_completed_tasks");
-    });
-  });
-
-  it("loads data even if prune RPC fails", async () => {
-    mockRpc.mockResolvedValueOnce({
-      data: null,
-      error: { message: "function not found" },
-    });
+  it("loads data on initial mount", async () => {
     setupMocks({
-      visions: [makeVision({ id: "v1", title: "Survives prune failure" })],
+      visions: [makeVision({ id: "v1", title: "Test vision" })],
     });
 
     const { result } = renderHook(() => useObjectivesData("user-123"));

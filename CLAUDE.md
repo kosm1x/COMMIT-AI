@@ -78,7 +78,7 @@ docs/                            # Improvement plan, deployment, tech spec
 
 ### Data hierarchy
 
-Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent (orphaned items supported). Status: `not_started | in_progress | completed | on_hold`. Priority: `high | medium | low`. Completed non-recurring tasks are auto-pruned after 15 days via `prune_completed_tasks()` (pg_cron daily + client RPC on login).
+Vision > Goal > Objective > Task (4-level). Each level has nullable FK to parent (orphaned items supported). Status: `not_started | in_progress | completed | on_hold`. Priority: `high | medium | low`. Task pruning is delegated to Jarvis.
 
 ### Database tables (16)
 

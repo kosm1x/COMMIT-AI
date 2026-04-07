@@ -8,7 +8,6 @@ import {
   sortObjectives,
   sortTasks,
 } from "../utils/autoSort";
-import { logger } from '../utils/logger';
 
 export interface ObjectivesDataState {
   visions: Vision[];
@@ -128,15 +127,10 @@ export function useObjectivesData(
 
   const hasAppliedSessionSort = useRef(false);
 
-  // Initial load — prune stale completed tasks before fetching
+  // Initial load
   useEffect(() => {
     if (userId) {
-      supabase
-        .rpc("prune_completed_tasks" as never)
-        .then(({ error }: { error: { message: string } | null }) => {
-          if (error) logger.warn("Task pruning skipped:", error.message);
-          reloadAll();
-        });
+      reloadAll();
     } else {
       setLoading(false);
     }

@@ -6,7 +6,7 @@ import {
   getEndOfMonth,
   getDaysInMonth,
 } from "../utils/trackingStats";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export interface DayActivity {
   date: Date;
@@ -433,13 +433,11 @@ export function useCreativeData(
           .eq("user_id", user!.id)
           .gte("entry_date", threeMonthsAgo.toISOString().split("T")[0])
           .order("entry_date", { ascending: false }),
-        // Word frequency: current period only, with content
+        // Word frequency: all entries, accumulate across entire journal history
         supabase
           .from("journal_entries")
           .select("id, content")
-          .eq("user_id", user!.id)
-          .gte("entry_date", startDate.toISOString().split("T")[0])
-          .lte("entry_date", endDate.toISOString().split("T")[0]),
+          .eq("user_id", user!.id),
       ]);
 
       const allEntries = entriesResult.data;

@@ -79,7 +79,7 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      <Header title={t("settings.title") || "Settings"} />
+      <Header title={t("settings.title") || "Settings"} showBack />
 
       <div className="flex-1 p-4 pb-24 max-w-2xl mx-auto w-full space-y-6">
         {/* Profile */}
@@ -166,7 +166,7 @@ export default function Settings() {
                       !notifPrefs.notify_journal_reminder,
                     )
                   }
-                  className={`w-10 h-6 rounded-full transition-colors relative ${
+                  className={`w-10 h-6 rounded-full transition-colors relative p-0 shrink-0 ${
                     notifPrefs.notify_journal_reminder
                       ? "bg-indigo-600"
                       : "bg-gray-300 dark:bg-gray-700"
@@ -176,7 +176,7 @@ export default function Settings() {
                   }
                 >
                   <span
-                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    className={`absolute left-0 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
                       notifPrefs.notify_journal_reminder
                         ? "translate-x-[18px]"
                         : "translate-x-0.5"
@@ -228,7 +228,7 @@ export default function Settings() {
                       !notifPrefs.notify_streak_alert,
                     )
                   }
-                  className={`w-10 h-6 rounded-full transition-colors relative ${
+                  className={`w-10 h-6 rounded-full transition-colors relative p-0 shrink-0 ${
                     notifPrefs.notify_streak_alert
                       ? "bg-indigo-600"
                       : "bg-gray-300 dark:bg-gray-700"
@@ -238,7 +238,7 @@ export default function Settings() {
                   }
                 >
                   <span
-                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    className={`absolute left-0 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
                       notifPrefs.notify_streak_alert
                         ? "translate-x-[18px]"
                         : "translate-x-0.5"
@@ -262,7 +262,7 @@ export default function Settings() {
                       !notifPrefs.notify_task_due,
                     )
                   }
-                  className={`w-10 h-6 rounded-full transition-colors relative ${
+                  className={`w-10 h-6 rounded-full transition-colors relative p-0 shrink-0 ${
                     notifPrefs.notify_task_due
                       ? "bg-indigo-600"
                       : "bg-gray-300 dark:bg-gray-700"
@@ -270,7 +270,7 @@ export default function Settings() {
                   aria-label={t("settings.taskDue") || "Toggle task due alerts"}
                 >
                   <span
-                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    className={`absolute left-0 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
                       notifPrefs.notify_task_due
                         ? "translate-x-[18px]"
                         : "translate-x-0.5"
